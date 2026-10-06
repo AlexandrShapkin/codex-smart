@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "active": "tools",
+  "active": "doctor",
   "stages": [
     {
       "id": "baseline",
@@ -63,7 +63,7 @@
       "id": "tools",
       "title": "External capability pins and compatibility",
       "milestone": "0.1 Foundation",
-      "progress": "partial",
+      "progress": "validated",
       "depends_on": [
         "workflow"
       ],

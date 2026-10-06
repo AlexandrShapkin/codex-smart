@@ -6,7 +6,7 @@ Version: 0.1.0 unreleased; see [versioning](docs/versioning.md).
 Recorded progress describes implementation evidence, not live issue closure or milestone completion.
 GitHub Issues own actionable state; use `just issues`. No legacy archive or benchmark quality is assumed.
 
-Active stage: **tools**. Start with `just context`.
+Active stage: **doctor**. Start with `just context`.
 
 ## baseline — Recover trustworthy repository baseline
 
@@ -24,7 +24,7 @@ Evidence: [docs/diagnostics/2026-10-06-workflow.md](docs/diagnostics/2026-10-06-
 
 ## tools — External capability pins and compatibility
 
-Milestone: 0.1 Foundation; recorded progress: **partial**.
+Milestone: 0.1 Foundation; recorded progress: **validated**.
 Dependencies: workflow.
 [Stage contract](docs/stages/tools.md); issues: [#7](https://github.com/AlexandrShapkin/codex-smart/issues/7).
 Evidence: [docs/diagnostics/2026-10-06-tools.md](docs/diagnostics/2026-10-06-tools.md).
