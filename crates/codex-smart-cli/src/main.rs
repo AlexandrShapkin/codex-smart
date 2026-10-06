@@ -2,6 +2,7 @@ use codex_smart_core::{
     VERSION,
     capability::{Capability, Inventory},
     config::{self, ConfigError, Layer, Origin, Resolved},
+    doctor::DoctorReport,
     migration::{MigrationPlan, read_optional},
     process::LaunchPlan,
     routing::{Reasoning, Task, decide},
@@ -184,32 +185,49 @@ fn execute(mut args: Vec<OsString>) -> Result<i32, &'static str> {
             println!("codex-smart {VERSION}")
         }
         Some("--help" | "-h" | "help") if args.len() == 1 => println!(
-            "codex-smart {VERSION}\nCommands: run [--tool-lock FILE] [--dry-run] [--] [codex args...], doctor/capabilities [--tool-lock FILE], explain [--tool-lock FILE] [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nOther arguments pass through to Codex. Use -- to pass a reserved command name. Config transactions default to dry-run; use --file FILE and explicit --apply. Tool pins are explicit; versions/health remain unverified."
+            "codex-smart {VERSION}\nCommands: run [--tool-lock FILE] [--dry-run] [--] [codex args...], doctor [--json] [--codex-config FILE] [--tool-lock FILE], capabilities [--tool-lock FILE], explain [--tool-lock FILE] [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nOther arguments pass through to Codex. Use -- to pass a reserved command name. Config transactions default to dry-run; use --file FILE and explicit --apply. Tool pins are explicit; versions/health remain unverified."
         ),
-        Some("doctor" | "capabilities") => {
+        Some("doctor") => {
+            let (lock, remaining) = diagnostic_options(&args[1..])?;
+            let mut json = false;
+            let mut codex_config = None;
+            let mut index = 0;
+            while index < remaining.len() {
+                if remaining[index] == "--json" && !json {
+                    json = true;
+                    index += 1;
+                } else if remaining[index] == "--codex-config"
+                    && codex_config.is_none()
+                    && index + 1 < remaining.len()
+                {
+                    codex_config = Some(PathBuf::from(&remaining[index + 1]));
+                    index += 2;
+                } else {
+                    return Err("E_ARGS: doctor [--json] [--tool-lock FILE] [--codex-config FILE]");
+                }
+            }
+            let repo = cwd()?;
+            let inventory = Inventory::discover(std::env::var_os("PATH").as_deref(), &repo);
+            let config = configuration(&Layer::default()).map(|_| ());
+            let report = DoctorReport::collect(
+                &repo,
+                &inventory,
+                lock.as_ref(),
+                config,
+                codex_config.as_deref(),
+            );
+            print!("{}", if json { report.json() } else { report.human() });
+            return Ok(report.exit_code());
+        }
+        Some("capabilities") => {
             let (lock, remaining) = diagnostic_options(&args[1..])?;
             if !remaining.is_empty() {
                 return Err("E_ARGS: diagnostics do not accept extra arguments");
             }
             let inventory = Inventory::discover(std::env::var_os("PATH").as_deref(), &cwd()?);
             println!("codex-smart {VERSION}\n{}", inventory.render());
-            let mut artifact_ok = true;
             if let Some(lock) = lock {
-                let (report, verified) = lock.report(&inventory, command == Some("doctor"));
-                print!("{report}");
-                artifact_ok = verified;
-            }
-            if command == Some("doctor") {
-                match configuration(&Layer::default()) {
-                    Ok(resolved) => print!("{}", resolved.render()),
-                    Err(error) => {
-                        println!("Configuration: {error}");
-                        return Ok(1);
-                    }
-                }
-            }
-            if !artifact_ok {
-                return Ok(1);
+                print!("{}", lock.report(&inventory, false).0);
             }
         }
         Some("explain" | "--explain") => {
