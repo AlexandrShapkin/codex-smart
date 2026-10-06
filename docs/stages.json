@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "active": "doctor",
+  "active": "router",
   "stages": [
     {
       "id": "baseline",
@@ -96,7 +96,7 @@
       "id": "doctor",
       "title": "Complete offline diagnostic contracts",
       "milestone": "0.1 Foundation",
-      "progress": "partial",
+      "progress": "validated",
       "depends_on": [
         "tools"
       ],

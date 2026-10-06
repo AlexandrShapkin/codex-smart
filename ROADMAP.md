@@ -6,7 +6,7 @@ Version: 0.1.0 unreleased; see [versioning](docs/versioning.md).
 Recorded progress describes implementation evidence, not live issue closure or milestone completion.
 GitHub Issues own actionable state; use `just issues`. No legacy archive or benchmark quality is assumed.
 
-Active stage: **doctor**. Start with `just context`.
+Active stage: **router**. Start with `just context`.
 
 ## baseline — Recover trustworthy repository baseline
 
@@ -31,7 +31,7 @@ Evidence: [docs/diagnostics/2026-10-06-tools.md](docs/diagnostics/2026-10-06-too
 
 ## doctor — Complete offline diagnostic contracts
 
-Milestone: 0.1 Foundation; recorded progress: **partial**.
+Milestone: 0.1 Foundation; recorded progress: **validated**.
 Dependencies: tools.
 [Stage contract](docs/stages/doctor.md); issues: [#4](https://github.com/AlexandrShapkin/codex-smart/issues/4).
 Evidence: [docs/diagnostics/2026-10-06-doctor.md](docs/diagnostics/2026-10-06-doctor.md).
