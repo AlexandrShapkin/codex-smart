@@ -1,0 +1,23 @@
+codex-smart 0.1.0
+Capability inventory (offline; no tools executed)
+codex: not found on trusted PATH
+rustc: not found on trusted PATH
+cargo: not found on trusted PATH
+git: not found on trusted PATH
+rg: not found on trusted PATH
+gh: not found on trusted PATH
+code-graph-mcp: not found on trusted PATH
+code-graph-smart: not found on trusted PATH
+serena: not found on trusted PATH
+context7 (session integration): unknown: session integration not probed
+MCP readiness, tool compatibility and index health: not probed
+
+Configuration schema: 1
+task: Local
+reasoning: Medium
+context_limit: 8192 bytes per retrieval response (escalate rather than skip evidence)
+task origin: BuiltIn
+reasoning origin: BuiltIn
+context origin: BuiltIn
+Unknown fields: preserved/inert; values not displayed
+Codex config/auth/MCP/plugins: untouched
