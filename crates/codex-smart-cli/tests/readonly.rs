@@ -646,10 +646,16 @@ fn golden_doctor_reports_missing_capabilities_without_probing() {
     let f = Fixture::new();
     f.write("repo/README", "fixture");
     let output = f.command().arg("doctor").output().unwrap();
-    assert!(output.status.success());
+    assert_eq!(output.status.code(), Some(1));
     assert_eq!(
         String::from_utf8(output.stdout).unwrap(),
         include_str!("../../../fixtures/doctor-empty-path.txt")
+    );
+    let output = f.command().args(["doctor", "--json"]).output().unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        include_str!("../../../fixtures/doctor-empty-path.json")
     );
 }
 #[test]
@@ -660,7 +666,7 @@ fn doctor_reports_invalid_config_and_returns_degraded_exit_code() {
     let output = f.command().arg("doctor").output().unwrap();
     assert_eq!(output.status.code(), Some(1));
     let text = String::from_utf8(output.stdout).unwrap();
-    assert!(text.contains("Configuration: E_CONFIG_TOML"));
+    assert!(text.contains("FAIL launcher_config: rejected; E_CONFIG_TOML"));
     assert!(!text.contains("FAKE_SECRET"));
     assert!(output.stderr.is_empty());
     assert_eq!(tree(&f.0), before);
@@ -734,8 +740,8 @@ fn tool_lock_verification_is_read_only_and_does_not_claim_runtime_version() {
         .unwrap();
     assert!(output.status.success(), "{:?}", output);
     let text = String::from_utf8(output.stdout).unwrap();
-    assert!(text.contains("codex: declared version 0.160.0; SHA-256 matches"));
-    assert!(text.contains("Runtime version/auth/MCP readiness: unverified"));
+    assert!(text.contains("declared version 0.160.0; artifact: SHA-256 matches"));
+    assert!(text.contains("codex_auth: offline"));
     assert!(text.contains("runtime version: unknown; compatibility: unknown:"));
     assert!(text.contains("ready: unknown:"));
     assert_eq!(tree(&f.0), before);
@@ -924,7 +930,7 @@ fn doctor_pin_failures_degrade_and_unsafe_wrappers_never_execute() {
     let text = String::from_utf8(output.stdout).unwrap();
     assert!(text.contains("executable missing"));
     assert!(text.contains("ready: no: executable unavailable"));
-    assert!(text.contains("execution unsupported (wrapper may install dependencies)"));
+    assert!(text.contains("incompatible: wrapper execution is unsupported"));
     assert_eq!(tree(&f.0), before);
     f.tool("codex");
     f.write("bin/codex", "#!/bin/sh\nexit 37\n");
@@ -1027,5 +1033,261 @@ fn pinned_launch_preserves_argument_bytes_and_wrapper_option_boundary() {
         String::from_utf8_lossy(&output.stdout)
             .contains("required SHA-256 matched; runtime version/readiness unverified")
     );
+    assert_eq!(tree(&f.0), before);
+}
+
+#[test]
+fn doctor_explicit_codex_config_conflicts_and_privacy_both_formats() {
+    let f = Fixture::new();
+    f.tool("codex");
+    f.tool("code-graph-smart");
+    f.write(
+        "repo/.git/config",
+        "[remote \"origin\"]\nurl = https://FAKE_SECRET@github.com/private/repo\n",
+    );
+    f.write("repo/.git/HEAD", "ref: refs/heads/private\n");
+    f.write("repo/.code-graph/index", "FAKE_SECRET_INDEX");
+    f.write("home/.codex/auth.json", "FAKE_SECRET_AUTH");
+    f.write("repo/codex.toml", "default_permissions='PRIVATE_SELECTOR'\nsandbox_mode='workspace-write'\nsecret='FAKE_SECRET'\n[mcp_servers.codegraph]\ncommand='npx'\nargs=['-y','PRIVATE_PACKAGE']\n[mcp_servers.code_graph]\ncommand='code-graph-smart'\n[mcp_servers.serena]\ncommand='serena'\nenabled=false\n[mcp_servers.context7]\nurl='https://FAKE_SECRET.example'\n");
+    let before = tree(&f.0);
+    for json in [false, true] {
+        let mut cmd = f.command();
+        cmd.args(["doctor", "--codex-config", "codex.toml"]);
+        if json {
+            cmd.arg("--json");
+        }
+        let output = cmd.output().unwrap();
+        assert_eq!(output.status.code(), Some(1));
+        let text = String::from_utf8(output.stdout).unwrap();
+        for secret in [
+            "FAKE_SECRET",
+            "PRIVATE_SELECTOR",
+            "PRIVATE_PACKAGE",
+            "refs/heads/private",
+        ] {
+            assert!(!text.contains(secret));
+        }
+        assert!(text.contains("conflicting profile and legacy settings"));
+        assert!(text.contains("duplicate capability aliases"));
+        assert!(text.contains("configured; disabled"));
+        assert!(text.contains("execution probe refused"));
+        assert!(text.contains("index_readiness"));
+        assert!(text.contains("mcp_handshake"));
+        assert!(text.contains("NOT_CHECKED"));
+        assert!(text.contains("origin configured: https"));
+        assert!(output.stderr.is_empty());
+        assert_eq!(tree(&f.0), before);
+    }
+}
+#[test]
+fn doctor_valid_local_contract_never_promotes_unknown_runtime_readiness() {
+    let f = Fixture::new();
+    f.tool("codex");
+    f.write(
+        "repo/.git/config",
+        "[remote \"origin\"]\nurl = https://github.com/example/repo\n",
+    );
+    f.write("repo/codex.toml", "sandbox_mode='workspace-write'\napproval_policy='on-request'\n[mcp_servers.serena]\ncommand='serena'\n");
+    f.write(
+        "repo/tools.toml",
+        include_str!("../../../fixtures/tools-codex.toml"),
+    );
+    let before = tree(&f.0);
+    let output = f
+        .command()
+        .args([
+            "doctor",
+            "--json",
+            "--tool-lock",
+            "tools.toml",
+            "--codex-config",
+            "codex.toml",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{:?}", output);
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert!(text.contains("\"schema_version\":1"));
+    assert!(text.contains("\"runtime_version\":null"));
+    assert!(text.contains("\"artifact\":\"SHA-256 matches\""));
+    assert!(text.contains("\"network_used\":false"));
+    assert!(text.contains("unknown: runtime/auth/transport not probed"));
+    assert_eq!(tree(&f.0), before);
+    f.write(
+        "repo/tools.toml",
+        include_str!("../../../fixtures/tools-codex.toml")
+            .replace("0.160.0", "99.0.0")
+            .as_str(),
+    );
+    let output = f
+        .command()
+        .args(["doctor", "--json", "--tool-lock", "tools.toml"])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    assert!(
+        String::from_utf8_lossy(&output.stdout).contains("runtime version/contract not validated")
+    );
+}
+#[test]
+fn doctor_readonly_git_metadata_is_optional_and_offline_network_is_not_failure() {
+    let f = Fixture::new();
+    f.tool("codex");
+    f.write("repo/.git/HEAD", "fixture");
+    fs::set_permissions(f.0.join("repo/.git"), fs::Permissions::from_mode(0o500)).unwrap();
+    let before = tree(&f.0);
+    let output = f.command().arg("doctor").output().unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert!(text.contains("WARN git_metadata_writable: apparently read-only"));
+    for id in [
+        "network",
+        "github_api",
+        "github_auth",
+        "git_remote_connectivity",
+    ] {
+        assert!(text.contains(&format!("NOT_CHECKED {id}: offline")));
+    }
+    assert_eq!(tree(&f.0), before);
+    fs::set_permissions(f.0.join("repo/.git"), fs::Permissions::from_mode(0o700)).unwrap();
+}
+#[test]
+fn doctor_explicit_config_rejects_hostile_inputs_and_option_values_are_private() {
+    use std::os::unix::fs::symlink;
+    let f = Fixture::new();
+    f.tool("codex");
+    f.write("repo/codex.toml", "FAKE_SECRET='unterminated\n");
+    symlink("codex.toml", f.0.join("repo/link.toml")).unwrap();
+    for name in ["codex.toml", "link.toml", "missing.toml"] {
+        let before = tree(&f.0);
+        let output = f
+            .command()
+            .args(["doctor", "--json", "--codex-config", name])
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(1));
+        assert!(!String::from_utf8_lossy(&output.stdout).contains("FAKE_SECRET"));
+        assert_eq!(tree(&f.0), before);
+    }
+    for source in [
+        "sandbox_mode=42",
+        "default_permissions=false",
+        "mcp_servers=[]",
+        "[mcp_servers.serena]\ncommand='serena'\ncommand='FAKE_SECRET'",
+        "[profiles]\n",
+    ] {
+        f.write("repo/codex.toml", source);
+        let output = f
+            .command()
+            .args(["doctor", "--codex-config", "codex.toml"])
+            .output()
+            .unwrap();
+        if source != "[profiles]\n" {
+            assert_eq!(output.status.code(), Some(1));
+        }
+        assert!(!String::from_utf8_lossy(&output.stdout).contains("FAKE_SECRET"));
+    }
+    f.write("repo/codex.toml", &"x".repeat(65_537));
+    let output = f
+        .command()
+        .args(["doctor", "--codex-config", "codex.toml"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    for args in [
+        vec!["doctor", "--json", "--json"],
+        vec!["doctor", "--codex-config"],
+        vec!["doctor", "--online"],
+        vec![
+            "doctor",
+            "--codex-config",
+            "codex.toml",
+            "--codex-config",
+            "FAKE_SECRET",
+        ],
+    ] {
+        let output = f.command().args(args).output().unwrap();
+        assert_eq!(output.status.code(), Some(2));
+        assert!(!String::from_utf8_lossy(&output.stderr).contains("FAKE_SECRET"));
+    }
+}
+
+#[test]
+fn doctor_does_not_follow_git_indirection_or_symlinked_metadata() {
+    use std::os::unix::fs::symlink;
+    let f = Fixture::new();
+    f.tool("codex");
+    f.write(
+        "outside/config",
+        "[remote \"origin\"]\nurl=https://FAKE_SECRET.invalid\n",
+    );
+    f.write("repo/.git", "gitdir: ../outside\n");
+    let before = tree(&f.0);
+    let output = f.command().arg("doctor").output().unwrap();
+    assert!(output.status.success());
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("origin configured: https"));
+    assert_eq!(tree(&f.0), before);
+    fs::remove_file(f.0.join("repo/.git")).unwrap();
+    symlink("../outside", f.0.join("repo/.git")).unwrap();
+    let before = tree(&f.0);
+    let output = f.command().args(["doctor", "--json"]).output().unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert!(!text.contains("origin configured: https"));
+    assert!(text.contains("directory unavailable or symlink refused"));
+    assert_eq!(tree(&f.0), before);
+}
+
+#[test]
+fn doctor_markers_and_remote_hints_fail_closed_without_traversal() {
+    use std::os::unix::fs::symlink;
+    let f = Fixture::new();
+    f.tool("codex");
+    f.write("repo/README", "fixture");
+    f.write("outside/index", "FAKE_SECRET");
+    symlink("../outside", f.0.join("repo/.code-graph")).unwrap();
+    f.write(
+        "repo/.git/config",
+        "[include]\npath=FAKE_SECRET\n[remote \"origin\"]\nurl=https://FAKE_SECRET.invalid\n",
+    );
+    let before = tree(&f.0);
+    let output = f.command().arg("doctor").output().unwrap();
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert!(text.contains("UNKNOWN codegraph_index_marker: unknown"));
+    assert!(text.contains("UNKNOWN git_origin: unknown: includes or multiple URLs"));
+    assert!(!text.contains("FAKE_SECRET"));
+    assert_eq!(tree(&f.0), before);
+    f.write("repo/.git/config", &"x".repeat(65_537));
+    let before = tree(&f.0);
+    let output = f.command().args(["doctor", "--json"]).output().unwrap();
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Config absent/unsafe/unreadable"));
+    assert_eq!(tree(&f.0), before);
+}
+
+#[test]
+fn doctor_refuses_auth_json_before_opening_or_parsing_it() {
+    use std::os::unix::fs::symlink;
+    let f = Fixture::new();
+    f.tool("codex");
+    f.write("repo/README", "fixture");
+    f.write("home/.codex/auth.json", "FAKE_SECRET_AUTH_JSON");
+    symlink(
+        f.0.join("home/.codex/auth.json"),
+        f.0.join("repo/auth.json"),
+    )
+    .unwrap();
+    let before = tree(&f.0);
+    for name in ["auth.json", "absent.json"] {
+        let output = f
+            .command()
+            .args(["doctor", "--json", "--codex-config", name])
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(1));
+        let text = String::from_utf8(output.stdout).unwrap();
+        assert!(text.contains("unsupported file kind"));
+        assert!(!text.contains("E_CONFIG_PATH") && !text.contains("FAKE_SECRET"));
+    }
     assert_eq!(tree(&f.0), before);
 }

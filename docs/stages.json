@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "active": "doctor",
+  "active": "router",
   "stages": [
     {
       "id": "baseline",
@@ -96,7 +96,7 @@
       "id": "doctor",
       "title": "Complete offline diagnostic contracts",
       "milestone": "0.1 Foundation",
-      "progress": "partial",
+      "progress": "validated",
       "depends_on": [
         "tools"
       ],
@@ -105,15 +105,21 @@
       ],
       "contract": "docs/stages/doctor.md",
       "reads": [
+        "docs/doctor.md",
         "docs/tooling.md",
         "docs/configuration.md",
         "docs/issues/04.md"
       ],
       "sources": [
         "crates/codex-smart-cli/src/main.rs",
-        "crates/codex-smart-core/src/capability.rs"
+        "crates/codex-smart-core/src/capability.rs",
+        "crates/codex-smart-core/src/doctor.rs",
+        "crates/codex-smart-cli/tests/readonly.rs",
+        "fixtures/doctor-empty-path.json"
       ],
-      "evidence": []
+      "evidence": [
+        "docs/diagnostics/2026-10-06-doctor.md"
+      ]
     },
     {
       "id": "router",

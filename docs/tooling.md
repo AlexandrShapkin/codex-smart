@@ -26,3 +26,7 @@ The SHA dependency is now exactly pinned sha2 =0.11.0, default features disabled
 toml_edit/rustix. Cargo.lock contains 30 checksum-backed registry packages. The provenance
 check rejects root patches and unreviewed local lockfile packages as well as direct
 path/package/source overrides. No developer tool or LLVM component was installed locally.
+
+Doctor now separates local checks from unprobed runtime readiness; use `doctor --json`
+for the schema-1 evidence report. No active probes or installers are invoked. See
+[the Doctor contract](doctor.md) for permissions, remote hints and index limits.

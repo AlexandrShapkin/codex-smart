@@ -1,23 +1,33 @@
-codex-smart 0.1.0
-Capability inventory (offline; no tools executed)
-codex: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
-rustc: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
-cargo: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
-git: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
-rg: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
-gh: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
-code-graph-mcp: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
-code-graph-smart: not found on trusted PATH; compatibility: incompatible: wrapper execution is unsupported; contract: unknown; ready: no: executable unavailable
-serena: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
-context7 (session integration): unknown: session integration not probed; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: unknown: runtime/auth/transport not probed
-MCP readiness, tool compatibility and index health: not probed
-
-Configuration schema: 1
-task: Local
-reasoning: Medium
-context_limit: 8192 bytes per retrieval response (escalate rather than skip evidence)
-task origin: BuiltIn
-reasoning origin: BuiltIn
-context origin: BuiltIn
-Unknown fields: preserved/inert; values not displayed
-Codex config/auth/MCP/plugins: untouched
+codex-smart 0.1.0 doctor (offline)
+Checks
+  PASS launcher_config: valid
+  FAIL codex_executable: absent; PATH metadata only; version/auth readiness unverified
+  PASS workspace_readable: apparently readable
+  PASS workspace_writable: apparently writable
+  UNKNOWN git_repository: not established
+  UNKNOWN git_metadata_writable: directory unavailable or symlink refused
+  UNKNOWN git_origin: not established
+  NOT_CHECKED network: offline
+  NOT_CHECKED github_api: offline
+  NOT_CHECKED github_auth: offline
+  NOT_CHECKED git_remote_connectivity: offline
+  NOT_CHECKED codex_auth: offline
+  NOT_CHECKED mcp_handshake: offline
+  UNKNOWN serena_project_marker: absent
+  UNKNOWN codegraph_index_marker: absent
+  UNKNOWN index_readiness: unknown
+  NOT_CHECKED codex_config: not supplied
+  UNKNOWN effective_codex_config: not resolved
+Access checks are hints, not mutation proof; full effective Codex config is unknown.
+Capabilities (discovery != compatibility != readiness)
+  codex: not found on trusted PATH; declared version unknown; artifact: not checked; runtime version: unknown; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+  rustc: not found on trusted PATH; declared version unknown; artifact: not checked; runtime version: unknown; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+  cargo: not found on trusted PATH; declared version unknown; artifact: not checked; runtime version: unknown; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+  git: not found on trusted PATH; declared version unknown; artifact: not checked; runtime version: unknown; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+  rg: not found on trusted PATH; declared version unknown; artifact: not checked; runtime version: unknown; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+  gh: not found on trusted PATH; declared version unknown; artifact: not checked; runtime version: unknown; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+  code-graph-mcp: not found on trusted PATH; declared version unknown; artifact: not checked; runtime version: unknown; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+  code-graph-smart: not found on trusted PATH; declared version unknown; artifact: not checked; runtime version: unknown; compatibility: incompatible: wrapper execution is unsupported; contract: unknown; ready: no: executable unavailable
+  serena: not found on trusted PATH; declared version unknown; artifact: not checked; runtime version: unknown; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+  context7 (session integration): unknown: session integration not probed; declared version unknown; artifact: not checked; runtime version: unknown; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: unknown: runtime/auth/transport not probed
+Summary: required 1/2 pass; exit 1; mutations: none; network: not used

@@ -72,7 +72,8 @@ Capabilities/explain parse the lock and defer hashing to keep preflight cheap. D
 with an explicit lock streams the canonical artifact and returns 1 on missing/rejected
 artifacts or digest mismatch. Invalid locks return 2 without reflecting their contents.
 Doctor's success indicates only that requested checks passed, not runtime readiness.
-Default diagnostics do no hashing. This CLI has no JSON output/schema contract yet.
+Default diagnostics do no hashing. Doctor now has a typed schema-1 JSON report;
+capabilities/explain retain human output. See [the Doctor contract](doctor.md).
 
 Explicit run verifies a required digest against the exact planned Codex path, including
 in dry-run, then rechecks metadata/digest immediately before actual execution. Pin failure

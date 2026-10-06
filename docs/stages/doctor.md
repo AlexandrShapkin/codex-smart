@@ -2,7 +2,7 @@
 
 ## Scope
 
-Complete explicit configuration, capability compatibility, permission and index-health diagnostics.
+Complete offline typed evidence, explicit single-file Codex configuration analysis, separate filesystem/Git/network access checks and conservative index markers.
 
 ## Non-goals
 
@@ -14,12 +14,12 @@ Offline inventory and version evidence are clear; unsupported, absent and unprob
 
 ## Validation
 
-just context doctor; just check. Golden diagnostics and isolated metadata/content snapshots.
+just context doctor; just check; just nextest; just deny. Human/JSON goldens and isolated filesystem/privacy regressions; just docs-sync/check with idempotence.
 
 ## Context
 
-Read [docs/tooling.md](../../docs/tooling.md), [docs/configuration.md](../../docs/configuration.md), [docs/issues/04.md](../../docs/issues/04.md). Start with `just context doctor`; follow source entry points only as needed.
+Read [docs/doctor.md](../../docs/doctor.md), [docs/tooling.md](../../docs/tooling.md), [docs/configuration.md](../../docs/configuration.md), [docs/issues/04.md](../../docs/issues/04.md). Start with `just context doctor`; follow source entry points only as needed.
 
 ## Follow-ups
 
-Readiness requires trustworthy evidence. Unprobeable MCP/auth/index states must stay unknown.
+Readiness requires trustworthy evidence. Unprobeable MCP/auth/index states stay unknown; no active probes until reviewed read-only contracts exist. Evidence: [Doctor validation](../diagnostics/2026-10-06-doctor.md).
