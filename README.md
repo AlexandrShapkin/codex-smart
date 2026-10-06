@@ -1,32 +1,78 @@
 # codex-smart
 
-A thin Rust launcher and capability/policy layer for Codex CLI. Minimize cost subject to correctness, verification, security and requirement coverage. Codex remains the development agent.
+[![CI](https://github.com/AlexandrShapkin/codex-smart/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AlexandrShapkin/codex-smart/actions/workflows/ci.yml)
+[![Security](https://github.com/AlexandrShapkin/codex-smart/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/AlexandrShapkin/codex-smart/actions/workflows/security.yml)
 
-Version: **0.1.0, unreleased**. See [ROADMAP](ROADMAP.md) for implemented and pending slices. No legacy code has been imported.
+Thin Rust policy and capability layer over Codex CLI with deterministic routing previews, safe diagnostics and verifiable execution. Codex remains the development agent: codex-smart is a launcher, not a second agent.
 
-Developer entry points: `just context [STAGE]`, `just issues`, `just check`.
-See the [workflow](docs/workflow.md) and [documentation index](docs/index.md).
+## Status
+
+**Pre-1.0: 0.1.0, unreleased.** Foundation, workflow, tool pins and offline diagnostics have validated slices. Router v2 is planned; current routing is not yet benchmark-proven. No production support guarantee or published package is claimed. See the [roadmap](ROADMAP.md).
+
+## Why codex-smart
+
+Make launch decisions and capability evidence inspectable while minimizing cost subject to correctness, verification, security and requirement coverage. Keep implementation decisions with Codex and record the limits of the evidence available.
+
+## Core principles
+
+- Thin Rust core with explicit inputs and deterministic policy previews.
+- Availability != compatibility != readiness; unknown health stays unknown.
+- No hidden installations, downloads or implicit indexing.
+- No silent mutation of Codex configuration, authentication, MCP or plugins.
+
+## Quick start
+
+Build from source with Rust 1.98. Prepare Codex CLI separately for actual execution; diagnostics do not require it. Cargo may fetch locked build dependencies during this explicit build.
 
 ```sh
 cargo build --workspace --locked
 cargo run -p codex-smart-cli -- --version
 cargo run -p codex-smart-cli -- doctor
-cargo run -p codex-smart-cli -- explain --task architecture
-cargo run -p codex-smart-cli -- config show
 cargo run -p codex-smart-cli -- run --dry-run -- exec "describe this repository"
-just check
 ```
 
-Diagnostics are offline, read-only, and never invoke discovered binaries. Executable discovery is not a health, authentication or MCP handshake assertion. See [configuration](docs/configuration.md), [routing](docs/routing.md), [tooling](docs/tooling.md), [development](docs/development.md), and [provenance](docs/provenance.md).
+## Commands
 
-No automatic installations, downloads, indexing or edits to Codex configuration, authentication, plugins or git metadata occur at runtime.
+After building, use `target/debug/codex-smart` or `cargo run -p codex-smart-cli --`:
 
-`codex-smart run -- [codex args...]` launches Codex with unchanged OS arguments. `run --dry-run` only plans; other non-reserved arguments pass through. Use `codex-smart -- doctor` to forward a reserved name to Codex. No profile or reasoning override is injected yet.
+| Command | Purpose |
+| --- | --- |
+| `doctor` | Offline capability and configuration diagnostics |
+| `explain --task architecture` | Inspect a routing preview without execution |
+| `config show` | Inspect separate codex-smart configuration |
+| `run --dry-run -- [codex args...]` | Plan an explicit launch |
+| `run -- [codex args...]` | Launch Codex with unchanged OS arguments |
 
-Separate marked codex-smart TOML configuration and explicit dry-run/apply/rollback are implemented. `explain` and `doctor` resolve/validate it without mutation; `run` continues exact Codex passthrough. See [configuration contract](docs/configuration.md). Security: `just security-fetch` then `just security`; these checks access the network only during the explicit public advisory refresh.
+Other non-reserved arguments pass through; `codex-smart -- doctor` forwards a reserved name to Codex. See [configuration](docs/configuration.md) for explicit dry-run/apply/rollback and [tool pins](docs/tool-compatibility.md) for optional `--tool-lock FILE`.
 
+## Safety model
 
-Optional `--tool-lock FILE` adds an explicit Codex artifact pin to `run` and declared
-version evidence to diagnostics; see [compatibility and lock format](docs/tool-compatibility.md).
-Availability, compatibility and readiness are distinct; wrapper versions and MCP health
-remain unknown. Runtime diagnostics never execute wrappers or download dependencies.
+Diagnostics are offline/read-only by default and never execute discovered binaries, index a repository or change git metadata. Project configuration and PATH are untrusted. Explicit launches use OS argument arrays without a shell; the launched Codex process follows its own configuration and permissions. Separate marked codex-smart configuration transactions require explicit actions. See [doctor](docs/doctor.md), [tooling](docs/tooling.md) and [configuration](docs/configuration.md).
+
+## Routing model
+
+`explain` previews the reference Rust policy using explicit task hints and conservative capability evidence. `run` currently preserves exact Codex arguments and injects no profile or reasoning override. Router v2 composition, fallback and escalation remain planned; see [routing](docs/routing.md) and [architecture](docs/architecture.md).
+
+## Development
+
+Start with `just context [STAGE]` and `just issues`; validate with `just check`. See the [development guide](docs/development.md) for prerequisites and [workflow](docs/workflow.md) for documentation ownership. Security checks use `just security-fetch` for the explicit public advisory refresh, then `just security`.
+
+## Documentation
+
+Start at the [documentation index](docs/index.md), then the [roadmap](ROADMAP.md), [workflow](docs/workflow.md) and [architecture](docs/architecture.md). Consult [routing](docs/routing.md), [configuration](docs/configuration.md) and [tooling](docs/tooling.md) as needed.
+
+## Roadmap
+
+[ROADMAP.md](ROADMAP.md) records stage scope and implementation evidence; [GitHub Issues](https://github.com/AlexandrShapkin/codex-smart/issues) own live actionable state. Milestones group releases; stage labels describe current ownership. Release tags use `vMAJOR.MINOR.PATCH` only after logical release acceptance; see [release readiness](docs/releasing.md).
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for focused branches, issue taxonomy, acceptance evidence and PR requirements.
+
+## Security
+
+Read [SECURITY.md](SECURITY.md) before reporting sensitive findings. Never post credentials or authentication material in public issues.
+
+## License
+
+No software license has been granted yet. License files and Cargo license metadata are absent pending an explicit owner decision; do not assume an open-source license.

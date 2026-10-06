@@ -1,23 +1,125 @@
-name: Feature
-description: Report a feature
+name: "Feature"
+description: "Propose a bounded enhancement"
+labels: ["enhancement"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Never include secrets, auth material, private prompts or private source.
+        Use SECURITY.md for sensitive reports.
+        Each actionable issue needs exactly one area, one severity, at most one stage
+        and one work-kind. Milestones group releases; stage labels track current ownership.
+        Choices below are proposals: maintainers apply labels during triage.
+        Replace stage ownership on transfer; do not add multiple areas or stages.
+  - type: textarea
+    id: summary
+    attributes:
+      label: "Summary"
+      description: "Describe the concrete problem or evidence question."
+    validations:
+      required: true
   - type: textarea
     id: context
     attributes:
-      label: Context and problem
+      label: "Context / current evidence"
+      description: "Include observed behavior, relevant versions and sanitized evidence."
     validations:
       required: true
   - type: textarea
     id: scope
     attributes:
-      label: Scope and non-goals
+      label: "Scope"
+      description: "Name the bounded work included."
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: "Non-goals"
+      description: "State what is deliberately excluded."
+    validations:
+      required: true
   - type: textarea
     id: acceptance
     attributes:
-      label: Acceptance criteria and validation
+      label: "Acceptance"
+      description: "List observable completion criteria."
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: "Validation"
+      description: "Describe isolated reproduction, tests or evidence collection."
     validations:
       required: true
   - type: textarea
     id: dependencies
     attributes:
-      label: Dependencies and versions (no secrets)
+      label: "Dependencies"
+      description: "Link blocking issues/stages or write None."
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: "Known risks"
+      description: "Describe safety, compatibility and evidence limits or write None."
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Primary area"
+      description: "Choose one primary technical/product scope."
+      multiple: false
+      options:
+        - "area:provenance"
+        - "area:cli"
+        - "area:tooling"
+        - "area:diagnostics"
+        - "area:config"
+        - "area:ci"
+        - "area:process"
+        - "area:workflow"
+        - "area:routing"
+        - "area:benchmark"
+        - "area:telemetry"
+        - "area:release"
+        - "area:security"
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "Severity / priority"
+      description: "P0: foundation blocker; P1: current-stage critical; P2: important planned; P3: later hardening/release."
+      multiple: false
+      options:
+        - "severity:P0"
+        - "severity:P1"
+        - "severity:P2"
+        - "severity:P3"
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: "Current stage owner"
+      description: "Choose current ownership, not release grouping or permanent history."
+      multiple: false
+      options:
+        - "No stage assigned yet"
+        - "stage:baseline"
+        - "stage:workflow"
+        - "stage:tools"
+        - "stage:doctor"
+        - "stage:router"
+        - "stage:benchmark"
+        - "stage:hardening"
+        - "stage:stable"
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "Work-kind: enhancement (pre-applied). Keep exactly one work-kind; any additional type must be explicitly defined before use. Do not prefix the title with severity."

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contribution and issue governance
+    url: https://github.com/AlexandrShapkin/codex-smart/blob/main/CONTRIBUTING.md
+    about: Read scope, taxonomy, validation and closeout requirements before filing.
+  - name: Sensitive security reports
+    url: https://github.com/AlexandrShapkin/codex-smart/blob/main/SECURITY.md
+    about: Check the private reporting policy; never disclose secrets in public issues.
