@@ -24,3 +24,9 @@ No automatic installations, downloads, indexing or edits to Codex configuration,
 `codex-smart run -- [codex args...]` launches Codex with unchanged OS arguments. `run --dry-run` only plans; other non-reserved arguments pass through. Use `codex-smart -- doctor` to forward a reserved name to Codex. No profile or reasoning override is injected yet.
 
 Separate marked codex-smart TOML configuration and explicit dry-run/apply/rollback are implemented. `explain` and `doctor` resolve/validate it without mutation; `run` continues exact Codex passthrough. See [configuration contract](docs/configuration.md). Security: `just security-fetch` then `just security`; these checks access the network only during the explicit public advisory refresh.
+
+
+Optional `--tool-lock FILE` adds an explicit Codex artifact pin to `run` and declared
+version evidence to diagnostics; see [compatibility and lock format](docs/tool-compatibility.md).
+Availability, compatibility and readiness are distinct; wrapper versions and MCP health
+remain unknown. Runtime diagnostics never execute wrappers or download dependencies.

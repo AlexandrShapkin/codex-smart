@@ -1,0 +1,7 @@
+# Test-only pin for the hostile fake Codex script; never a real installation pin.
+kind = "codex-smart-tools"
+schema_version = 1
+
+[tools.codex]
+version = "0.160.0"
+sha256 = "ff6f57a4d9e2f1c8a885cfdd6cdd5dac1b1c6ce0a3029ef9891bff686951276c"

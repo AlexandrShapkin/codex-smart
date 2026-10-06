@@ -36,7 +36,7 @@
       "id": "workflow",
       "title": "Bounded roadmap and documentation context",
       "milestone": "0.1 Foundation",
-      "progress": "partial",
+      "progress": "validated",
       "depends_on": [
         "baseline"
       ],
@@ -63,7 +63,7 @@
       "id": "tools",
       "title": "External capability pins and compatibility",
       "milestone": "0.1 Foundation",
-      "progress": "active",
+      "progress": "partial",
       "depends_on": [
         "workflow"
       ],
@@ -72,18 +72,25 @@
       ],
       "contract": "docs/stages/tools.md",
       "reads": [
+        "docs/tool-compatibility.md",
         "docs/tooling.md",
         "docs/architecture.md",
         "docs/decisions/0002-thin-launcher.md",
-        "docs/issues/07.md"
+        "docs/issues/07.md",
+        "docs/decisions/0007-owned-executable-pins.md"
       ],
       "sources": [
         "crates/codex-smart-core/src/capability.rs",
         "crates/codex-smart-core/src/process.rs",
         "crates/codex-smart-cli/src/main.rs",
-        "crates/codex-smart-cli/tests/readonly.rs"
+        "crates/codex-smart-cli/tests/readonly.rs",
+        "crates/codex-smart-core/src/tool_lock.rs",
+        "crates/codex-smart-core/src/version.rs",
+        "fixtures/tools-codex.toml"
       ],
-      "evidence": []
+      "evidence": [
+        "docs/diagnostics/2026-10-06-tools.md"
+      ]
     },
     {
       "id": "doctor",

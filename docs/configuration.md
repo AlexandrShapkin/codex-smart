@@ -40,3 +40,13 @@ Before commit, errors preserve the source and remove only artifacts created by t
 The advisory lock and optimistic identity checks cover cooperating migrations and edits observed before commit. They do not prove an atomic compare-and-swap against arbitrary noncooperating same-user writers in the last check/rename window. No claim of race-free execution or exhaustive power-failure testing is made. Symlink traversal cannot redirect writes outside the held directory.
 
 Default resolution never reads Codex config/auth/MCP/plugins. Transactions reject targets inside CODEX_HOME or any .codex directory (including project/default stores) even if a file carries a codex-smart marker. Reserved transaction artifact filenames are also rejected as primary targets. Explicit validate can read a supplied file but refuses unmarked/non-schema-1 input without printing its contents. No actual user configuration was migrated during development; tests use isolated marked fixtures.
+
+
+## Explicit executable lock
+
+The separate [tool-lock contract](tool-compatibility.md) uses kind="codex-smart-tools"
+and schema_version=1. It is not a policy layer and has no automatic project/global lookup.
+Only the caller's explicit --tool-lock file can require the owned Codex artifact digest;
+no lock record can select an executable, command, shell or install action. Policy preview
+and user Codex config/auth/MCP/plugins remain separate. See the compatibility matrix for
+why a declared version or matching digest never establishes runtime readiness.

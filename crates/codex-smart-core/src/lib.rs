@@ -4,4 +4,6 @@ pub mod config;
 pub mod migration;
 pub mod process;
 pub mod routing;
+pub mod tool_lock;
+pub mod version;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

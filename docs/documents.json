@@ -156,6 +156,15 @@
       ]
     },
     {
+      "path": "docs/decisions/0007-owned-executable-pins.md",
+      "title": "ADR-0007: Explicit Codex artifact pins and honest offline evidence",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "tools"
+      ]
+    },
+    {
       "path": "docs/development.md",
       "title": "Development",
       "owner": "engineering",
@@ -189,6 +198,15 @@
       "role": "historical",
       "stages": [
         "baseline"
+      ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-06-tools.md",
+      "title": "External executable pin validation — 2026-10-06",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "tools"
       ]
     },
     {
@@ -487,6 +505,16 @@
       "role": "contract",
       "stages": [
         "workflow"
+      ]
+    },
+    {
+      "path": "docs/tool-compatibility.md",
+      "title": "External version and execution compatibility",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "tools",
+        "doctor"
       ]
     },
     {
