@@ -694,3 +694,22 @@ fn marked_file_in_codex_home_is_never_migrated() {
         assert_eq!(tree(&f.0), before);
     }
 }
+
+#[test]
+fn rollback_refuses_orphan_staging_without_backup() {
+    use codex_smart_core::{config::ConfigError, migration::MigrationPlan};
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    f.write("home/smart.toml", "kind='codex-smart'\nschema_version=0\n");
+    let file = f.0.join("home/smart.toml");
+    fs::set_permissions(&file, fs::Permissions::from_mode(0o600)).unwrap();
+    let stage = file.with_file_name("smart.toml.codex-smart-stage");
+    fs::write(&stage, "unrecognized interrupted state").unwrap();
+    fs::set_permissions(&stage, fs::Permissions::from_mode(0o600)).unwrap();
+    let before = tree(&f.0);
+    assert!(matches!(
+        MigrationPlan::rollback(&file),
+        Err(ConfigError::RecoveryRequired)
+    ));
+    assert_eq!(tree(&f.0), before);
+}

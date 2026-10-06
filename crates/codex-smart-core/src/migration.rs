@@ -310,7 +310,7 @@ mod linux {
             let backup = target.read_artifact(".codex-smart-backup")?;
             let receipt = target.read_artifact(".codex-smart-applied")?;
             let Some(backup) = backup else {
-                if receipt.is_some() {
+                if receipt.is_some() || target.read_artifact(".codex-smart-stage")?.is_some() {
                     return Err(ConfigError::RecoveryRequired);
                 }
                 if version(&document(text(&before.bytes)?)?)? != 0 {
