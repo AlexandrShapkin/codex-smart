@@ -1,0 +1,521 @@
+{
+  "schema": 1,
+  "documents": [
+    {
+      "path": ".github/pull_request_template.md",
+      "title": "pull_request_template",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "AGENTS.md",
+      "title": "Repository engineering contract",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "CHANGELOG.md",
+      "title": "Changelog",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "title": "Contributing",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "README.md",
+      "title": "codex-smart",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "ROADMAP.md",
+      "title": "Roadmap",
+      "owner": "engineering",
+      "role": "generated",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "SECURITY.md",
+      "title": "Security",
+      "owner": "security",
+      "role": "current",
+      "stages": [
+        "hardening"
+      ]
+    },
+    {
+      "path": "codex-smart-project-brief.md",
+      "title": "Codex Smart — project brief and engineering backlog",
+      "owner": "provenance",
+      "role": "input",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/architecture.md",
+      "title": "Architecture",
+      "owner": "architecture",
+      "role": "current",
+      "stages": [
+        "baseline",
+        "router"
+      ]
+    },
+    {
+      "path": "docs/benchmarking.md",
+      "title": "Benchmark protocol (planned)",
+      "owner": "benchmark",
+      "role": "current",
+      "stages": [
+        "benchmark"
+      ]
+    },
+    {
+      "path": "docs/configuration.md",
+      "title": "Configuration",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/decisions/0001-rust-core.md",
+      "title": "ADR-0001: Rust core and CLI",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/decisions/0002-thin-launcher.md",
+      "title": "ADR-0002: Thin launcher and conservative discovery",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/decisions/0003-policy-preview.md",
+      "title": "ADR-0003: Explicit hints and reference Rust policy",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/decisions/0004-rhai-deferred.md",
+      "title": "ADR-0004: Defer Rhai until reference policy is validated",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/decisions/0005-safe-config-transactions.md",
+      "title": "ADR-0005: Marked TOML and descriptor-based config transactions",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/decisions/0006-bounded-context.md",
+      "title": "ADR-0006: Repository-owned bounded stage context",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/development.md",
+      "title": "Development",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-06-baseline.md",
+      "title": "Post-bootstrap correction gate — 2026-10-06",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-06-config.md",
+      "title": "Configuration and transaction slice — 2026-10-06",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-06-roadmap.md",
+      "title": "Historical recovered roadmap",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-06-workflow.md",
+      "title": "Bounded workflow validation — 2026-10-06",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-06.md",
+      "title": "Initial engineering diagnostic — 2026-10-06",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/index.md",
+      "title": "Documentation index",
+      "owner": "engineering",
+      "role": "generated",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/issues/01.md",
+      "title": "P0: Establish repository provenance and baseline",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/issues/02.md",
+      "title": "P0: Bootstrap Rust workspace and CLI",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/issues/03.md",
+      "title": "P0: Implement read-only capability preflight",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/issues/04.md",
+      "title": "P0: Implement codex-smart doctor",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "doctor"
+      ]
+    },
+    {
+      "path": "docs/issues/05.md",
+      "title": "P0: Guarantee explain is side-effect free",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/issues/06.md",
+      "title": "P0: Design safe configuration and migration model",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/issues/07.md",
+      "title": "P0: Pin and report external capability versions",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "tools"
+      ]
+    },
+    {
+      "path": "docs/issues/08.md",
+      "title": "P0: Add CI quality gates",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/issues/09.md",
+      "title": "P1: Define task and risk model",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "router"
+      ]
+    },
+    {
+      "path": "docs/issues/10.md",
+      "title": "P1: Implement Router v2 decision engine",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "router"
+      ]
+    },
+    {
+      "path": "docs/issues/11.md",
+      "title": "P1: Add reasoning-effort selection",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "router"
+      ]
+    },
+    {
+      "path": "docs/issues/12.md",
+      "title": "P1: Add routing fallback and escalation",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "router"
+      ]
+    },
+    {
+      "path": "docs/issues/13.md",
+      "title": "P1: Evaluate and integrate sandboxed Rhai policies",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "router"
+      ]
+    },
+    {
+      "path": "docs/issues/14.md",
+      "title": "P2: Build end-to-end development benchmark",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "benchmark"
+      ]
+    },
+    {
+      "path": "docs/issues/15.md",
+      "title": "P2: Add token/tool/latency telemetry",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "benchmark"
+      ]
+    },
+    {
+      "path": "docs/issues/16.md",
+      "title": "P3: Implement release and migration workflow",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "hardening"
+      ]
+    },
+    {
+      "path": "docs/issues/17.md",
+      "title": "P3: Production hardening and 1.0 readiness",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "hardening",
+        "stable"
+      ]
+    },
+    {
+      "path": "docs/issues/18.md",
+      "title": "P0: Launch Codex safely with exact OS arguments",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/issues/index.md",
+      "title": "Issue index",
+      "owner": "engineering",
+      "role": "reference",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/provenance.md",
+      "title": "Provenance gate",
+      "owner": "provenance",
+      "role": "current",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/releasing.md",
+      "title": "Release readiness",
+      "owner": "release",
+      "role": "current",
+      "stages": [
+        "hardening"
+      ]
+    },
+    {
+      "path": "docs/routing.md",
+      "title": "Routing",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "router"
+      ]
+    },
+    {
+      "path": "docs/stages/baseline.md",
+      "title": "Recover trustworthy repository baseline",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "baseline"
+      ]
+    },
+    {
+      "path": "docs/stages/benchmark.md",
+      "title": "Full development benchmark and aggregate telemetry",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "benchmark"
+      ]
+    },
+    {
+      "path": "docs/stages/doctor.md",
+      "title": "Complete offline diagnostic contracts",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "doctor"
+      ]
+    },
+    {
+      "path": "docs/stages/hardening.md",
+      "title": "Packaging, migration and security hardening",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "hardening"
+      ]
+    },
+    {
+      "path": "docs/stages/router.md",
+      "title": "Router v2 composition and controlled integration",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "router"
+      ]
+    },
+    {
+      "path": "docs/stages/stable.md",
+      "title": "1.0 readiness and durable public contracts",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "stable"
+      ]
+    },
+    {
+      "path": "docs/stages/tools.md",
+      "title": "External capability pins and compatibility",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "tools"
+      ]
+    },
+    {
+      "path": "docs/stages/workflow.md",
+      "title": "Bounded roadmap and documentation context",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/tooling.md",
+      "title": "Tooling and capability trust",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "tools",
+        "doctor"
+      ]
+    },
+    {
+      "path": "docs/versioning.md",
+      "title": "Versioning",
+      "owner": "release",
+      "role": "current",
+      "stages": [
+        "stable"
+      ]
+    },
+    {
+      "path": "docs/workflow.md",
+      "title": "Bounded development workflow",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    }
+  ]
+}

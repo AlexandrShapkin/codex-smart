@@ -4,6 +4,9 @@ A thin Rust launcher and capability/policy layer for Codex CLI. Minimize cost su
 
 Version: **0.1.0, unreleased**. See [ROADMAP](ROADMAP.md) for implemented and pending slices. No legacy code has been imported.
 
+Developer entry points: `just context [STAGE]`, `just issues`, `just check`.
+See the [workflow](docs/workflow.md) and [documentation index](docs/index.md).
+
 ```sh
 cargo build --workspace --locked
 cargo run -p codex-smart-cli -- --version

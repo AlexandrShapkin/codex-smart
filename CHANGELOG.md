@@ -11,4 +11,6 @@
 - Add pinned toml_edit/rustix and advisory/license/source/bans checks.
 - Fix renamed-key comment preservation, orphan-staging recovery rejection, dependency source review and coverage prerequisite handling.
 
+- Add bounded stage context, documentation ownership and deterministic offline generated roadmap/index checks behind just.
+
 No release tag or public API stability guarantee yet.

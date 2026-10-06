@@ -1,4 +1,22 @@
+default:
+    @just --list --unsorted
+
+# Offline bounded contract and source pointers; defaults to the active stage.
+context stage="":
+    @python3 -B scripts/workflow.py context {{quote(stage)}}
+
+# Explicit live GitHub metadata; never called by context or docs-check.
+issues:
+    gh issue list --repo AlexandrShapkin/codex-smart --state all --limit 100 --json number,title,state,url
+
+docs-check:
+    python3 -B scripts/workflow.py check
+
+docs-generate:
+    python3 -B scripts/workflow.py generate
+
 check:
+    python3 -B scripts/workflow.py check
     python3 -B -m unittest discover -s scripts -p 'test_*.py'
     cargo fmt --check
     cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
