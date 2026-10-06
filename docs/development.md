@@ -14,13 +14,14 @@ Requested command aliases: `just docs-sync` runs the existing deterministic docs
 state. They add no new workflow or automatic online action. The offline check/context
 implementation from PR #19 is preserved.
 
-## Main protection proposal (pending owner approval)
+## Main protection policy
 
-Normal changes should reach `main` through reviewed/validated PRs. No protection
-is configured yet; the following minimal policy is a proposal, not an enforcement
-claim. CI `check` and Security `review` are existing GitHub Actions checks.
+Normal changes should reach `main` through reviewed/validated PRs. The owner has
+authorized the following conservative policy. Repository settings own live
+enforcement state; verify it with `gh api repos/AlexandrShapkin/codex-smart/branches/main/protection`.
+CI `check` and Security `review` are existing GitHub Actions checks.
 
-| Setting | Proposed value |
+| Setting | Policy |
 | --- | --- |
 | Branch | Exactly `main` |
 | Require PR | Enabled |
@@ -34,8 +35,7 @@ claim. CI `check` and Security `review` are existing GitHub Actions checks.
 | Linear history, signed commits, merge queue, branch lock | Not required |
 | Push restrictions | None beyond the PR/check requirements |
 
-Keep all currently accepted merge methods and leave auto-merge disabled. Apply the
-policy only after explicit owner approval; owner emergency bypasses should be
-followed by documented validation and a review of the deviation. This public
+Keep all currently accepted merge methods and leave auto-merge disabled. Owner
+emergency bypasses should be followed by documented validation and a review of
+the deviation. This public
 repository is eligible under [GitHub's documented branch protection plan support](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
-No enforcement or recovery settings were changed by this proposal.

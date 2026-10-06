@@ -17,7 +17,7 @@ class WorkflowTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         docs = json.loads((ROOT / "docs/documents.json").read_text())
         stages = json.loads((ROOT / "docs/stages.json").read_text())
-        for name in ["Cargo.toml", "docs/documents.json", "docs/stages.json",
+        for name in ["Cargo.toml", "LICENSE", "NOTICE", "docs/documents.json", "docs/stages.json",
                      "docs/issues/github-map.json", *[d["path"] for d in docs["documents"]]]:
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)

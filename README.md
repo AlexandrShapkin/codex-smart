@@ -2,8 +2,9 @@
 
 [![CI](https://github.com/AlexandrShapkin/codex-smart/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AlexandrShapkin/codex-smart/actions/workflows/ci.yml)
 [![Security](https://github.com/AlexandrShapkin/codex-smart/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/AlexandrShapkin/codex-smart/actions/workflows/security.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-Thin Rust policy and capability layer over Codex CLI with deterministic routing previews, safe diagnostics and verifiable execution. Codex remains the development agent: codex-smart is a launcher, not a second agent.
+An independent thin Rust compatibility/policy and capability layer for the external Codex CLI, with deterministic routing previews, safe diagnostics and verifiable execution. Codex CLI remains the development agent: codex-smart is a launcher, not a second agent.
 
 ## Status
 
@@ -73,6 +74,10 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) for focused branches, issue taxonomy, ac
 
 Read [SECURITY.md](SECURITY.md) before reporting sensitive findings. Never post credentials or authentication material in public issues.
 
+## Independence and trademarks
+
+codex-smart is an independent open-source project, not affiliated with, endorsed by, sponsored by, or an official product of OpenAI. Codex CLI is an external compatibility target. OpenAI and Codex names and related marks belong to their respective owners; mentions identify external products only.
+
 ## License
 
-No software license has been granted yet. License files and Cargo license metadata are absent pending an explicit owner decision; do not assume an open-source license.
+codex-smart-authored source is licensed under [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for attribution. Third-party dependencies and tools retain their own licenses and terms; this project does not relicense them.

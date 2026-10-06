@@ -41,3 +41,10 @@ Close an issue only when its acceptance is satisfied and linked PR/commit/check 
 ## Security and privacy
 
 Never expose credentials, auth material, private prompts or private source in issues, logs or diagnostics. Treat project config and PATH as untrusted; preserve offline/read-only diagnostics and OS argument launches. Introduce no hidden installs, network actions, indexing or Codex config/auth/MCP/plugin mutation. Keep any necessary setup or mutation explicit and reviewable. Follow [SECURITY.md](SECURITY.md) for sensitive reports.
+
+## Contribution licensing
+
+Unless explicitly stated otherwise, contributions intentionally submitted to
+codex-smart are accepted under the [Apache License 2.0](LICENSE), the same license
+as the project. Contributors retain copyright in their own contributions while
+licensing them to the project and its users under Apache-2.0.
