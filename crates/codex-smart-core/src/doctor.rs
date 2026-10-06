@@ -205,6 +205,13 @@ impl DoctorReport {
                 "not supplied",
                 "Use --codex-config FILE for explicit single-file analysis; stores not discovered",
             ),
+            Some(path) if path.extension().is_none_or(|ext| ext != "toml") => report.add(
+                "codex_config",
+                true,
+                CheckState::Fail,
+                "unsupported file kind",
+                "Explicit configuration must be a .toml path; other files are not opened",
+            ),
             Some(path) => match read_optional(path) {
                 Ok(Some(source)) => analyze_codex_config(&mut report, &source, repo),
                 Ok(None) => report.add(

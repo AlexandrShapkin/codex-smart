@@ -54,7 +54,8 @@ order. Runtime version is null until an attestation source exists.
 ## Explicit Codex configuration analysis
 
 Default Doctor never discovers Codex config/auth/plugin stores. --codex-config explicitly
-reads one caller-supplied TOML file using the existing secure reader: 64 KiB, current
+accepts only a .toml path; other file kinds (including auth.json) are rejected before
+opening. It reads that caller-supplied TOML file using the existing secure reader: 64 KiB, current
 ownership, one hard link, no symlinks/ancestor symlinks or group/world write permissions.
 It does not read referenced files, environment values, credentials or servers.
 

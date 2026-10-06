@@ -1264,3 +1264,30 @@ fn doctor_markers_and_remote_hints_fail_closed_without_traversal() {
     assert!(String::from_utf8_lossy(&output.stdout).contains("Config absent/unsafe/unreadable"));
     assert_eq!(tree(&f.0), before);
 }
+
+#[test]
+fn doctor_refuses_auth_json_before_opening_or_parsing_it() {
+    use std::os::unix::fs::symlink;
+    let f = Fixture::new();
+    f.tool("codex");
+    f.write("repo/README", "fixture");
+    f.write("home/.codex/auth.json", "FAKE_SECRET_AUTH_JSON");
+    symlink(
+        f.0.join("home/.codex/auth.json"),
+        f.0.join("repo/auth.json"),
+    )
+    .unwrap();
+    let before = tree(&f.0);
+    for name in ["auth.json", "absent.json"] {
+        let output = f
+            .command()
+            .args(["doctor", "--json", "--codex-config", name])
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(1));
+        let text = String::from_utf8(output.stdout).unwrap();
+        assert!(text.contains("unsupported file kind"));
+        assert!(!text.contains("E_CONFIG_PATH") && !text.contains("FAKE_SECRET"));
+    }
+    assert_eq!(tree(&f.0), before);
+}
