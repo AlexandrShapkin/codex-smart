@@ -11,3 +11,10 @@ The process layer resolves an absolute executable path, records file metadata, r
 PATH lookup is bounded to 64 absolute directories and 16 KiB of PATH. Relative/repository paths and group/world-writable entries are rejected. Ownership, ancestor-directory trust and race-free descriptor execution are not yet guaranteed; the metadata recheck narrows but does not eliminate TOCTOU. Linux is the initial supported execution platform; non-Unix discovery fails closed pending platform adapters.
 
 Own configuration resolution is deterministic and read-only; transactional changes are a separate explicit config command. See ADR-0005 and configuration.md for crash recovery, filesystem invariants and concurrency limits. Preview policy still does not activate MCP or inject launch settings.
+
+
+External evidence is typed independently: Availability, declared/runtime version,
+reference execution contract, Compatibility and Readiness. Artifact pins are restricted
+to explicitly requested Codex launches; see [ADR-0007](decisions/0007-owned-executable-pins.md)
+and [the command/transport matrix](tool-compatibility.md). No handshake or installer is
+part of normal startup. Hash verification narrows execution races without eliminating them.

@@ -713,3 +713,319 @@ fn rollback_refuses_orphan_staging_without_backup() {
     ));
     assert_eq!(tree(&f.0), before);
 }
+
+#[test]
+fn tool_lock_verification_is_read_only_and_does_not_claim_runtime_version() {
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    f.tool("codex");
+    f.write(
+        "repo/tools.toml",
+        include_str!("../../../fixtures/tools-codex.toml"),
+    );
+    let file = f.0.join("repo/tools.toml");
+    let before = tree(&f.0);
+    let output = f
+        .command()
+        .arg("doctor")
+        .arg("--tool-lock")
+        .arg(&file)
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{:?}", output);
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert!(text.contains("codex: declared version 0.160.0; SHA-256 matches"));
+    assert!(text.contains("Runtime version/auth/MCP readiness: unverified"));
+    assert!(text.contains("runtime version: unknown; compatibility: unknown:"));
+    assert!(text.contains("ready: unknown:"));
+    assert_eq!(tree(&f.0), before);
+}
+#[test]
+fn pin_mismatch_prevents_launch_and_unknown_contract_remains_explicit() {
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    f.tool("codex");
+    f.write("repo/tools.toml", &format!("kind='codex-smart-tools'\nschema_version=1\n[tools.codex]\nversion='9.0.0'\nsha256='{}'\n", "0".repeat(64)));
+    let file = f.0.join("repo/tools.toml");
+    let before = tree(&f.0);
+    let output = f
+        .command()
+        .args(["run", "--tool-lock"])
+        .arg(&file)
+        .args(["--", "exec", "FAKE_SECRET"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("E_CODEX_PIN"));
+    assert!(!String::from_utf8_lossy(&output.stderr).contains("FAKE_SECRET"));
+    assert_eq!(tree(&f.0), before);
+    let output = f
+        .command()
+        .args(["explain", "--tool-lock"])
+        .arg(&file)
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{:?}", output);
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert!(text.contains("contract: unknown"));
+    assert!(text.contains("SHA-256: deferred"));
+    assert_eq!(tree(&f.0), before);
+}
+#[test]
+fn matching_codex_pin_preserves_passthrough_exit_and_dry_run() {
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    f.tool("codex");
+    f.write("bin/codex", "#!/bin/sh\nexit 37\n");
+    f.write("repo/tools.toml", "kind='codex-smart-tools'\nschema_version=1\n[tools.codex]\nversion='0.160.0'\nsha256='707a93d29a0084fcd4b3a053bbc1caa8cac8d2e03de02907fa20d2878a932074'\n");
+    let file = f.0.join("repo/tools.toml");
+    let before = tree(&f.0);
+    let output = f
+        .command()
+        .args(["run", "--tool-lock"])
+        .arg(&file)
+        .args(["--dry-run", "--", "exec"])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{:?}", output);
+    assert_eq!(tree(&f.0), before);
+    let output = f
+        .command()
+        .args(["run", "--tool-lock"])
+        .arg(&file)
+        .args(["--", "exec"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(37));
+}
+
+#[test]
+fn fingerprint_rejects_unsafe_artifacts_and_enforces_exact_read_budget() {
+    use codex_smart_core::tool_lock::{Checksum, LockError, MAX_VERIFY_BYTES, fingerprint};
+    use std::os::unix::fs::symlink;
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    f.tool("codex");
+    let file = f.0.join("bin/codex");
+    let before = tree(&f.0);
+    let (digest, size) = fingerprint(&file, MAX_VERIFY_BYTES).unwrap();
+    assert_eq!(
+        digest,
+        Checksum::parse("ff6f57a4d9e2f1c8a885cfdd6cdd5dac1b1c6ce0a3029ef9891bff686951276c")
+            .unwrap()
+    );
+    assert_eq!(fingerprint(&file, size).unwrap(), (digest, size));
+    assert_eq!(fingerprint(&file, size - 1), Err(LockError::TooLarge));
+    assert_eq!(
+        fingerprint(Path::new("relative"), size),
+        Err(LockError::UnsafeArtifact)
+    );
+    assert_eq!(
+        fingerprint(&f.0.join("bin"), size),
+        Err(LockError::UnsafeArtifact)
+    );
+    assert_eq!(tree(&f.0), before);
+    let link = f.0.join("link");
+    symlink(&file, &link).unwrap();
+    assert_eq!(fingerprint(&link, size), Err(LockError::UnsafeArtifact));
+    for mode in [0o600, 0o777] {
+        fs::set_permissions(&file, fs::Permissions::from_mode(mode)).unwrap();
+        assert_eq!(fingerprint(&file, size), Err(LockError::UnsafeArtifact));
+    }
+    fs::set_permissions(&file, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::OpenOptions::new()
+        .write(true)
+        .open(&file)
+        .unwrap()
+        .set_len(MAX_VERIFY_BYTES + 1)
+        .unwrap();
+    let before = fs::metadata(&file).unwrap();
+    assert_eq!(fingerprint(&file, u64::MAX), Err(LockError::TooLarge));
+    let after = fs::metadata(&file).unwrap();
+    assert_eq!(before.len(), after.len());
+    assert_eq!(before.modified().unwrap(), after.modified().unwrap());
+}
+
+#[test]
+fn tool_lock_parser_and_file_errors_are_read_only_and_private() {
+    use std::os::unix::fs::symlink;
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    f.tool("codex");
+    let valid = include_str!("../../../fixtures/tools-codex.toml");
+    for source in [
+        valid.replace("schema_version = 1", "schema_version = 99"),
+        valid.replace("[tools.codex]", "[tools.code-graph-smart]"),
+        valid.replace("version = \"0.160.0\"", "version = \"PRIVATE_VALUE\""),
+        valid.replace(
+            "schema_version = 1",
+            "schema_version = 1\ncommand = 'PRIVATE_VALUE'",
+        ),
+        "x".repeat(65_537),
+    ] {
+        f.write("repo/tools.toml", &source);
+        let before = tree(&f.0);
+        let output = f
+            .command()
+            .args(["doctor", "--tool-lock", "tools.toml"])
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(2));
+        assert!(!String::from_utf8_lossy(&output.stderr).contains("PRIVATE_VALUE"));
+        assert!(output.stdout.is_empty());
+        assert_eq!(tree(&f.0), before);
+    }
+    f.write("repo/tools.toml", valid);
+    symlink(f.0.join("repo/tools.toml"), f.0.join("repo/link.toml")).unwrap();
+    for args in [
+        vec!["doctor", "--tool-lock", "link.toml"],
+        vec!["doctor", "--tool-lock", "missing.toml"],
+        vec!["doctor", "--tool-lock"],
+        vec!["run", "--dry-run", "--dry-run"],
+        vec![
+            "doctor",
+            "--tool-lock",
+            "tools.toml",
+            "--tool-lock",
+            "tools.toml",
+        ],
+        vec![
+            "run",
+            "--tool-lock",
+            "tools.toml",
+            "--tool-lock",
+            "tools.toml",
+        ],
+    ] {
+        let before = tree(&f.0);
+        let output = f.command().args(args).output().unwrap();
+        assert_eq!(output.status.code(), Some(2));
+        assert_eq!(tree(&f.0), before);
+    }
+}
+
+#[test]
+fn doctor_pin_failures_degrade_and_unsafe_wrappers_never_execute() {
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    f.tool("code-graph-smart");
+    f.tool("npx");
+    f.write(
+        "repo/tools.toml",
+        include_str!("../../../fixtures/tools-codex.toml"),
+    );
+    let before = tree(&f.0);
+    let output = f
+        .command()
+        .args(["doctor", "--tool-lock", "tools.toml"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert!(text.contains("executable missing"));
+    assert!(text.contains("ready: no: executable unavailable"));
+    assert!(text.contains("execution unsupported (wrapper may install dependencies)"));
+    assert_eq!(tree(&f.0), before);
+    f.tool("codex");
+    f.write("bin/codex", "#!/bin/sh\nexit 37\n");
+    let before = tree(&f.0);
+    let output = f
+        .command()
+        .args(["doctor", "--tool-lock", "tools.toml"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("SHA-256 mismatch"));
+    assert_eq!(tree(&f.0), before);
+    for name in ["explain", "capabilities"] {
+        let output = f
+            .command()
+            .args([name, "--tool-lock", "tools.toml"])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        assert!(String::from_utf8_lossy(&output.stdout).contains("SHA-256: deferred"));
+        assert_eq!(tree(&f.0), before);
+    }
+}
+
+#[test]
+fn pinned_plan_rejects_replacement_before_execution() {
+    use codex_smart_core::{
+        capability::Capability,
+        process::{LaunchError, LaunchPlan},
+        tool_lock::ToolLock,
+    };
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    f.tool("codex");
+    let path = f.0.join("bin");
+    let lock = ToolLock::parse(include_str!("../../../fixtures/tools-codex.toml")).unwrap();
+    let plan = LaunchPlan::prepare(Some(path.as_os_str()), &f.0.join("repo"), vec![])
+        .unwrap()
+        .require_pin(lock.pin(Capability::Codex).unwrap())
+        .unwrap();
+    fs::write(path.join("codex"), "#!/bin/sh\nexit 37\n").unwrap();
+    assert_eq!(plan.execute(), Err(LaunchError::ChangedExecutable));
+    assert!(!f.0.join("home/side-effect").exists());
+}
+
+#[test]
+fn pinned_launch_preserves_argument_bytes_and_wrapper_option_boundary() {
+    use std::os::unix::ffi::OsStringExt;
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    f.tool("codex");
+    f.write(
+        "bin/codex",
+        "#!/bin/sh\nprintf \"%s\\0\" \"$@\" > \"$HOME/argv\"\nexit 37\n",
+    );
+    fs::create_dir_all(f.0.join("home")).unwrap();
+    f.write("repo/tools.toml", "kind='codex-smart-tools'\nschema_version=1\n[tools.codex]\nversion='9.0.0'\nsha256='4f5ef69c8043b22a9a6e28ac44df31d3687cb0fabf771782bba376d49e8d68c5'\n");
+    let non_utf8 = std::ffi::OsString::from_vec(vec![b'x', 0xff]);
+    let dangerous = "$(touch injected); `touch injected`";
+    let output = f
+        .command()
+        .args([
+            "run",
+            "--tool-lock",
+            "tools.toml",
+            "--",
+            "exec",
+            "--tool-lock",
+            "not-a-lock",
+        ])
+        .arg(&non_utf8)
+        .arg(dangerous)
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(37));
+    let expected = [
+        b"exec\0--tool-lock\0not-a-lock\0".as_slice(),
+        &[b'x', 0xff, 0],
+        dangerous.as_bytes(),
+        &[0],
+    ]
+    .concat();
+    assert_eq!(fs::read(f.0.join("home/argv")).unwrap(), expected);
+    assert!(!f.0.join("repo/injected").exists());
+    let before = tree(&f.0);
+    let output = f
+        .command()
+        .args([
+            "run",
+            "--dry-run",
+            "--tool-lock",
+            "tools.toml",
+            "--",
+            "exec",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    assert!(
+        String::from_utf8_lossy(&output.stdout)
+            .contains("required SHA-256 matched; runtime version/readiness unverified")
+    );
+    assert_eq!(tree(&f.0), before);
+}

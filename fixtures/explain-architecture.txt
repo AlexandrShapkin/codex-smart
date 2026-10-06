@@ -8,16 +8,16 @@ context origin: BuiltIn
 Unknown fields: preserved/inert; values not displayed
 Codex config/auth/MCP/plugins: untouched
 Capability inventory (offline; no tools executed)
-codex: not found on trusted PATH
-rustc: not found on trusted PATH
-cargo: not found on trusted PATH
-git: not found on trusted PATH
-rg: not found on trusted PATH
-gh: not found on trusted PATH
-code-graph-mcp: not found on trusted PATH
-code-graph-smart: not found on trusted PATH
-serena: not found on trusted PATH
-context7 (session integration): unknown: session integration not probed
+codex: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+rustc: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+cargo: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+git: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+rg: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+gh: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+code-graph-mcp: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+code-graph-smart: not found on trusted PATH; compatibility: incompatible: wrapper execution is unsupported; contract: unknown; ready: no: executable unavailable
+serena: not found on trusted PATH; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: no: executable unavailable
+context7 (session integration): unknown: session integration not probed; compatibility: unknown: runtime version/contract not validated; contract: unknown; ready: unknown: runtime/auth/transport not probed
 MCP readiness, tool compatibility and index health: not probed
 Routing preview (does not enable tools or alter Codex config)
 Task: Architecture

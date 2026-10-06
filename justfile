@@ -1,6 +1,12 @@
 default:
     @just --list --unsorted
 
+# Explicit repository state; never invoked by offline context/docs checks.
+status:
+    git status --short
+    git branch --show-current
+    git rev-parse HEAD
+
 # Offline bounded contract and source pointers; defaults to the active stage.
 context stage="":
     @python3 -B scripts/workflow.py context {{quote(stage)}}
@@ -14,6 +20,9 @@ docs-check:
 
 docs-generate:
     python3 -B scripts/workflow.py generate
+
+alias docs-sync := docs-generate
+alias deny := security
 
 check:
     python3 -B scripts/workflow.py check

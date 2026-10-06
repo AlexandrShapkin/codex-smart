@@ -4,6 +4,7 @@ import tomllib
 from pathlib import Path
 
 approved = {
+    "sha2": ("=0.11.0", []),
     "toml_edit": ("=0.25.15", ["display", "parse"]),
     "rustix": ("=1.1.5", ["fs", "process"]),
     "codex-smart-core": ("=0.1.0", []),
@@ -16,8 +17,8 @@ def check_table(table):
         selected = (spec.get("version"), sorted(spec.get("features", [])))
         if name not in approved or selected != approved[name]:
             raise SystemExit(f"Unreviewed direct dependency/version/features: {name}")
-        if name == "toml_edit" and spec.get("default-features") is not False:
-            raise SystemExit("toml_edit must keep only reviewed parse/display features")
+        if name in {"toml_edit", "sha2"} and spec.get("default-features") is not False:
+            raise SystemExit("Dependency must keep only reviewed features")
         if name == "codex-smart-core" and spec.get("path") != "../codex-smart-core":
             raise SystemExit("Unexpected local core path")
         allowed = {"version", "features", "default-features"}
@@ -30,13 +31,24 @@ def check_table(table):
         if "git" in spec or "registry" in spec:
             raise SystemExit(f"Unreviewed dependency source: {name}")
 
-for manifest in Path("crates").glob("*/Cargo.toml"):
+workspace = tomllib.loads(Path("Cargo.toml").read_text())
+if workspace.get("patch") or workspace.get("replace"):
+    raise SystemExit("Unreviewed workspace dependency source override")
+check_table(workspace.get("workspace", {}).get("dependencies", {}))
+for manifest in [Path("Cargo.toml"), *Path("crates").glob("*/Cargo.toml")]:
     config = tomllib.loads(manifest.read_text())
     for container in [config, *config.get("target", {}).values()]:
         for kind in ("dependencies", "dev-dependencies", "build-dependencies"):
             check_table(container.get(kind, {}))
 packages = tomllib.loads(Path("Cargo.lock").read_text())["package"]
 external = [p for p in packages if "source" in p]
+internal_names = {"codex-smart-cli", "codex-smart-core"}
+for package in packages:
+    if "source" not in package and (
+        package["name"] not in internal_names
+        or package["version"] != workspace["workspace"]["package"]["version"]
+    ):
+        raise SystemExit("Unreviewed local lockfile dependency")
 for package in external:
     if package["source"] != "registry+https://github.com/rust-lang/crates.io-index":
         raise SystemExit("Unreviewed transitive source: " + package["name"])

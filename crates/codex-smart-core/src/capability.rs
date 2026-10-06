@@ -1,3 +1,4 @@
+use crate::tool_lock::{ArtifactEvidence, CapabilityEvidence};
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
@@ -47,6 +48,31 @@ pub struct Entry {
     pub capability: Capability,
     pub executable: Option<PathBuf>,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Availability {
+    Discovered,
+    NotFound,
+    SessionUnknown,
+}
+impl Entry {
+    pub fn evidence(&self) -> CapabilityEvidence {
+        CapabilityEvidence::assess(
+            self.capability,
+            self.availability() == Availability::Discovered,
+            None,
+            ArtifactEvidence::Deferred,
+        )
+    }
+    pub fn availability(&self) -> Availability {
+        if self.capability == Capability::Context7 {
+            Availability::SessionUnknown
+        } else if self.executable.is_some() {
+            Availability::Discovered
+        } else {
+            Availability::NotFound
+        }
+    }
+}
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Inventory(pub Vec<Entry>);
 impl Inventory {
@@ -68,20 +94,29 @@ impl Inventory {
     pub fn found(&self, capability: Capability) -> bool {
         self.0
             .iter()
-            .any(|e| e.capability == capability && e.executable.is_some())
+            .any(|e| e.capability == capability && e.availability() == Availability::Discovered)
     }
     pub fn render(&self) -> String {
         let mut output = String::from("Capability inventory (offline; no tools executed)\n");
         for entry in &self.0 {
             // Paths and tool output are deliberately omitted from public diagnostics.
-            let status = if entry.capability == Capability::Context7 {
-                "unknown: session integration not probed"
-            } else if entry.executable.is_some() {
-                "found: version/health/auth unverified"
-            } else {
-                "not found on trusted PATH"
+            let status = match entry.availability() {
+                Availability::SessionUnknown => "unknown: session integration not probed",
+                Availability::Discovered if entry.capability == Capability::CodeGraphWrapper => {
+                    "found: version/health/auth unverified; execution unsupported (wrapper may install dependencies)"
+                }
+                Availability::Discovered => "found: version/health/auth unverified",
+                Availability::NotFound => "not found on trusted PATH",
             };
-            output.push_str(&format!("{}: {}\n", entry.capability.name(), status));
+            let evidence = entry.evidence();
+            output.push_str(&format!(
+                "{}: {}; compatibility: {}; contract: {}; ready: {}\n",
+                entry.capability.name(),
+                status,
+                evidence.compatibility.name(),
+                evidence.execution_contract.name(),
+                evidence.readiness.name()
+            ));
         }
         output.push_str("MCP readiness, tool compatibility and index health: not probed\n");
         output

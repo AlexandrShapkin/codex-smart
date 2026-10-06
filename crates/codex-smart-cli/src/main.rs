@@ -1,10 +1,11 @@
 use codex_smart_core::{
     VERSION,
-    capability::Inventory,
+    capability::{Capability, Inventory},
     config::{self, ConfigError, Layer, Origin, Resolved},
     migration::{MigrationPlan, read_optional},
     process::LaunchPlan,
     routing::{Reasoning, Task, decide},
+    tool_lock::{LockError, ToolLock},
 };
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -110,16 +111,65 @@ fn config_command(args: &[OsString]) -> Result<(), &'static str> {
     }
     Ok(())
 }
+fn read_tool_lock(path: &Path) -> Result<ToolLock, &'static str> {
+    let source = read_optional(path)
+        .map_err(|e| e.code())?
+        .ok_or(LockError::Missing.code())?;
+    ToolLock::parse(&source).map_err(|e| e.code())
+}
+fn diagnostic_options(
+    args: &[OsString],
+) -> Result<(Option<ToolLock>, Vec<OsString>), &'static str> {
+    let mut lock = None;
+    let mut remaining = Vec::new();
+    let mut index = 0;
+    while index < args.len() {
+        if args[index] == "--tool-lock" {
+            if lock.is_some() || index + 1 == args.len() {
+                return Err("E_ARGS: --tool-lock requires one file and may not be repeated");
+            }
+            lock = Some(read_tool_lock(Path::new(&args[index + 1]))?);
+            index += 2;
+        } else {
+            remaining.push(args[index].clone());
+            index += 1;
+        }
+    }
+    Ok((lock, remaining))
+}
 fn launch(mut args: Vec<OsString>, explicit_run: bool) -> Result<i32, &'static str> {
-    let dry_run = explicit_run && args.first().is_some_and(|a| a == "--dry-run");
-    if dry_run {
-        args.remove(0);
+    let mut dry_run = false;
+    let mut lock = None;
+    if explicit_run {
+        loop {
+            if args.first().is_some_and(|a| a == "--dry-run") {
+                if dry_run {
+                    return Err("E_ARGS: --dry-run may not be repeated");
+                }
+                dry_run = true;
+                args.remove(0);
+            } else if args.first().is_some_and(|a| a == "--tool-lock") {
+                if lock.is_some() || args.len() < 2 {
+                    return Err("E_ARGS: --tool-lock requires one file and may not be repeated");
+                }
+                lock = Some(read_tool_lock(Path::new(&args[1]))?);
+                args.drain(..2);
+            } else {
+                break;
+            }
+        }
     }
     if args.first().is_some_and(|a| a == "--") {
         args.remove(0);
     }
-    let plan = LaunchPlan::prepare(std::env::var_os("PATH").as_deref(), &cwd()?, args)
+    let mut plan = LaunchPlan::prepare(std::env::var_os("PATH").as_deref(), &cwd()?, args)
         .map_err(|e| e.code())?;
+    if let Some(lock) = lock {
+        let pin = lock
+            .pin(Capability::Codex)
+            .ok_or("E_CODEX_PIN: tool lock must include a Codex pin")?;
+        plan = plan.require_pin(pin).map_err(|e| e.code())?;
+    }
     if dry_run {
         print!("{}", plan.summary());
         Ok(0)
@@ -134,14 +184,21 @@ fn execute(mut args: Vec<OsString>) -> Result<i32, &'static str> {
             println!("codex-smart {VERSION}")
         }
         Some("--help" | "-h" | "help") if args.len() == 1 => println!(
-            "codex-smart {VERSION}\nCommands: run [--dry-run] [--] [codex args...], doctor, capabilities, explain [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nOther arguments pass through to Codex. Use -- to pass a reserved command name. Config transactions default to dry-run; use --file FILE and explicit --apply."
+            "codex-smart {VERSION}\nCommands: run [--tool-lock FILE] [--dry-run] [--] [codex args...], doctor/capabilities [--tool-lock FILE], explain [--tool-lock FILE] [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nOther arguments pass through to Codex. Use -- to pass a reserved command name. Config transactions default to dry-run; use --file FILE and explicit --apply. Tool pins are explicit; versions/health remain unverified."
         ),
         Some("doctor" | "capabilities") => {
-            if args.len() != 1 {
+            let (lock, remaining) = diagnostic_options(&args[1..])?;
+            if !remaining.is_empty() {
                 return Err("E_ARGS: diagnostics do not accept extra arguments");
             }
             let inventory = Inventory::discover(std::env::var_os("PATH").as_deref(), &cwd()?);
             println!("codex-smart {VERSION}\n{}", inventory.render());
+            let mut artifact_ok = true;
+            if let Some(lock) = lock {
+                let (report, verified) = lock.report(&inventory, command == Some("doctor"));
+                print!("{report}");
+                artifact_ok = verified;
+            }
             if command == Some("doctor") {
                 match configuration(&Layer::default()) {
                     Ok(resolved) => print!("{}", resolved.render()),
@@ -151,9 +208,13 @@ fn execute(mut args: Vec<OsString>) -> Result<i32, &'static str> {
                     }
                 }
             }
+            if !artifact_ok {
+                return Ok(1);
+            }
         }
         Some("explain" | "--explain") => {
-            let resolved = configuration(&explain_overrides(&args[1..])?)?;
+            let (lock, remaining) = diagnostic_options(&args[1..])?;
+            let resolved = configuration(&explain_overrides(&remaining)?)?;
             let inventory = Inventory::discover(std::env::var_os("PATH").as_deref(), &cwd()?);
             let mut decision = decide(resolved.task, &inventory);
             decision.reasoning = resolved.reasoning;
@@ -163,6 +224,9 @@ fn execute(mut args: Vec<OsString>) -> Result<i32, &'static str> {
                 inventory.render(),
                 decision.render()
             );
+            if let Some(lock) = lock {
+                print!("{}", lock.report(&inventory, false).0);
+            }
         }
         Some("config") => config_command(&args[1..])?,
         Some("run") => {

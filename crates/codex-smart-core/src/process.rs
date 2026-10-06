@@ -1,5 +1,7 @@
 //! Explicit process launching. No shell, profile edits, installs or tool probes.
+use crate::capability::Capability;
 use crate::capability::find_executable;
+use crate::tool_lock::{Checksum, MAX_VERIFY_BYTES, Pin, fingerprint};
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -9,6 +11,7 @@ pub enum LaunchError {
     MissingCodex,
     ChangedExecutable,
     SpawnFailed,
+    PinMismatch,
 }
 impl LaunchError {
     pub fn code(self) -> &'static str {
@@ -16,6 +19,7 @@ impl LaunchError {
             Self::MissingCodex => "E_CODEX_MISSING: Codex not found on trusted PATH",
             Self::ChangedExecutable => "E_CODEX_CHANGED: executable changed after planning",
             Self::SpawnFailed => "E_CODEX_SPAWN: could not execute Codex",
+            Self::PinMismatch => "E_CODEX_PIN: required Codex artifact pin could not be verified",
         }
     }
 }
@@ -24,6 +28,7 @@ pub struct LaunchPlan {
     executable: PathBuf,
     args: Vec<OsString>,
     metadata: std::fs::Metadata,
+    checksum: Option<Checksum>,
 }
 impl LaunchPlan {
     pub fn prepare(
@@ -39,12 +44,36 @@ impl LaunchPlan {
             executable,
             args,
             metadata,
+            checksum: None,
         })
+    }
+    pub fn require_pin(mut self, pin: &Pin) -> Result<Self, LaunchError> {
+        if pin.capability != Capability::Codex {
+            return Err(LaunchError::PinMismatch);
+        }
+        self.checksum = Some(pin.checksum);
+        self.verify_pin()?;
+        Ok(self)
+    }
+    fn verify_pin(&self) -> Result<(), LaunchError> {
+        if let Some(checksum) = self.checksum {
+            let (actual, _) = fingerprint(&self.executable, MAX_VERIFY_BYTES)
+                .map_err(|_| LaunchError::PinMismatch)?;
+            if actual != checksum || !self.unchanged() {
+                return Err(LaunchError::PinMismatch);
+            }
+        }
+        Ok(())
     }
     pub fn summary(&self) -> String {
         format!(
-            "Launch dry-run\nExecutable: trusted absolute Codex path (not executed)\nArguments: {} forwarded unchanged; values omitted for privacy\nShell: none\nCodex config/auth/MCP/plugins: no launcher edits\nRouting: passthrough; no profile or reasoning override injected\n",
-            self.args.len()
+            "Launch dry-run\nExecutable: trusted absolute Codex path (not executed)\nArguments: {} forwarded unchanged; values omitted for privacy\nArtifact pin: {}\nShell: none\nCodex config/auth/MCP/plugins: no launcher edits\nRouting: passthrough; no profile or reasoning override injected\n",
+            self.args.len(),
+            if self.checksum.is_some() {
+                "required SHA-256 matched; runtime version/readiness unverified"
+            } else {
+                "none required"
+            }
         )
     }
     fn unchanged(&self) -> bool {
@@ -74,6 +103,7 @@ impl LaunchPlan {
         if !self.unchanged() {
             return Err(LaunchError::ChangedExecutable);
         }
+        self.verify_pin()?;
         let mut command = Command::new(&self.executable);
         command.args(&self.args);
         #[cfg(unix)]

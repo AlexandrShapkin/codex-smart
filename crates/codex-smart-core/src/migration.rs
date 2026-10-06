@@ -81,6 +81,14 @@ mod linux {
         dir: File,
         name: OsString,
     }
+    struct TransactionLock(File);
+    impl Drop for TransactionLock {
+        fn drop(&mut self) {
+            // A concurrent fork can retain the open file description briefly.
+            // Release explicitly instead of waiting for every inherited copy to close.
+            let _ = sys::flock(&self.0, sys::FlockOperation::Unlock);
+        }
+    }
     impl Target {
         fn open(path: &Path) -> Result<Self, ConfigError> {
             if path.components().any(|c| matches!(c, Component::ParentDir)) {
@@ -163,7 +171,7 @@ mod linux {
             }
             Ok(())
         }
-        fn lock(&self) -> Result<File, ConfigError> {
+        fn lock(&self) -> Result<TransactionLock, ConfigError> {
             self.validate_parent()?;
             let flags = OFlags::RDWR | OFlags::NOFOLLOW | OFlags::NONBLOCK | OFlags::CLOEXEC;
             let created = sys::openat(
@@ -193,7 +201,7 @@ mod linux {
             validate_file(&file.metadata().map_err(|_| ConfigError::Io)?, true)?;
             sys::flock(&file, sys::FlockOperation::NonBlockingLockExclusive)
                 .map_err(|_| ConfigError::Busy)?;
-            Ok(file)
+            Ok(TransactionLock(file))
         }
     }
     fn validate_file(meta: &std::fs::Metadata, private: bool) -> Result<(), ConfigError> {
@@ -481,6 +489,32 @@ mod linux {
             for name in &self.names {
                 let _ = sys::unlinkat(&self.target.dir, name, sys::AtFlags::empty());
             }
+        }
+    }
+    #[cfg(test)]
+    mod lock_tests {
+        use super::*;
+        #[test]
+        fn lock_drop_releases_even_with_an_inherited_file_description() {
+            let path =
+                std::env::temp_dir().join(format!("codex-smart-lock-drop-{}", std::process::id()));
+            let file = File::options()
+                .read(true)
+                .write(true)
+                .create_new(true)
+                .open(&path)
+                .unwrap();
+            let inherited = file.try_clone().unwrap();
+            sys::flock(&file, sys::FlockOperation::NonBlockingLockExclusive).unwrap();
+            let competitor = File::open(&path).unwrap();
+            assert!(
+                sys::flock(&competitor, sys::FlockOperation::NonBlockingLockExclusive).is_err()
+            );
+            drop(TransactionLock(file));
+            sys::flock(&competitor, sys::FlockOperation::NonBlockingLockExclusive).unwrap();
+            sys::flock(&competitor, sys::FlockOperation::Unlock).unwrap();
+            drop(inherited);
+            std::fs::remove_file(path).unwrap();
         }
     }
 }

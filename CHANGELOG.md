@@ -13,4 +13,8 @@
 
 - Add bounded stage context, documentation ownership and deterministic offline generated roadmap/index checks behind just.
 
+- Add explicit Codex artifact pins, separate capability/version/compatibility/readiness evidence, bounded read-only verification and an authoritative command/transport matrix.
+
+- Explicitly release migration advisory locks before inherited file descriptions close.
+
 No release tag or public API stability guarantee yet.

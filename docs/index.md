@@ -24,10 +24,12 @@ GitHub Issues own live state; local issue files preserve design references.
 | [ADR-0004: Defer Rhai until reference policy is validated](../docs/decisions/0004-rhai-deferred.md) | architecture | contract | baseline |
 | [ADR-0005: Marked TOML and descriptor-based config transactions](../docs/decisions/0005-safe-config-transactions.md) | architecture | contract | baseline |
 | [ADR-0006: Repository-owned bounded stage context](../docs/decisions/0006-bounded-context.md) | architecture | contract | workflow |
+| [ADR-0007: Explicit Codex artifact pins and honest offline evidence](../docs/decisions/0007-owned-executable-pins.md) | architecture | contract | tools |
 | [Development](../docs/development.md) | engineering | current | workflow |
 | [Post-bootstrap correction gate — 2026-10-06](../docs/diagnostics/2026-10-06-baseline.md) | engineering | historical | baseline |
 | [Configuration and transaction slice — 2026-10-06](../docs/diagnostics/2026-10-06-config.md) | engineering | historical | baseline |
 | [Historical recovered roadmap](../docs/diagnostics/2026-10-06-roadmap.md) | engineering | historical | baseline |
+| [External executable pin validation — 2026-10-06](../docs/diagnostics/2026-10-06-tools.md) | engineering | historical | tools |
 | [Bounded workflow validation — 2026-10-06](../docs/diagnostics/2026-10-06-workflow.md) | engineering | historical | workflow |
 | [Initial engineering diagnostic — 2026-10-06](../docs/diagnostics/2026-10-06.md) | engineering | historical | baseline |
 | [Documentation index](../docs/index.md) | engineering | generated | workflow |
@@ -61,6 +63,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [1.0 readiness and durable public contracts](../docs/stages/stable.md) | engineering | contract | stable |
 | [External capability pins and compatibility](../docs/stages/tools.md) | engineering | contract | tools |
 | [Bounded roadmap and documentation context](../docs/stages/workflow.md) | engineering | contract | workflow |
+| [External version and execution compatibility](../docs/tool-compatibility.md) | engineering | current | tools, doctor |
 | [Tooling and capability trust](../docs/tooling.md) | engineering | current | tools, doctor |
 | [Versioning](../docs/versioning.md) | release | current | stable |
 | [Bounded development workflow](../docs/workflow.md) | engineering | current | workflow |
