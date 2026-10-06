@@ -34,6 +34,7 @@ Evidence: [docs/diagnostics/2026-10-06-tools.md](docs/diagnostics/2026-10-06-too
 Milestone: 0.1 Foundation; recorded progress: **partial**.
 Dependencies: tools.
 [Stage contract](docs/stages/doctor.md); issues: [#4](https://github.com/AlexandrShapkin/codex-smart/issues/4).
+Evidence: [docs/diagnostics/2026-10-06-doctor.md](docs/diagnostics/2026-10-06-doctor.md).
 
 ## router — Router v2 composition and controlled integration
 

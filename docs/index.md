@@ -28,10 +28,12 @@ GitHub Issues own live state; local issue files preserve design references.
 | [Development](../docs/development.md) | engineering | current | workflow |
 | [Post-bootstrap correction gate — 2026-10-06](../docs/diagnostics/2026-10-06-baseline.md) | engineering | historical | baseline |
 | [Configuration and transaction slice — 2026-10-06](../docs/diagnostics/2026-10-06-config.md) | engineering | historical | baseline |
+| [Doctor validation evidence](../docs/diagnostics/2026-10-06-doctor.md) | engineering | historical | doctor |
 | [Historical recovered roadmap](../docs/diagnostics/2026-10-06-roadmap.md) | engineering | historical | baseline |
 | [External executable pin validation — 2026-10-06](../docs/diagnostics/2026-10-06-tools.md) | engineering | historical | tools |
 | [Bounded workflow validation — 2026-10-06](../docs/diagnostics/2026-10-06-workflow.md) | engineering | historical | workflow |
 | [Initial engineering diagnostic — 2026-10-06](../docs/diagnostics/2026-10-06.md) | engineering | historical | baseline |
+| [Offline Doctor contract](../docs/doctor.md) | engineering | current | doctor |
 | [Documentation index](../docs/index.md) | engineering | generated | workflow |
 | [P0: Establish repository provenance and baseline](../docs/issues/01.md) | engineering | reference | baseline |
 | [P0: Bootstrap Rust workspace and CLI](../docs/issues/02.md) | engineering | reference | baseline |

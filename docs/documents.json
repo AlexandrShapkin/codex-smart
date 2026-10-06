@@ -192,6 +192,15 @@
       ]
     },
     {
+      "path": "docs/diagnostics/2026-10-06-doctor.md",
+      "title": "Doctor validation evidence",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "doctor"
+      ]
+    },
+    {
       "path": "docs/diagnostics/2026-10-06-roadmap.md",
       "title": "Historical recovered roadmap",
       "owner": "engineering",
@@ -225,6 +234,15 @@
       "role": "historical",
       "stages": [
         "baseline"
+      ]
+    },
+    {
+      "path": "docs/doctor.md",
+      "title": "Offline Doctor contract",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "doctor"
       ]
     },
     {

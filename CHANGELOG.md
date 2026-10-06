@@ -17,4 +17,6 @@
 
 - Explicitly release migration advisory locks before inherited file descriptions close.
 
+- Add typed offline Doctor checks, JSON schema 1, explicit privacy-safe Codex config analysis, separate permission/remote/index evidence and read-only golden regressions.
+
 No release tag or public API stability guarantee yet.

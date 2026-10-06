@@ -50,3 +50,11 @@ Only the caller's explicit --tool-lock file can require the owned Codex artifact
 no lock record can select an executable, command, shell or install action. Policy preview
 and user Codex config/auth/MCP/plugins remain separate. See the compatibility matrix for
 why a declared version or matching digest never establishes runtime readiness.
+
+## Doctor single-file analysis
+
+`doctor --codex-config FILE` explicitly analyzes an allowlisted Codex TOML subset without
+printing values or reading referenced auth/plugin stores. It reports permission-profile
+and legacy sandbox conflicts and MCP declarations. It does not resolve effective Codex
+configuration across layers/profiles/CLI. Default Doctor retains no Codex store discovery.
+See [the Doctor contract](doctor.md) for schema, privacy and required-check semantics.
