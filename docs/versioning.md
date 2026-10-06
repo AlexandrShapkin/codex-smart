@@ -4,6 +4,10 @@ Semantic Versioning: 0.1.x Foundation; 0.2.x Router v2; 0.3.x benchmarks/telemet
 
 Workspace version is the sole binary version source. Lockfile is committed. Local stable is rustc 1.98.0; CI requests 1.98.0 explicitly. A named 1.98.0 local toolchain is not provisioned, so rust-toolchain.toml is deferred to avoid implicit rustup downloads. No automatic rustup install is performed by runtime diagnostics.
 
+Git tags use `vMAJOR.MINOR.PATCH` only after logical release acceptance and explicit
+publication authorization. `0.1.0` remains unreleased; repository cosmetics do not
+create tags or releases. See [release readiness](releasing.md).
+
 
 External runtime declarations are independent of the product version. [The tool lock](tool-compatibility.md)
 accepts strict three-component release versions only; build/prerelease suffixes and raw

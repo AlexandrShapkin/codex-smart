@@ -13,3 +13,29 @@ Requested command aliases: `just docs-sync` runs the existing deterministic docs
 `just deny` runs the existing security gate. `just status` explicitly reads local git
 state. They add no new workflow or automatic online action. The offline check/context
 implementation from PR #19 is preserved.
+
+## Main protection proposal (pending owner approval)
+
+Normal changes should reach `main` through reviewed/validated PRs. No protection
+is configured yet; the following minimal policy is a proposal, not an enforcement
+claim. CI `check` and Security `review` are existing GitHub Actions checks.
+
+| Setting | Proposed value |
+| --- | --- |
+| Branch | Exactly `main` |
+| Require PR | Enabled |
+| Required approving reviews | 0; owner reviews acceptance, without requiring an unavailable second maintainer |
+| Dismiss stale approvals | Enabled |
+| Code-owner / last-push approval requirements | Disabled |
+| Required status checks | `check`, `review`, from GitHub Actions (app ID 15368) |
+| Require branch up to date | Enabled |
+| Allow force pushes / deletion | Disabled / disabled |
+| Enforce on administrators | Disabled; explicit owner emergency recovery remains possible |
+| Linear history, signed commits, merge queue, branch lock | Not required |
+| Push restrictions | None beyond the PR/check requirements |
+
+Keep all currently accepted merge methods and leave auto-merge disabled. Apply the
+policy only after explicit owner approval; owner emergency bypasses should be
+followed by documented validation and a review of the deviation. This public
+repository is eligible under [GitHub's documented branch protection plan support](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
+No enforcement or recovery settings were changed by this proposal.

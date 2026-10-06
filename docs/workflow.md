@@ -13,6 +13,11 @@ evidence. `just security-fetch` is the explicit public advisory refresh;
 
 ## Sources of truth
 
+The permanent [issue taxonomy and closeout rules](../CONTRIBUTING.md#issue-governance)
+live in CONTRIBUTING.md. Every actionable issue has one primary area, one severity,
+at most one current stage owner and one work-kind. Milestones group releases;
+stage labels track mutable implementation ownership.
+
 - `docs/stages.json` owns stable stage IDs, dependency order, issue links, context
   entry points and recorded implementation progress. Each stage has a contract
   defining scope, non-goals, acceptance, validation, context and follow-ups.
