@@ -1,0 +1,13 @@
+[package]
+name = "codex-smart-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+[[bin]]
+name = "codex-smart"
+path = "src/main.rs"
+[dependencies]
+codex-smart-core = { version = "=0.1.0", path = "../codex-smart-core" }
+[lints]
+workspace = true

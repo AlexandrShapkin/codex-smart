@@ -1,0 +1,25 @@
+name: Security
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    env:
+      RUSTUP_TOOLCHAIN: 1.98.0
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: ./.github/actions/setup-just
+      - run: rustup toolchain install 1.98.0 --profile minimal
+      - run: cargo +1.98.0 fetch --locked
+      - name: Install pinned security checker in CI
+        run: cargo +1.98.0 install cargo-deny --version 0.20.2 --locked
+      - name: Fetch public advisory database explicitly
+        run: just security-fetch
+      - name: Dependency provenance, advisories, licenses, bans and sources
+        run: just security

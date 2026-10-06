@@ -1,0 +1,210 @@
+{
+  "schema": 1,
+  "active": "tools",
+  "stages": [
+    {
+      "id": "baseline",
+      "title": "Recover trustworthy repository baseline",
+      "milestone": "0.1 Foundation",
+      "progress": "validated",
+      "depends_on": [],
+      "issues": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        18
+      ],
+      "contract": "docs/stages/baseline.md",
+      "reads": [
+        "docs/provenance.md",
+        "docs/architecture.md",
+        "docs/configuration.md"
+      ],
+      "sources": [
+        "crates/codex-smart-cli",
+        "crates/codex-smart-core",
+        ".github/workflows"
+      ],
+      "evidence": [
+        "docs/diagnostics/2026-10-06-baseline.md"
+      ]
+    },
+    {
+      "id": "workflow",
+      "title": "Bounded roadmap and documentation context",
+      "milestone": "0.1 Foundation",
+      "progress": "partial",
+      "depends_on": [
+        "baseline"
+      ],
+      "issues": [
+        20
+      ],
+      "contract": "docs/stages/workflow.md",
+      "reads": [
+        "docs/workflow.md",
+        "docs/development.md",
+        "docs/decisions/0006-bounded-context.md"
+      ],
+      "sources": [
+        "justfile",
+        "scripts/workflow.py",
+        "docs/stages.json",
+        "docs/documents.json"
+      ],
+      "evidence": [
+        "docs/diagnostics/2026-10-06-workflow.md"
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "External capability pins and compatibility",
+      "milestone": "0.1 Foundation",
+      "progress": "active",
+      "depends_on": [
+        "workflow"
+      ],
+      "issues": [
+        7
+      ],
+      "contract": "docs/stages/tools.md",
+      "reads": [
+        "docs/tooling.md",
+        "docs/architecture.md",
+        "docs/decisions/0002-thin-launcher.md",
+        "docs/issues/07.md"
+      ],
+      "sources": [
+        "crates/codex-smart-core/src/capability.rs",
+        "crates/codex-smart-core/src/process.rs",
+        "crates/codex-smart-cli/src/main.rs",
+        "crates/codex-smart-cli/tests/readonly.rs"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "doctor",
+      "title": "Complete offline diagnostic contracts",
+      "milestone": "0.1 Foundation",
+      "progress": "partial",
+      "depends_on": [
+        "tools"
+      ],
+      "issues": [
+        4
+      ],
+      "contract": "docs/stages/doctor.md",
+      "reads": [
+        "docs/tooling.md",
+        "docs/configuration.md",
+        "docs/issues/04.md"
+      ],
+      "sources": [
+        "crates/codex-smart-cli/src/main.rs",
+        "crates/codex-smart-core/src/capability.rs"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "router",
+      "title": "Router v2 composition and controlled integration",
+      "milestone": "0.2 Router v2",
+      "progress": "planned",
+      "depends_on": [
+        "doctor"
+      ],
+      "issues": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "contract": "docs/stages/router.md",
+      "reads": [
+        "docs/routing.md",
+        "docs/architecture.md",
+        "docs/decisions/0003-policy-preview.md",
+        "docs/decisions/0004-rhai-deferred.md"
+      ],
+      "sources": [
+        "crates/codex-smart-core/src/routing.rs",
+        "crates/codex-smart-core/src/config.rs"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "benchmark",
+      "title": "Full development benchmark and aggregate telemetry",
+      "milestone": "0.3 Development Benchmark",
+      "progress": "planned",
+      "depends_on": [
+        "router"
+      ],
+      "issues": [
+        14,
+        15
+      ],
+      "contract": "docs/stages/benchmark.md",
+      "reads": [
+        "docs/benchmarking.md",
+        "docs/provenance.md"
+      ],
+      "sources": [
+        "docs/benchmarking.md"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "hardening",
+      "title": "Packaging, migration and security hardening",
+      "milestone": "0.4 Hardening",
+      "progress": "planned",
+      "depends_on": [
+        "benchmark"
+      ],
+      "issues": [
+        16,
+        17
+      ],
+      "contract": "docs/stages/hardening.md",
+      "reads": [
+        "docs/releasing.md",
+        "docs/configuration.md",
+        "SECURITY.md"
+      ],
+      "sources": [
+        ".github/workflows/release.yml",
+        "crates/codex-smart-core/src/process.rs",
+        "crates/codex-smart-core/src/migration.rs"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "stable",
+      "title": "1.0 readiness and durable public contracts",
+      "milestone": "1.0 Stable",
+      "progress": "planned",
+      "depends_on": [
+        "hardening"
+      ],
+      "issues": [
+        17
+      ],
+      "contract": "docs/stages/stable.md",
+      "reads": [
+        "docs/versioning.md",
+        "docs/releasing.md",
+        "docs/benchmarking.md"
+      ],
+      "sources": [
+        "Cargo.toml",
+        "CHANGELOG.md"
+      ],
+      "evidence": []
+    }
+  ]
+}
