@@ -47,5 +47,59 @@ Repository size, cost metadata, language and capability inventory are excluded f
 the API. Task and risk remain independent; no reasoning-effort mapping is introduced.
 
 Additional signals such as compatibility boundaries, deployment and unknown impact
-radius await a demonstrated downstream contract. This slice does not infer safety
-from their absence or implement #10 decisions, #11 reasoning, #12 fallback or #13 Rhai.
+radius await a demonstrated downstream contract. The assessment does not infer safety
+from their absence or implement capability decisions, reasoning, fallback or Rhai.
+
+## Router v2 capability decision engine (#10)
+
+`routing::engine::decide` accepts the #9 TaskRiskAssessment, structured capability
+needs and one normalized immutable CapabilitySurface. No discovery occurs inside
+policy. The engine stays separate from legacy preview/config/CLI; `run` remains
+passthrough. Decisions do not activate tools or grant execution authority.
+
+Every decision retains native shell/git/search/build/test as its baseline, subject to
+host availability. External backends are augmentations. Needs map deterministically:
+StructuralImpact → direct CodeGraph, SymbolNavigation → Serena, ExternalApiReference
+→ Context7, RemoteRepository → GitHub. A structural need never also selects Serena;
+separate explicit needs can select multiple verified backends. Task kind and risk do
+not infer capability intent. High risk adds AdditionalSafetyEvidenceRequired without
+selecting a backend or reasoning effort.
+
+CapabilityState is a normalized usable-state assertion: Verified, Unknown,
+Unavailable or Blocked. Verified means the caller has separately established runtime
+compatibility and applicable transport/auth/project/index readiness. It is not an
+executable-presence flag. The existing Availability, Compatibility and Readiness
+contracts remain unchanged; `CapabilitySurface::from_offline` can never produce
+Verified. ReferenceOnly, digest Match and discovered executables still do not attest
+runtime readiness. Context7 remains Unknown until separate session integration can
+prove usability. There is no production verified-evidence producer in this slice.
+Tests use explicit synthetic assertions; future controlled integration owns real ones.
+
+The surface constructor normalizes each backend once. Duplicate equivalent records
+collapse; conflicting records choose the most restrictive state, ordered Blocked >
+Unavailable > Unknown > Verified for this normalization only. Missing records mean
+Unknown. The unsupported CodeGraphWrapper is always Blocked, even if a caller supplies
+Verified; it never satisfies a direct CodeGraph need. Native developer tools do not
+become external augmentations.
+
+Known unambiguous tasks with a requested Verified backend select that backend only.
+Unknown/ambiguous tasks defer even Verified requests. Unknown, Unavailable and Blocked
+requests remain unselected with their own typed reason. No alternate backend is guessed,
+no retry/probe occurs and no automatic evidence collection follows. Explicit needs
+are deduplicated before reading the surface, so repeated needs do not duplicate a
+backend. Repository size, cost metadata and language are absent from decision inputs.
+
+RouterDecision preserves the assessment, a sorted set of verified augmentations and
+stable DecisionReason codes: NativeBaseline, NoExternalNeed, AmbiguousTask,
+AdditionalSafetyEvidenceRequired, VerifiedCapabilitySelected(backend),
+CapabilityUnknown(backend), CapabilityUnavailable(backend), CapabilityBlocked(backend)
+and CapabilityDeferredForAmbiguity(backend). Rendered explanations contain enum values
+only, in deterministic order, including assessment reasons. No paths, credentials,
+raw config or tool output enter them.
+
+Validation includes a 64-case pure task/intent/state matrix, offline evidence and
+wrapper regressions, normalization/order/duplicate invariants, and five in-memory
+stubbed E2E sessions across facts → assessment → decision → full human explanation.
+No real network, subprocess, MCP, index or backend launch is used in those sessions.
+#11 reasoning, #12 fallback/escalation execution and #13 Rhai remain separate. Router
+activation and capability probes are not delivered; the stage remains partial.

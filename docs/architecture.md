@@ -7,8 +7,10 @@ Level A prepares capabilities, risk, reasoning and auditable fallback. Level B i
 Router v2's separate task/risk foundation accepts structured explicit hints and cheap
 already collected semantic facts, then returns typed task, risk, ambiguity and stable
 reasons. Its pure boundary excludes repository size, capability selection and reasoning
-effort. The future decision engine consumes this assessment; the legacy preview stays
-unchanged until that integration. See [routing](routing.md).
+effort. The separate pure decision engine consumes this assessment, explicit capability needs
+and one normalized evidence snapshot. Native tools remain the baseline; only caller-verified
+augmentations may be selected. Offline evidence never fabricates verified readiness.
+The legacy preview and passthrough launch stay unchanged until controlled integration. See [routing](routing.md).
 
 Read-only commands inspect bounded PATH and local filesystem evidence. Doctor additionally reads bounded local Git config and explicitly supplied Codex TOML without executing tools or following referenced stores; see [the Doctor contract](doctor.md). Presence is distinguished from readiness. MCP, index health and auth are unknown until a future explicitly controlled compatibility probe can validate them without mutation. Runtime version strings are not obtained by launching arbitrary wrappers.
 
