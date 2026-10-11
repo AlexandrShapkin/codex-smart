@@ -111,7 +111,7 @@ assert not p.exists()
 try: p.write_text('changed')
 except OSError: pass
 else: raise AssertionError
-assert not Path('/home/user').exists()
+assert not Path('/home').exists()
 assert not Path('/benchmarks/.artifacts').exists()
 ''')
         record('symlink', "from pathlib import Path\nassert not Path('/work/escape').exists()\n")
