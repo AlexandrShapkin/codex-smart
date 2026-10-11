@@ -166,6 +166,13 @@ class CampaignTests(unittest.TestCase):
     def test_frozen_state_drift_rejected(self):
         cases = [
             (('status',), 'frozen-plan-ready'),
+            (('codex', 'executable_sha256'), '0'*64),
+            (('codex', 'version'), '0.162.2'),
+            (('cold_warm', 'protocol'), 'controlled cache'),
+            (('cold_warm', 'index'), 'verified'),
+            (('cold_warm', 'bootstrap'), 'measured'),
+            (('cold_warm', 'classification'), 'cold'),
+            (('readiness', 'grading_isolation_contract'), 'verified'),
             (('live_contract', 'status'), 'blocked'),
             (('live_contract', 'terminal_status'), 'failed'),
             (('live_contract', 'quality_pass'), False),
@@ -182,6 +189,9 @@ class CampaignTests(unittest.TestCase):
             (('historical_live_attempts',), []),
             (('historical_live_attempts',), None),
         ]
+        for name in ['rustc', 'go', 'python3']:
+            cases.append((('toolchains', name, 'version'), 'different version'))
+            cases.append((('toolchains', name, 'version_arguments'), ['--help']))
         history = self.config['historical_live_attempts'][0]
         for key, value in [('terminal_status', 'completed'), ('exit_status', 0),
                            ('grader', 'passed'), ('usage', 'observed'),
@@ -219,13 +229,24 @@ class CampaignTests(unittest.TestCase):
             artifacts.assert_not_called()
             execute.assert_not_called()
 
-    def test_programmatic_entry_preflights_once(self):
+    def test_unverified_grading_blocks_public_entry_and_cli_before_execution(self):
+        import contextlib, io, sys
         with patch.object(c, 'real_preflight') as preflight, \
-             patch.object(c, 'artifact_directory', return_value=Path('/fake/artifacts')), \
-             patch.object(c, '_real_run', return_value={}) as runner:
-            self.assertEqual(c.real_run('/fake/codex', 'test', allow_preliminary_campaign=True), {})
-            preflight.assert_called_once_with(self.config, '/fake/codex')
-            runner.assert_called_once_with(self.config, '/fake/codex', Path('/fake/artifacts'), c.CONFIG)
+             patch.object(c, 'toolchains') as tools, patch.object(b, 'execute') as execute, \
+             patch.object(c, 'artifact_directory') as artifacts, patch.object(c, '_real_run') as runner:
+            with self.assertRaisesRegex(ValueError, 'grading isolation contract is not verified'):
+                c.real_run('/fake/codex', 'test', allow_preliminary_campaign=True)
+            with patch.object(sys, 'argv', ['campaign', '--real', '--allow-preliminary-campaign',
+                                          '--codex', '/fake/codex']), \
+                 contextlib.redirect_stderr(io.StringIO()) as stderr:
+                with self.assertRaises(SystemExit) as raised: c.main()
+                self.assertEqual(raised.exception.code, 2)
+                self.assertIn('grading isolation contract is not verified', stderr.getvalue())
+            preflight.assert_not_called()
+            tools.assert_not_called()
+            execute.assert_not_called()
+            artifacts.assert_not_called()
+            runner.assert_not_called()
 
     def test_verified_live_contract(self):
         live = self.config['live_contract']

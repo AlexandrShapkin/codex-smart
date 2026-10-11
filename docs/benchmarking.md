@@ -66,13 +66,11 @@ produces stable shuffled scenario/variant/repetition order, including unavailabl
 CI uses fake runs and needs no OpenAI credentials. The initial read-only preflight
 failed at startup; the first writable-host smoke subsequently reached a real turn.
 
-A bounded real campaign invocation requires `--real --codex /absolute/executable
---model MODEL`. The harness only accepts the inspected `codex-cli 0.162.1`; it records
-executable checksum, requested model and controlled settings reference, plus manifest,
-grader and harness checksums. Existing auth
-is reused through an explicit keyring credential-store override, never read/copied by this harness. Model reference is requested, not a claim
-of provider-confirmed identity. CLI inspection is explicit benchmark setup, never
-product runtime behavior.
+`scripts/benchmark.py` is a low-level harness/library and synthetic validation CLI.
+Its legacy `--real` path is disabled; `--codex` and `--model` live options are removed.
+The only production-facing real entry is `scripts/benchmark_campaign.py`, which is
+currently blocked by the unverified grading isolation contract. CLI inspection and
+executable identity validation are benchmark setup, never product runtime behavior.
 
 The [official non-interactive documentation](https://learn.chatgpt.com/docs/non-interactive-mode)
 defines `codex exec --json` and the sample `turn.completed.usage` fields. Local 0.162.1
@@ -118,8 +116,8 @@ prompt/source logging or telemetry.
 
 ## Remaining acceptance campaign
 
-Independently verify the live pinned trace, expand realistic task coverage,
-pin toolchains and campaign model/settings, validate all graders in isolated environments,
+Design and verify grading isolation, finalize realistic task coverage,
+preserve the frozen toolchains and campaign model/settings, validate all graders within that boundary,
 and run repeated seeded quality-first measurements with cache/overhead evidence.
 Obtain exact legacy provenance or retain unavailable status. Implement and verify a
 separate decision-applying adapter before any Router v2 measurement. #14 stays open
@@ -266,27 +264,37 @@ No raw trace, stderr, prompt, source, private absolute artifact path, credential
 material, request identifiers or arbitrary event payload is committed.
 
 The frozen state is live_contract verified, real_runner_contract prepared,
-representative_campaign_ready false: representative task coverage has not yet been
+grading_isolation_contract required-not-verified, representative_campaign_ready false: representative task coverage has not yet been
 accepted. Benchmark remains partial; #14 stays open and #15 stays separate. The seven
 scenarios and 42 planned jobs remain a preliminary compact campaign. No winner,
 savings or representative end-to-end performance claim follows from this smoke.
 All 42 jobs remain unexecuted.
 
-The campaign runner prints the frozen plan by default. Real execution requires
-`--real --allow-preliminary-campaign --codex /absolute/pinned/executable --run-id ID`.
-Without preliminary acknowledgement it prints the plan and refuses execution.
-The public programmatic real entry reloads the frozen configuration and performs
-preflight once before calling its private execution helper. Semantic validation rejects
-drift in campaign status, typed live evidence, exact smoke counters/readiness and the
-retained failed historical evidence until explicitly reviewed and updated.
-Before a model call it requires the verified live contract, exact executable SHA,
-`codex-cli 0.162.1`, and every exact frozen toolchain version. Model/settings,
-seed 14, three repetitions, zero retries and timeout 120 remain frozen. Vanilla/native
-commands are identical; only the native public instruction differs. No network,
-installation or setup is added beyond normal Codex model execution. Normal CODEX_HOME
-and keyring auth remain inherited, with no credential copying or auth-file creation.
-Use the disposable grading environment described above; the runner adds no isolation
-boundary. No product telemetry or Router runtime changes are involved.
+Codex live execution/JSONL/auth contract is verified; grader correctness is tested
+using independent positive and deliberately wrong controls. Grader security isolation
+is **not verified**, and representative coverage is **not accepted**. The IaC smoke
+remains valid: that grader compares JSON semantics and executes no submitted program.
+Other graders execute submitted Python, Rust or Go code in host subprocesses; environment
+filtering, temporary directories and process timeouts do not provide filesystem/network
+security isolation. Running submitted code on the normal authenticated host is not an
+approved campaign configuration.
+
+The campaign runner prints the frozen plan by default. Both `--real` and
+`--allow-preliminary-campaign` remain necessary, but they cannot bypass grading isolation.
+The public `real_run()` reloads the frozen configuration and refuses with
+`grading isolation contract is not verified` before artifact creation or any executable,
+version, toolchain or model execution. Real campaign execution is currently disabled.
+No risk acknowledgement can override this gate; verifying isolation requires a separately
+reviewed contract change. The private prepared execution helper is exercised with mocks only.
+
+Semantic validation freezes exact executable SHA/version, toolchain versions and version
+arguments, the entire cold/warm protocol, typed live evidence, smoke counters/readiness
+and retained failed evidence. Future approved execution must run identity preflight once
+before executing jobs. Seed 14, three repetitions, zero retries, timeout 120, model and
+reasoning remain frozen. Vanilla/native commands are identical; only the native public
+instruction differs. Normal CODEX_HOME and keyring routing are preserved, with ignored
+user config/rules, no credential copies or auth files. No product telemetry or Router
+runtime changes are involved.
 
 Private gitignored run directories reject existing identifiers and symlinks. Each
 completed normalized job is saved immediately; Ctrl-C kills the active process group
@@ -295,17 +303,18 @@ stay null and cost comparison still requires quality-equivalent matched runs.
 The dry-run remains credential-free and synthetic. Real mode was not executed during
 this implementation or its tests; all runner tests use fakes/mocks.
 
-Recommended next #14 task: **B — accept or expand representative task coverage before
-spending on 42 runs**. Five of seven fixtures are Python or JSON-based IaC; Rust and Go
-each cover one small task, CI work and large repository lifecycles are absent, and
-legacy/Router variants remain unavailable. Repeating these compact fixtures improves
-harness evidence but cannot satisfy the full lifecycle scope or establish comparative
-product performance. First agree a bounded language/task coverage matrix and grader
-acceptance criteria, then separately approve execution and its cost. The current 42
-jobs may be approved later as explicitly preliminary harness evidence. Neither option
-is executed here, and no large new suite is introduced.
+Recommended next #14 task: **Design and verify the grading isolation boundary, then
+finalize representative coverage.** Define a boundary that prevents submitted code from
+accessing the authenticated host's files, credentials and network, and test attempted
+escapes before accepting it. No container/orchestration system is implemented here.
+Then accept or expand a bounded language/task matrix and independent grader criteria
+before spending on 42 runs. Five of seven fixtures are Python or JSON-based IaC; Rust
+and Go each cover one small task, CI lifecycle and large repositories are absent, and
+legacy/Router variants remain unavailable. Repetitions cannot fill those coverage gaps.
+The current 42 jobs may be separately approved later as preliminary harness evidence;
+no coverage expansion or campaign execution occurs here.
 
-Implementation validation: 53 Python tests, docs-check, just check, nextest (85/85),
+Implementation validation: 54 Python tests, docs-check, just check, nextest (85/85),
 diff checks and bounded benchmark context pass using fake/mocked runners only.
 Local deny is skipped because the advisory cache is mounted read-only; exact-head
 green Security CI and check/review success from GitHub Actions app 15368 are required

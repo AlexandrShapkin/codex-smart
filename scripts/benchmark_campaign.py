@@ -30,8 +30,14 @@ def load(path=CONFIG):
                 'harness_sha256': Path(b.__file__), 'campaign_runner_sha256': Path(__file__)}
     if any(c['pins'][key] != sha(file) for key, file in expected.items()):
         raise ValueError('campaign source mismatch; explicitly review and repin')
-    if c['codex']['version'] != '0.162.1' or len(c['codex']['executable_sha256']) != 64:
-        raise ValueError('unsupported Codex reference')
+    require_frozen(c['codex']['version'], '0.162.1', 'Codex version')
+    require_frozen(c['codex']['executable_sha256'],
+                   '89cc44e820780120ba2c8bc4585c014815bdc7a1fc494c337a585a2c78dc59eb',
+                   'Codex executable SHA')
+    require_frozen(c.get('toolchains'), {
+        'rustc': {'version': 'rustc 1.98.0 (88d9e12ae 2026-08-18)', 'version_arguments': ['--version']},
+        'go': {'version': 'go version go1.27.2-X:nodwarf5 linux/amd64', 'version_arguments': ['version']},
+        'python3': {'version': 'Python 3.14.8', 'version_arguments': ['--version']}}, 'toolchains')
     if c['variants'] != ['vanilla', 'native'] or c['repetitions'] != 3 or c['retries'] != 0:
         raise ValueError('initial campaign bounds')
     if c['seeds'] != [14] or c['timeout_seconds'] != 120 or c['planned_primary_runs'] != 42:
@@ -44,8 +50,10 @@ def load(path=CONFIG):
     if any(c['settings']['auth'][key] is not False
            for key in ('credentials_copied', 'user_config_loaded')):
         raise ValueError('auth evidence must use typed booleans')
-    if c['cold_warm']['classification'] != 'unknown':
-        raise ValueError('cache protocol mismatch')
+    require_frozen(c.get('cold_warm'), {
+        'classification': 'unknown',
+        'protocol': 'fresh disposable fixture per attempt; inherited host caches not controlled; do not claim cold or warm',
+        'index': 'not applicable: no indexing requested', 'bootstrap': 'unknown'}, 'cache protocol')
     require_frozen(c.get('status'), 'frozen-plan-live-contract-verified', 'campaign status')
     require_frozen(c.get('live_contract'), {
         'status': 'verified', 'startup': 'verified', 'auth_routing': 'verified',
@@ -59,6 +67,7 @@ def load(path=CONFIG):
         'fresh_input': None, 'total': None, 'full_tool_calls': None}, 'smoke metrics')
     require_frozen(c.get('readiness'), {
         'real_runner_contract': 'prepared', 'representative_campaign_ready': False,
+        'grading_isolation_contract': 'required-not-verified',
         'reason': 'representative task coverage has not yet been accepted'}, 'readiness')
     history = c.get('historical_live_attempts')
     if not isinstance(history, list) or len(history) != 1 or not isinstance(history[0], dict):
@@ -178,6 +187,8 @@ def real_run(executable, run_id, path=CONFIG, *, allow_preliminary_campaign=Fals
     if allow_preliminary_campaign is not True:
         raise ValueError('explicit preliminary campaign acknowledgement required')
     c = load(path)
+    if c['readiness']['grading_isolation_contract'] != 'verified':
+        raise ValueError('grading isolation contract is not verified')
     real_preflight(c, executable)
     artifacts = artifact_directory(run_id)
     return _real_run(c, executable, artifacts, path)
