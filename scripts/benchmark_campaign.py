@@ -31,8 +31,12 @@ def load(path=CONFIG):
         raise ValueError('initial campaign ordering/bounds')
     if c['settings'] != {'model': 'gpt-6-sol', 'reasoning_effort': 'low', 'sandbox': 'workspace-write',
                          'ignore_user_config': True, 'ignore_rules': True, 'ephemeral': True,
-                         'auth': 'existing Codex authentication; unchanged between variants'}:
+                         'auth': {'source': 'existing normal CODEX_HOME', 'credential_store': 'keyring',
+                                  'credentials_copied': False, 'user_config_loaded': False}}:
         raise ValueError('unreviewed settings')
+    if any(c['settings']['auth'][key] is not False
+           for key in ('credentials_copied', 'user_config_loaded')):
+        raise ValueError('auth evidence must use typed booleans')
     if c['cold_warm']['classification'] != 'unknown':
         raise ValueError('cache protocol mismatch')
     m = b.load_manifest()
@@ -81,6 +85,7 @@ def toolchains(c):
 def references(c, path):
     return {**c['pins'], 'campaign_sha256': sha(path), 'campaign_id': c['campaign_id'],
             'codex_version': c['codex']['version'], 'executable_sha256': c['codex']['executable_sha256'],
+            'auth': c['settings']['auth'],
             'model': c['settings']['model'], 'settings': 'isolated-exec-v2-low',
             'runner': 'fake-v1', 'execution_kind': 'synthetic-self-validation',
             'toolchains': {k: v['version'] for k, v in c['toolchains'].items()}}

@@ -179,6 +179,13 @@
             "items": {
               "type": "string"
             }
+          },
+          "terminal_status": {
+            "enum": [
+              "completed",
+              "failed",
+              "missing"
+            ]
           }
         },
         "required": [
@@ -193,7 +200,8 @@
           "tokens",
           "observed_tool_calls",
           "tool_calls",
-          "errors"
+          "errors",
+          "terminal_status"
         ]
       }
     },
