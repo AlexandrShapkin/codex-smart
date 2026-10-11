@@ -2,7 +2,7 @@
 
 Reference policy is deterministic Rust. Native tools are the default. Explicit task hints select architecture/impact → CodeGraph, symbol refactoring → Serena, external API → Context7, remote CI → GitHub. A missing capability yields an explicit native fallback and lower confidence, never a false availability claim.
 
-Medium reasoning is the default. Architecture, migration, security and refactoring select High. Repository size alone never selects reasoning. This initial preview does not enable MCP or change Codex profiles. Router v2 with risk composition, validated integration and bounded context remains pending.
+Medium reasoning is the default. Architecture, migration, security and refactoring select High. Repository size alone never selects reasoning. This initial preview does not enable MCP or change Codex profiles. Router v2 pure policy composition is validated; production launch integration remains deferred.
 
 ## Router v2 task/risk foundation (#9)
 
@@ -252,6 +252,8 @@ prerequisites, including blocked current contracts, without initiating any execu
 Validation includes pure prerequisite precedence tests and in-memory failure/degraded
 sessions across #9 → #10 → #11 → #12 → explanation; invariant loops cover capability
 and risk degradation, ambiguity, additional needs, prerequisite failures, ordering,
-duplicates, external size metadata and context insufficiency. #13 remains unresolved;
-Router is partial. No production Verified producer, probes, automatic evidence execution
-or production Router activation is delivered. Rhai need will be assessed separately.
+duplicates, external size metadata and context insufficiency. #13 is satisfied by the accepted [ADR-0004](decisions/0004-rhai-deferred.md):
+Router v2 remains Rust-only and its policy composition is validated. No production
+Verified producer, probes, automatic evidence execution or production Router
+activation is delivered. Independent benchmark evidence is next; Rhai is deferred
+pending demonstrated need and is not a benchmark variant.

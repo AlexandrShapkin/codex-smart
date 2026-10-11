@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "active": "router",
+  "active": "benchmark",
   "stages": [
     {
       "id": "baseline",
@@ -125,7 +125,7 @@
       "id": "router",
       "title": "Router v2 composition and controlled integration",
       "milestone": "0.2 Router v2",
-      "progress": "partial",
+      "progress": "validated",
       "depends_on": [
         "doctor"
       ],
@@ -153,7 +153,8 @@
         "crates/codex-smart-core/src/config.rs"
       ],
       "evidence": [
-        "docs/routing.md"
+        "docs/routing.md",
+        "docs/decisions/0004-rhai-deferred.md"
       ]
     },
     {

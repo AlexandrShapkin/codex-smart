@@ -10,7 +10,7 @@ No size-only policy, mandatory heavy MCP, hidden profile changes, custom agent o
 
 ## Acceptance
 
-All P0 safety acceptance gates are satisfied before activation. Deterministic auditable decisions preserve supported explicit overrides, tests and escalation under missing capabilities.
+Router v2 Rust policy composition is validated: deterministic auditable decisions preserve supported explicit overrides, tests and impact analysis under missing capabilities. #13 is completed by the accepted ADR-0004 deferral. This acceptance does not claim production readiness or activation; all P0 safety gates still apply before future activation.
 
 ## Validation
 
@@ -33,7 +33,16 @@ from production launch; see the
 The #12 pure fallback/evidence plan preserves verification under degraded decisions;
 see the [fallback contract](../routing.md#router-v2-fallback-and-bounded-evidence-plan-12).
 No automatic evidence execution or production Router activation is delivered.
-Router remains partial: #13 is unresolved, and Rhai need is not established.
-No capability activation is delivered.
+The accepted [ADR-0004](../decisions/0004-rhai-deferred.md) completes #13 through
+evaluation and documented deferral: Router v2 remains Rust-only. Merged policy
+slices are [#27](https://github.com/AlexandrShapkin/codex-smart/pull/27),
+[#28](https://github.com/AlexandrShapkin/codex-smart/pull/28),
+[#29](https://github.com/AlexandrShapkin/codex-smart/pull/29) and
+[#30](https://github.com/AlexandrShapkin/codex-smart/pull/30).
 
-Current reasoning/config remain preview. Rhai requires a separate ADR and enforced sandbox only if justified.
+Production run remains passthrough. No automatic backend activation or production
+Verified capability producer is delivered; reasoning argv planning stays separate
+from launch. Independent benchmark evidence is next, with quality gates that can
+reject the policy; no benchmark success or Rhai variant is assumed. Future
+activation/hardening depends on measured evidence. Reconsidering Rhai requires the
+evidence and safety gates in ADR-0004.

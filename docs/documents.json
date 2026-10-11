@@ -130,11 +130,12 @@
     },
     {
       "path": "docs/decisions/0004-rhai-deferred.md",
-      "title": "ADR-0004: Defer Rhai until reference policy is validated",
+      "title": "ADR-0004: Rust-only Router v2 and evidence-gated Rhai deferral",
       "owner": "architecture",
       "role": "contract",
       "stages": [
-        "baseline"
+        "baseline",
+        "router"
       ]
     },
     {
