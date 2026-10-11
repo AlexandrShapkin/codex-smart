@@ -1,5 +1,7 @@
 use crate::capability::{Capability, Inventory};
 
+pub mod assessment;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Task {
     #[default]

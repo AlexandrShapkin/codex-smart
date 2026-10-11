@@ -4,6 +4,12 @@ Two crates: `codex-smart-core` holds typed capability inventory, policy, config,
 
 Level A prepares capabilities, risk, reasoning and auditable fallback. Level B is one Codex session deciding implementation and verification. Explicit task hints precede costly discovery. Pure decisions accept an inventory; host adapters never leak into unit tests.
 
+Router v2's separate task/risk foundation accepts structured explicit hints and cheap
+already collected semantic facts, then returns typed task, risk, ambiguity and stable
+reasons. Its pure boundary excludes repository size, capability selection and reasoning
+effort. The future decision engine consumes this assessment; the legacy preview stays
+unchanged until that integration. See [routing](routing.md).
+
 Read-only commands inspect bounded PATH and local filesystem evidence. Doctor additionally reads bounded local Git config and explicitly supplied Codex TOML without executing tools or following referenced stores; see [the Doctor contract](doctor.md). Presence is distinguished from readiness. MCP, index health and auth are unknown until a future explicitly controlled compatibility probe can validate them without mutation. Runtime version strings are not obtained by launching arbitrary wrappers.
 
 The process layer resolves an absolute executable path, records file metadata, rechecks it before execution and uses `Command` without a shell. Unix replaces the launcher with Codex so terminal/signals/exit code are preserved. Argument bytes, including non-UTF8, are passed unchanged. Read-only dry-run omits argument values. This is passthrough execution: preview policy is not enforced against unverified MCP integrations.

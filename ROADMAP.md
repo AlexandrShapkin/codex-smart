@@ -38,9 +38,10 @@ Evidence: [docs/diagnostics/2026-10-06-doctor.md](docs/diagnostics/2026-10-06-do
 
 ## router — Router v2 composition and controlled integration
 
-Milestone: 0.2 Router v2; recorded progress: **planned**.
+Milestone: 0.2 Router v2; recorded progress: **partial**.
 Dependencies: doctor.
 [Stage contract](docs/stages/router.md); issues: [#9](https://github.com/AlexandrShapkin/codex-smart/issues/9), [#10](https://github.com/AlexandrShapkin/codex-smart/issues/10), [#11](https://github.com/AlexandrShapkin/codex-smart/issues/11), [#12](https://github.com/AlexandrShapkin/codex-smart/issues/12), [#13](https://github.com/AlexandrShapkin/codex-smart/issues/13).
+Evidence: [docs/routing.md](docs/routing.md).
 
 ## benchmark — Full development benchmark and aggregate telemetry
 
