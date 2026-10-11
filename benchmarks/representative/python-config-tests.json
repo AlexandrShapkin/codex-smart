@@ -15,5 +15,20 @@
       "test_config.py": "import unittest\nclass Contract(unittest.TestCase):\n def test_valid(self): self.assertTrue(True)\n"
     }
   ],
-  "oracle": null
+  "oracle": null,
+  "structure": {
+    "initial_file_count": 3,
+    "reference_changed_file_count": 1,
+    "support_files": [
+      "service.py"
+    ],
+    "dependency_edges": [
+      {
+        "caller": "service.py",
+        "callee": "config.py",
+        "witness": "from config import parse_bool",
+        "symbol": "parse_bool"
+      }
+    ]
+  }
 }

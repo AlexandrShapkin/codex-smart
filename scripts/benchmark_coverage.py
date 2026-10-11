@@ -16,6 +16,7 @@ import representative_graders as graders
 MANIFEST = b.ROOT/'representative-manifest.json'
 CAMPAIGN = b.ROOT/'representative-campaign-v1.json'
 DOMAINS = {'Rust', 'Go', 'Python', 'infrastructure', 'repository/CI', 'exploration'}
+CARGO_VERSION = 'cargo 1.98.0 (797e8a9bc 2026-08-05)'
 CLASSES = {'bugfix', 'feature', 'API', 'tests', 'refactor', 'security', 'CI', 'inspection'}
 TIERS = {'focused', 'multi-file', 'cross-cutting'}
 LIFECYCLE = {'inspect', 'edit', 'test', 'build/check', 'impact-analysis'}
@@ -67,6 +68,7 @@ def validate_matrix(m):
             raise ValueError('language task diversity')
     if sum(s['complexity_tier'] != 'focused' for s in rows) < 6:
         raise ValueError('insufficient cross-file work')
+    for scenario in rows: fixture(scenario)
     return m
 
 
@@ -75,19 +77,20 @@ def fixture(s):
     if path != Path('representative')/(s['id']+'.json') or '..' in path.parts or not path.is_relative_to('representative'):
         raise ValueError('fixture path')
     f = json.loads((b.ROOT/path).read_text())
-    if set(f) != {'files','reference','wrong_controls','oracle'} or not isinstance(f['wrong_controls'], list) or len(f['wrong_controls']) < 2:
+    if set(f) != {'files','reference','wrong_controls','oracle','structure'} or not isinstance(f['wrong_controls'], list) or len(f['wrong_controls']) < 2:
         raise ValueError('independent controls required')
     for files in [f['files'], f['reference'], *f['wrong_controls']]:
         if not isinstance(files, dict) or not files:
             raise ValueError('fixture content')
         for name, content in files.items():
             p = Path(name)
-            if p.is_absolute() or '..' in p.parts or type(content) is not str or any(word in name.lower() for word in ['oracle','independent','reference','solution','wrong']):
+            if p.is_absolute() or '..' in p.parts or type(content) is not str or re.search(r'(^|[/_.-])(oracle|independent|reference|solution|wrong)([/_.-]|$)', name.lower()):
                 raise ValueError('unsafe or leaking staged file')
     if b.digest(f['files']) != s['snapshot']:
         raise ValueError('snapshot mismatch')
-    visible = s['prompt'].lower() + '\n' + '\n'.join(f['files']).lower()
-    if any(word in visible for word in ['wrong_control', 'oracle', 'reference solution', 'grader assertion']):
+    visible = s['prompt'].lower() + '\n' + '\n'.join(f['files']).lower() + '\n' + '\n'.join(f['files'].values()).lower()
+    if any(word in visible for word in ['wrong_control', 'oracle', 'reference solution', 'grader assertion',
+                                             'initial_file_count', 'reference_changed_file_count', 'support_files', 'dependency_edges']):
         raise ValueError('benchmark leakage')
     # Nontrivial complete changed reference files must not appear in initial files
     # or prompt. This deterministic check cannot replace semantic human review.
@@ -95,13 +98,76 @@ def fixture(s):
     for n, code in f['reference'].items():
         if len(code) > 40 and code != f['files'].get(n) and code in initial:
             raise ValueError('reference leakage')
+    validate_structure(s, f)
     return f
 
 
+def validate_structure(s, f):
+    evidence = f['structure']
+    if not isinstance(evidence, dict) or set(evidence) != {
+            'initial_file_count','reference_changed_file_count','support_files','dependency_edges'}:
+        raise ValueError('structural evidence schema')
+    initial, reference = f['files'], f['reference']
+    changed = {n for n,c in reference.items() if initial.get(n) != c}
+    exact(evidence['initial_file_count'],len(initial),'initial file count')
+    exact(evidence['reference_changed_file_count'],len(changed),'changed file count')
+    support = evidence['support_files']
+    if (not isinstance(support,list) or not support or any(type(n) is not str for n in support)
+            or len(support) != len(set(support)) or not set(support) <= set(initial)
+            or set(support) & changed):
+        raise ValueError('missing or mutable support file')
+    edges = evidence['dependency_edges']
+    if not isinstance(edges,list) or not edges:
+        raise ValueError('dependency evidence required')
+    graph, pairs = {}, set()
+    for e in edges:
+        if not isinstance(e,dict) or set(e) != {'caller','callee','witness','symbol'}:
+            raise ValueError('dependency edge schema')
+        if any(type(v) is not str or not v for v in e.values()):
+            raise ValueError('dependency edge values')
+        a,b,witness,symbol = (e[k] for k in ['caller','callee','witness','symbol'])
+        if (a not in initial or b not in initial or a == b or (a,b) in pairs
+                or witness not in initial[a] or symbol not in initial[b]):
+            raise ValueError('dependency evidence mismatch')
+        pairs.add((a,b));graph.setdefault(a,set()).add(b)
+    involved = {name for pair in pairs for name in pair}
+    if not set(support) <= involved:
+        raise ValueError('support outside dependency surface')
+    tier = s['complexity_tier']
+    # Added tests/docs do not satisfy the existing behavior/API change threshold.
+    behavior = {n for n in changed & set(initial) if Path(n).suffix in {'.rs','.go','.py','.json'}}
+    minimum = {'focused':(1,0), 'multi-file':(4,2), 'cross-cutting':(5,3)}[tier]
+    if len(initial) < minimum[0] or len(behavior & involved) < minimum[1]:
+        raise ValueError('complexity structural minimum')
+    if tier != 'focused' and not any(
+            any(n in changed & involved and patch.get(n) == initial[n] for n in initial)
+            for patch in f['wrong_controls']):
+        raise ValueError('incomplete-impact wrong control required')
+    if tier == 'cross-cutting' and not any(
+            graph.get(b,set()) - {a} for a,children in graph.items() for b in children):
+        raise ValueError('cross-cutting dependency path required')
+    if not any(Path(n).name.lower() not in s['prompt'].lower() for n in support):
+        raise ValueError('supporting context must not be a named target')
+    if tier == 'focused' and s['risk_dimension'] not in {'test-detection-strength','conditional-call-graph'}:
+        raise ValueError('focused measurement purpose unreviewed')
+
+
+def coverage_report(m=None):
+    m = load_manifest() if m is None else validate_matrix(m)
+    rows = []
+    for s in m['scenarios']:
+        structure = fixture(s)['structure']
+        rows.append({'scenario':s['id'], 'domain':s['language_or_domain'],
+                     'task_classes':s['task_class'], 'complexity_tier':s['complexity_tier'],
+                     'initial_file_count':structure['initial_file_count'],
+                     'reference_changed_file_count':structure['reference_changed_file_count'],
+                     'support_file_count':len(structure['support_files']),
+                     'lifecycle_requirements':s['lifecycle_requirements']})
+    return rows
+
+
 def load_manifest(path=MANIFEST):
-    m = validate_matrix(json.loads(Path(path).read_text()))
-    for s in m['scenarios']: fixture(s)
-    return m
+    return validate_matrix(json.loads(Path(path).read_text()))
 
 
 def expected_campaign(m):
@@ -114,7 +180,7 @@ def expected_campaign(m):
             'unavailable_variants':{'legacy':'provenance archive absent','router-v2':'no verified decision-applying adapter'},
             'repetitions':2, 'seeds':[14], 'retries':0, 'timeout_seconds':120,
             'planned_primary_runs':len(m['scenarios'])*2*2, 'maximum_model_calls':len(m['scenarios'])*2*2,
-            'settings':historical['settings'], 'codex':historical['codex'], 'toolchains':historical['toolchains'],
+            'settings':historical['settings'], 'codex':historical['codex'], 'toolchains':historical['toolchains'] | {'cargo':{'version':CARGO_VERSION,'version_arguments':['--version']}},
             'cold_warm':historical['cold_warm'],
             'live_contract':{'status':'inherited-execution-contract-only','source_campaign':'initial-development-v1',
                              'scope':'Codex startup/auth/JSONL only; not representative grading compatibility'},
@@ -137,6 +203,9 @@ def load_campaign(path=CAMPAIGN):
 
 def trusted_controls():
     load_campaign()  # Pin references/oracles before any trusted-control execution.
+    with tempfile.TemporaryDirectory(prefix='representative-version-') as tmp:
+        if not graders.command(['cargo','--version'],Path(tmp),expected_stdout=CARGO_VERSION):
+            raise ValueError('Cargo version mismatch; trusted controls refused')
     results = []
     for s in load_manifest()['scenarios']:
         f = fixture(s)
@@ -158,7 +227,8 @@ def main():
     args = parser.parse_args()
     c = load_campaign()
     output = {'campaign_id':c['campaign_id'], 'planned_jobs':c['planned_primary_runs'],
-              'model_execution_enabled':False, 'representative_campaign_ready':False}
+              'model_execution_enabled':False, 'representative_campaign_ready':False,
+              'coverage_report':coverage_report()}
     if args.trusted_controls:
         output['controls']=trusted_controls()
     print(json.dumps(output,indent=2))

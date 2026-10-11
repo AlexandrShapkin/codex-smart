@@ -1,8 +1,11 @@
 {
   "files": {
-    "policy.json": "{\"api_port\": 8443, \"private_cidr\": \"10.42.0.0/16\"}",
+    "policy.json": "{\"api_port\": 8443, \"private_cidr\": \"10.42.0.0/16\", \"profile\": \"private-api\"}",
     "deployment.json": "{\"api\": {\"image\": \"example/api:2.4.1\", \"replicas\": 3, \"runAsNonRoot\": false, \"allowPrivilegeEscalation\": true, \"readOnlyRootFilesystem\": false, \"capabilities\": [\"NET_ADMIN\"]}, \"audit\": {\"enabled\": true, \"retention_days\": 30}}",
-    "ingress.json": "{\"ports\": [8443, 22], \"cidrs\": [\"0.0.0.0/0\"]}"
+    "ingress.json": "{\"ports\": [8443, 22], \"cidrs\": [\"0.0.0.0/0\"]}",
+    "service.json": "{\"deployment\": \"deployment.json\", \"ingress\": \"ingress.json\", \"policy\": \"policy.json\", \"healthcheck\": {\"path\": \"/health\", \"port\": 8443}, \"audit_policy\": \"audit-policy.json\"}",
+    "audit-policy.json": "{\"service\": \"audit\", \"retention_days\": 30, \"access\": \"internal\"}",
+    "README.md": "Service configuration links deployment, ingress and the local policy. Healthcheck and audit settings must remain intact. Validate JSON contracts locally; do not deploy or run infrastructure providers.\n"
   },
   "reference": {
     "deployment.json": "{\"api\": {\"image\": \"example/api:2.4.1\", \"replicas\": 3, \"runAsNonRoot\": true, \"allowPrivilegeEscalation\": false, \"readOnlyRootFilesystem\": true, \"capabilities\": []}, \"audit\": {\"enabled\": true, \"retention_days\": 30}}",
@@ -10,7 +13,7 @@
   },
   "wrong_controls": [
     {
-      "ingress.json": "{\"ports\": [8443], \"cidrs\": [\"0.0.0.0/0\"]}"
+      "ingress.json": "{\"ports\": [8443, 22], \"cidrs\": [\"0.0.0.0/0\"]}"
     },
     {
       "deployment.json": "{\"api\": {\"image\": \"example/api:2.4.1\", \"replicas\": 3, \"runAsNonRoot\": true, \"allowPrivilegeEscalation\": true, \"readOnlyRootFilesystem\": true, \"capabilities\": []}, \"audit\": {\"enabled\": true, \"retention_days\": 30}}"
@@ -39,5 +42,40 @@
         "10.42.0.0/16"
       ]
     }
+  },
+  "structure": {
+    "initial_file_count": 6,
+    "reference_changed_file_count": 2,
+    "support_files": [
+      "service.json",
+      "policy.json",
+      "audit-policy.json"
+    ],
+    "dependency_edges": [
+      {
+        "caller": "service.json",
+        "callee": "deployment.json",
+        "witness": "\"deployment.json\"",
+        "symbol": "api"
+      },
+      {
+        "caller": "service.json",
+        "callee": "ingress.json",
+        "witness": "\"ingress.json\"",
+        "symbol": "ports"
+      },
+      {
+        "caller": "service.json",
+        "callee": "policy.json",
+        "witness": "\"policy.json\"",
+        "symbol": "api_port"
+      },
+      {
+        "caller": "service.json",
+        "callee": "audit-policy.json",
+        "witness": "\"audit-policy.json\"",
+        "symbol": "audit"
+      }
+    ]
   }
 }

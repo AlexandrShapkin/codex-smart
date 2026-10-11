@@ -27,7 +27,10 @@ unchanged and unexecuted. The successful JSON-only IaC smoke verifies the Codex
 execution contract; it is not comparative evidence. Ten distinct development tasks
 now form a separate representative-development-v1 design with independent trusted
 controls and a 40-call maximum (vanilla/native, two repetitions, zero retries).
-Coverage metadata is measurement-only. Review matrix acceptance independently of
+Structural realism is strengthened with functional supporting context, hidden
+dependency evidence, tier thresholds and pinned Cargo check/test controls. This is
+purpose-built representative synthetic coverage, not large real-world repository
+evidence. Coverage metadata is measurement-only. Review matrix acceptance independently of
 host qualification; no measured result, winner or savings exists.
 
 Current-host capability investigation is complete: systemd/cgroup-v2 present but

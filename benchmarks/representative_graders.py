@@ -10,14 +10,17 @@ import sys
 import tempfile
 
 
-def command(argv, cwd):
+def command(argv, cwd, expected_stdout=None):
     env = {'PATH': os.environ.get('PATH', '/usr/bin:/bin'),
            'GOCACHE': str(cwd/'go-cache'), 'GOPROXY': 'off', 'GOSUMDB': 'off',
-           'GOTOOLCHAIN': 'local', 'PYTHONDONTWRITEBYTECODE': '1'}
+           'GOTOOLCHAIN': 'local', 'PYTHONDONTWRITEBYTECODE': '1',
+           'CARGO_HOME': str(cwd/'cargo-home'), 'CARGO_NET_OFFLINE': 'true'}
     # A timeout/environment allowlist is not a security boundary.
     try:
-        return subprocess.run(argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
-                              capture_output=True, timeout=25).returncode == 0
+        result = subprocess.run(argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+                                capture_output=True, timeout=25)
+        return result.returncode == 0 and (expected_stdout is None or
+                                          result.stdout.decode().strip() == expected_stdout)
     except (OSError, subprocess.TimeoutExpired):
         return False
 
@@ -64,11 +67,10 @@ def check(scenario, fixture, workspace):
                     dest.parent.mkdir(parents=True, exist_ok=True)
                     dest.write_text(p.read_text())
             if domain == 'Rust':
-                (oracle/'independent.rs').write_text(fixture['oracle'])
-                return (command(['rustc', '--test', 'lib.rs', '-o', 'local-tests'], oracle)
-                        and command([str(oracle/'local-tests')], oracle)
-                        and command(['rustc', '--test', 'independent.rs', '-o', 'independent'], oracle)
-                        and command([str(oracle/'independent')], oracle))
+                (oracle/'tests').mkdir(exist_ok=True)
+                (oracle/'tests'/'independent.rs').write_text(fixture['oracle'])
+                return (command(['cargo','check','--locked','--offline'],oracle)
+                        and command(['cargo','test','--locked','--offline'],oracle))
             if domain == 'Go':
                 (oracle/'independent_test.go').write_text(fixture['oracle'])
                 return command(['go', 'test', '-count=1', './...'], oracle)

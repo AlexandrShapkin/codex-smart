@@ -72,6 +72,12 @@
       "version_arguments": [
         "--version"
       ]
+    },
+    "cargo": {
+      "version": "cargo 1.98.0 (797e8a9bc 2026-08-05)",
+      "version_arguments": [
+        "--version"
+      ]
     }
   },
   "cold_warm": {
@@ -96,20 +102,20 @@
   },
   "measured_records": [],
   "pins": {
-    "manifest_sha256": "17515d454d0cca894bd81812a5b0d0b4b8ceaf91b614d6cc90e11f47ffa0de5a",
-    "grader_sha256": "80c495423a2fab893b7671685d6908c3e0b55ffbd408fc7546f2e8bf36ad5251",
-    "coverage_validator_sha256": "b5a70aeccae7392aa64791f9dd34a88bc53f00eaa1e5623f9e7ada7b98092c31",
+    "manifest_sha256": "90feb15e92815b3b9d6269f33a2f85b76b52350cdad72eb72a3f61916ac1ee7e",
+    "grader_sha256": "5065eac953924ad13614670a12f906e99c5381cdff0fc536b5e6dd8d14a2c372",
+    "coverage_validator_sha256": "0b7337512d298fc946267d836808ba50531585719ebb4f2922a21f7335f8cb1b",
     "fixture_sha256": {
-      "rust-ledger": "afe92345beeb6700cbef130b26bde048e84f5b936c7a658897072b5bdcd374a7",
-      "rust-duration": "d80057d9b7eb279b3ffdc8086862966f28a4b38d6454f7cba374d021d3d5c728",
-      "go-pagination": "06bb3dc5c22c6cf5070e88c16a112505e3b8013a321e43e2a27ea8cd1d7c6817",
-      "go-reservations": "dcc71ce26bb66804b1279c3fa67190bc96cd3789d0e737b441a10e8b704ab379",
-      "python-config-tests": "7e9ff981e5748f6b8bfdfebe7fa6d5b351b1625aa8caa05f8ffcc78bc9c24034",
-      "python-billing": "d323c0457d49c5764851acc758236a0dcc3c3cf8b9f747f92cea8269678edfc8",
-      "python-result-api": "31782650085d7ff2eeef0428fded22ecdd9a52152640bb47a754ad6e96fbd0b6",
-      "infra-service-policy": "629d5b625b6e6310be1cd9f91d2cf5a77159df69f7b001b7d04e5afc4c61a3a9",
-      "repo-ci-gates": "43d994e6e287f160aa68ee975496893717872f0059b3343f823b65b8ce892251",
-      "explore-notification": "d9d511f2bd74dfc1cc9d7313aa50c3fc1c593c6202e4d1bc369be505be7251b2"
+      "rust-ledger": "a1264d1c636814b10236bf3274955c8784ba36f6072b087c969494d9075f813c",
+      "rust-duration": "efc103d011c309c4f7e42f82c399db717b912a7fad833e257ba930c16742713b",
+      "go-pagination": "631b3cdd60ad5258a8d189f830df1435a6aaf23d01b5cfe58ea58b7da6b135b0",
+      "go-reservations": "dd1c9d8762a6f6a5a7a5385e377da35eafa953bd52965c38ecb0e768327cd5c6",
+      "python-config-tests": "33ca7a018e2229867d8824319c126265b245f4b87261bded687e35866b92e829",
+      "python-billing": "e369e8aba2afd01996e2d0568c6bbbc7aa08f0004b2814e562476c829266353e",
+      "python-result-api": "cdf0d0141060338ce390b09a1f71014fc8b9525382349338b397c76576f808f8",
+      "infra-service-policy": "cdfeecb3e48236fbe484e6e506562439dd748067eafcaa6a102a79558765c754",
+      "repo-ci-gates": "8970d13b5b4c52ce49693f61ea80b9e7a46f0729b58b0e927d29d37280617ae0",
+      "explore-notification": "ae0aba81970dad6be00294b09cd2ba2a1770482c9a13d02083c003518569027d"
     }
   }
 }

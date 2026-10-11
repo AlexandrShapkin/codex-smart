@@ -20,7 +20,7 @@
       "risk_dimension": "signed-accounting",
       "prompt": "Repair refund accounting: posted refunds must reduce the account balance while pending entries remain excluded. Keep the public interfaces stable, add regression tests, and validate the complete ledger workflow.",
       "fixture": "representative/rust-ledger.json",
-      "snapshot": "3c437a90e5d47654d0c2fac5103f4586a708cbdef34a79b14207974bef077234"
+      "snapshot": "5edb96ff822323b3675344f0136c5fb9742d708ffe5761098acf96f4330db38c"
     },
     {
       "id": "rust-duration",
@@ -39,9 +39,9 @@
         "impact-analysis"
       ],
       "risk_dimension": "caller-unit-consistency",
-      "prompt": "Replace the ambiguous tuple returned by duration parsing with a named Duration value exposing hours and minutes. Migrate formatting and scheduling callers without changing accepted input or total-minute behavior. Remove the tuple API and validate all callers.",
+      "prompt": "Replace the ambiguous tuple returned by duration parsing with a named Duration value exposing hours and minutes. Migrate all consumers without changing accepted input, output formatting or total-minute behavior. Remove the tuple API and validate the complete project workflow.",
       "fixture": "representative/rust-duration.json",
-      "snapshot": "1f983084d6401346d683fda2526b1794b314dbf8624273ed4193fa73dece6788"
+      "snapshot": "cf216d7a0c21f374697741cbc20915d7a7b645c4f8045faf9baf17c18b959cfd"
     },
     {
       "id": "go-pagination",
@@ -62,7 +62,7 @@
       "risk_dimension": "pagination-boundaries",
       "prompt": "Add cursor pagination to Catalog: Page returns items and a next offset, using -1 when exhausted. Invalid offsets or nonpositive limits return an empty exhausted page. Update the HTTP-independent response adapter to preserve item order and expose the cursor. Add tests and validate the package.",
       "fixture": "representative/go-pagination.json",
-      "snapshot": "9b941ed3694299e6b4e8571f4dd83c8185f18af787c5bb6561a7c88c81660f43"
+      "snapshot": "2acd1bc249cec519679477c6c6404854b9893175472b7631f2a4afd85ea58403"
     },
     {
       "id": "go-reservations",
@@ -83,7 +83,7 @@
       "risk_dimension": "expiry-boundary",
       "prompt": "Fix availability so expired reservations stop consuming capacity at their exact expiration time. Share the active-reservation rule between availability and the status report; canceled reservations must stay excluded. Preserve interfaces and validate boundary behavior.",
       "fixture": "representative/go-reservations.json",
-      "snapshot": "9f81c1fa574fbe5e41115778abf229a56782773283d1a7e62f0bf0dd0d3608b3"
+      "snapshot": "755161e27082556959b83d54e988c8406e49787a6e89e841141ff8014b6c16f9"
     },
     {
       "id": "python-config-tests",
@@ -121,7 +121,7 @@
       "risk_dimension": "monetary-rounding",
       "prompt": "Implement percentage discounts in integer cents, rounding each line down after multiplication. Reject percentages outside 0..100. Both checkout totals and receipt lines must use the discounted amounts consistently; preserve line ordering and add regression coverage.",
       "fixture": "representative/python-billing.json",
-      "snapshot": "0ee77157e564c846b0d810f98b2b12a0c415c940bfd04438e5512b341a5af3ea"
+      "snapshot": "62870c9d9425b0902ee4794fcf7db435b17f6c5c757866cd262470d689dbd71c"
     },
     {
       "id": "python-result-api",
@@ -139,9 +139,9 @@
         "impact-analysis"
       ],
       "risk_dimension": "absence-versus-falsy",
-      "prompt": "Migrate lookup from an optional scalar to a LookupResult with found and value fields, so missing keys are distinct from stored falsy values. Update the cache adapter and rendering caller. Preserve the existing rendered missing marker and scalar cache interface for callers.",
+      "prompt": "Migrate lookup from an optional scalar to a LookupResult with found and value fields, so missing keys are distinct from stored falsy values. Update all consumers while preserving their outward interfaces, missing markers and request ordering. Validate public entry points.",
       "fixture": "representative/python-result-api.json",
-      "snapshot": "605719b4e0813dd7b4bf3717e27950c5bf914cd2b23d475348c2cf16e3f80794"
+      "snapshot": "8242ba315c561aad35690f48b0e0b485f4c668636f0eed1ab33374de15eaeae6"
     },
     {
       "id": "infra-service-policy",
@@ -161,7 +161,7 @@
       "risk_dimension": "least-privilege",
       "prompt": "Harden the API service using the local service policy: run without root or privilege escalation, drop capabilities, use a read-only root filesystem, and restrict ingress to the approved application port and private CIDR. Preserve the pinned image, replica count, and audit service. Validate declaratively without deploying infrastructure.",
       "fixture": "representative/infra-service-policy.json",
-      "snapshot": "75d507a063cb9a1821377cdf1e190a7cb05f64fba22775b09c53b38b7a941446"
+      "snapshot": "ab9e2e4732bc61c928574950a4b827dc3370467de221e2f3988081eec3b704f4"
     },
     {
       "id": "repo-ci-gates",
@@ -181,7 +181,7 @@
       "risk_dimension": "validation-before-publish",
       "prompt": "Repair the local declarative pipeline so lint and unit tests both gate packaging, integration tests gate publication together with packaging, and publication is restricted to trusted main pushes. Keep checks active on pull requests and preserve artifact naming. Use the documented pipeline schema; do not contact a CI service.",
       "fixture": "representative/repo-ci-gates.json",
-      "snapshot": "e5b1b9cbefdb9dbbf2579d7da0ecc649cf77533a2b34324204d3df6cd6a3faca"
+      "snapshot": "a4385da08a39257cad9081c0fe98908ab9d7dd891ba1fb4f129b2a7a9f3205a1"
     },
     {
       "id": "explore-notification",
@@ -196,9 +196,9 @@
         "impact-analysis"
       ],
       "risk_dimension": "conditional-call-graph",
-      "prompt": "Investigate notification delivery without changing source. Write answer.json containing delivered_path and suppressed_path arrays of qualified function names from entry.dispatch to the last function reached, plus external_effect naming the delivered function that represents the external send boundary. Explain the call flow using the fixture behavior, not filename order.",
+      "prompt": "Investigate notification delivery without changing source. Write answer.json containing delivered_path and suppressed_path arrays of qualified function names in invocation order for notify events with active unmuted and active muted profiles, plus external_effect naming the function that represents the external send boundary. Explain the call flow using fixture behavior.",
       "fixture": "representative/explore-notification.json",
-      "snapshot": "9855a04e3ce9d3d878fa0873ebc086de1e2d9515784ff091b6ff507d9048d949"
+      "snapshot": "f0b16b4aeac2d5eafef4a7c970326d23c87884c31b74bfca1e2fbf7e4631be54"
     }
   ]
 }

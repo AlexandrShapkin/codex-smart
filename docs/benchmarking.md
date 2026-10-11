@@ -588,3 +588,89 @@ host; current readiness remains false and isolation required-not-verified. Cover
 can be reviewed independently of host qualification. Next: accept this bounded matrix,
 then qualify a separate host and adapt/verify the guarded representative runner before
 any separately authorized model spending. Benchmark stays partial, #14 open, #15 separate.
+
+### Structural workload realism amendment
+
+Language/task diversity is an accepted candidate. This amendment strengthens workload
+realism without changing any of the ten identities, variant bounds or 40-call budget.
+The suite is **purpose-built representative synthetic coverage**; it does not claim
+large real-world repository coverage. Structural counts are acceptance metadata,
+never production Router signals or proxies for token savings.
+
+| Scenario | Tier | Initial files | Changed reference files | Unchanged support files |
+| --- | --- | ---: | ---: | ---: |
+| rust-ledger | multi-file | 11 | 3 | 4 |
+| rust-duration | cross-cutting | 11 | 4 | 3 |
+| go-pagination | multi-file | 8 | 4 | 3 |
+| go-reservations | multi-file | 9 | 3 | 4 |
+| python-config-tests | focused | 3 | 1 | 1 |
+| python-billing | multi-file | 9 | 3 | 5 |
+| python-result-api | cross-cutting | 8 | 4 | 3 |
+| infra-service-policy | multi-file | 6 | 2 | 3 |
+| repo-ci-gates | cross-cutting | 6 | 3 | 2 |
+| explore-notification | focused | 11 | 1 | 4 |
+
+Changed-reference counts include added regression tests. Tier acceptance is stricter:
+**multi-file** requires four initial files and two changed existing behavior/configuration
+files participating in the dependency graph; **cross-cutting** requires five initial
+files, three such changes and a dependency path with at least two edges. Added tests,
+README changes or Cargo metadata alone cannot meet those change thresholds. **Focused**
+means a narrow reviewed measurement purpose (mutation-sensitive tests or conditional
+analysis), not a size classification; exploration spans more files while remaining
+read-only. Unchanged support must participate in the graph, with at least one supporting
+file not named as the direct prompt target. At least one wrong control for each complex
+task restores a stale initial caller/configuration while keeping the rest of the
+reference patch; all wrong controls must fail the independent grader.
+
+The supporting context is functional: exports and formatters, billing and command
+callers, local request adapters, booking/audit readers, quote/summary layers, service
+and archive entry points, deployment/policy links and multi-file CI configuration.
+Existing tests and contracts help distinguish preserved behavior from requested changes.
+These surfaces create decisions about what to inspect and which consumers to validate,
+without adding random text or optimizing for LOC. They do not prove an agent will avoid
+reading the entire fixture; eventual measured traces must establish context-selection
+behavior. No measured comparative evidence exists.
+
+Exploration has both live dispatch branches: notification performs profile resolution,
+eligibility/preferences, destination selection and gateway delivery; archive records
+an audit event. The independent answer checks invocation order for delivered/suppressed
+notification paths and the external boundary, preserving every source file. Adjacent
+archive/audit code is genuine functionality rather than dead filler.
+
+Hidden fixture `structure` fields pin initial/changed counts, unchanged support and
+reviewed dependency edges. Edge witnesses must occur in the original caller and their
+referenced symbols in the callee; both files must exist. These deterministic checks
+verify the reviewed textual relationship and reject drift, not arbitrary semantic
+claims about a graph. Human review establishes relationship meaning. Hidden structural
+evidence, reference changes, controls and oracles remain outside staged task files.
+Prompts state developer intent and public behavior; they do not enumerate relevant
+supporting files. Human and deterministic leakage review was repeated after expansion.
+
+`python3 -B scripts/benchmark_coverage.py` now emits a deterministic safe review report:
+scenario, domain, task classes, tier, initial count, changed-reference count, support
+count and lifecycle requirements. It reveals no changed filenames, dependency witnesses,
+reference source or grader assertions, and never executes tools/models. This report
+is for design review, not the model-visible task or Router input.
+
+Both Rust fixtures are normal dependency-free Cargo libraries with `Cargo.toml`, a
+pinned local lockfile, `src/` modules and integration tests. Trusted-control validation
+uses `cargo check --locked --offline` and `cargo test --locked --offline`, including the
+fixed independent integration oracle. Already-installed Cargo was inspected as
+**cargo 1.98.0 (797e8a9bc 2026-08-05)** and is frozen with `--version` in the representative
+campaign only. JSON version/argument drift rejects loading; an actual version mismatch
+refuses trusted controls. No toolchain was installed or updated. Offline/private
+Cargo cache settings prevent registry setup; trusted host validation remains correctness
+only, with no security-isolation claim.
+
+The future accepted immutable Rust inventory must include the exact Cargo binary
+alongside the pinned real rustc/sysroot, target libraries, compiler shared-library
+closure, linker and CRT. Cargo must use disposable private home/target directories,
+offline locked builds and no registry dependencies. A qualified host must demonstrate
+that precise Cargo workflow within the final isolation boundary. This documentation
+adds an inventory requirement, not a verified runtime or a host fallback.
+
+Campaign identity/status and isolation dependency are unchanged. Grading isolation
+remains required-not-verified; representative_campaign_ready remains false; both
+campaigns are unexecuted. The historical seven-component manifest/preliminary 42-job
+plan and smoke evidence remain byte-identical. The current host blocker is unchanged,
+#14 open, #15 separate and benchmark partial.

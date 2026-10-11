@@ -3,7 +3,12 @@
     "go.mod": "module fixture\n\ngo 1.23\n",
     "reservation.go": "package fixture\ntype Reservation struct{Units int; Expires int64; Canceled bool}\nfunc Active(r Reservation, now int64)bool{return !r.Canceled}\n",
     "capacity.go": "package fixture\nfunc Available(total int, rs []Reservation, now int64)int{for _,r:=range rs{if Active(r,now){total-=r.Units}};return total}\n",
-    "report.go": "package fixture\nfunc ActiveCount(rs []Reservation, now int64)int{n:=0;for _,r:=range rs{if !r.Canceled{n++}};return n}\n"
+    "report.go": "package fixture\nfunc ActiveCount(rs []Reservation, now int64)int{n:=0;for _,r:=range rs{if !r.Canceled{n++}};return n}\n",
+    "booking.go": "package fixture\nfunc CanBook(total, requested int, rs []Reservation, now int64) bool {\n    return requested > 0 && Available(total, rs, now) >= requested\n}\n",
+    "audit.go": "package fixture\ntype Audit struct { Active int; Free int }\nfunc Snapshot(total int, rs []Reservation, now int64) Audit {\n    return Audit{ActiveCount(rs, now), Available(total, rs, now)}\n}\n",
+    "cancel.go": "package fixture\nfunc Cancel(r Reservation) Reservation { r.Canceled = true; return r }\n",
+    "reservation_existing_test.go": "package fixture\nimport \"testing\"\nfunc TestCancel(t *testing.T){r:=Cancel(Reservation{2,99,false});if !r.Canceled||Active(r,1){t.Fatal(\"cancellation\")}}\n",
+    "README.md": "Reservation capacity, booking and audit are local library entry points. Expiration timestamps use caller-provided integer time. Preserve cancellation and avoid wall-clock or network dependencies. All read paths must agree.\n"
   },
   "reference": {
     "reservation.go": "package fixture\ntype Reservation struct{Units int; Expires int64; Canceled bool}\nfunc Active(r Reservation, now int64)bool{return !r.Canceled&&r.Expires>now}\n",
@@ -15,8 +20,50 @@
       "reservation.go": "package fixture\ntype Reservation struct{Units int; Expires int64; Canceled bool}\nfunc Active(r Reservation,now int64)bool{return !r.Canceled&&r.Expires>=now}\n"
     },
     {
-      "report.go": "package fixture\nfunc ActiveCount(rs []Reservation,now int64)int{return len(rs)}\n"
+      "report.go": "package fixture\nfunc ActiveCount(rs []Reservation, now int64)int{n:=0;for _,r:=range rs{if !r.Canceled{n++}};return n}\n"
     }
   ],
-  "oracle": "package fixture\nimport \"testing\"\nfunc TestContract(t *testing.T){rs:=[]Reservation{{3,21,false},{4,20,false},{7,99,true},{2,19,false}};if Available(30,rs,20)!=27||ActiveCount(rs,20)!=1{t.Fatal(\"expiry\")};if Available(30,nil,20)!=30||ActiveCount(nil,20)!=0{t.Fatal(\"empty\")};if !Active(rs[0],20)||Active(rs[1],20)||Active(rs[2],20){t.Fatal(\"activity\")}}\n"
+  "oracle": "package fixture\nimport \"testing\"\nfunc TestContract(t *testing.T){rs:=[]Reservation{{3,21,false},{4,20,false},{7,99,true},{2,19,false}};if !CanBook(30,27,rs,20)||CanBook(30,28,rs,20)||Snapshot(30,rs,20)!=(Audit{1,27}){t.Fatal(\"downstream\")};if Available(30,rs,20)!=27||ActiveCount(rs,20)!=1{t.Fatal(\"expiry\")};if Available(30,nil,20)!=30||ActiveCount(nil,20)!=0{t.Fatal(\"empty\")};if !Active(rs[0],20)||Active(rs[1],20)||Active(rs[2],20){t.Fatal(\"activity\")}}\n",
+  "structure": {
+    "initial_file_count": 9,
+    "reference_changed_file_count": 3,
+    "support_files": [
+      "booking.go",
+      "audit.go",
+      "cancel.go",
+      "reservation_existing_test.go"
+    ],
+    "dependency_edges": [
+      {
+        "caller": "booking.go",
+        "callee": "capacity.go",
+        "witness": "Available(",
+        "symbol": "Available"
+      },
+      {
+        "caller": "capacity.go",
+        "callee": "reservation.go",
+        "witness": "Active(",
+        "symbol": "Active"
+      },
+      {
+        "caller": "audit.go",
+        "callee": "report.go",
+        "witness": "ActiveCount(",
+        "symbol": "ActiveCount"
+      },
+      {
+        "caller": "report.go",
+        "callee": "reservation.go",
+        "witness": "Reservation",
+        "symbol": "Reservation"
+      },
+      {
+        "caller": "reservation_existing_test.go",
+        "callee": "cancel.go",
+        "witness": "Cancel(",
+        "symbol": "Cancel"
+      }
+    ]
+  }
 }
