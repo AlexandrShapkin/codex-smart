@@ -21,7 +21,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [ADR-0001: Rust core and CLI](../docs/decisions/0001-rust-core.md) | architecture | contract | baseline |
 | [ADR-0002: Thin launcher and conservative discovery](../docs/decisions/0002-thin-launcher.md) | architecture | contract | baseline |
 | [ADR-0003: Explicit hints and reference Rust policy](../docs/decisions/0003-policy-preview.md) | architecture | contract | baseline |
-| [ADR-0004: Defer Rhai until reference policy is validated](../docs/decisions/0004-rhai-deferred.md) | architecture | contract | baseline |
+| [ADR-0004: Rust-only Router v2 and evidence-gated Rhai deferral](../docs/decisions/0004-rhai-deferred.md) | architecture | contract | baseline, router |
 | [ADR-0005: Marked TOML and descriptor-based config transactions](../docs/decisions/0005-safe-config-transactions.md) | architecture | contract | baseline |
 | [ADR-0006: Repository-owned bounded stage context](../docs/decisions/0006-bounded-context.md) | architecture | contract | workflow |
 | [ADR-0007: Explicit Codex artifact pins and honest offline evidence](../docs/decisions/0007-owned-executable-pins.md) | architecture | contract | tools |

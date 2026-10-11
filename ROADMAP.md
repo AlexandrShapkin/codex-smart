@@ -6,7 +6,7 @@ Version: 0.1.0 unreleased; see [versioning](docs/versioning.md).
 Recorded progress describes implementation evidence, not live issue closure or milestone completion.
 GitHub Issues own actionable state; use `just issues`. No legacy archive or benchmark quality is assumed.
 
-Active stage: **router**. Start with `just context`.
+Active stage: **benchmark**. Start with `just context`.
 
 ## baseline — Recover trustworthy repository baseline
 
@@ -38,10 +38,10 @@ Evidence: [docs/diagnostics/2026-10-06-doctor.md](docs/diagnostics/2026-10-06-do
 
 ## router — Router v2 composition and controlled integration
 
-Milestone: 0.2 Router v2; recorded progress: **partial**.
+Milestone: 0.2 Router v2; recorded progress: **validated**.
 Dependencies: doctor.
 [Stage contract](docs/stages/router.md); issues: [#9](https://github.com/AlexandrShapkin/codex-smart/issues/9), [#10](https://github.com/AlexandrShapkin/codex-smart/issues/10), [#11](https://github.com/AlexandrShapkin/codex-smart/issues/11), [#12](https://github.com/AlexandrShapkin/codex-smart/issues/12), [#13](https://github.com/AlexandrShapkin/codex-smart/issues/13).
-Evidence: [docs/routing.md](docs/routing.md).
+Evidence: [docs/routing.md](docs/routing.md), [docs/decisions/0004-rhai-deferred.md](docs/decisions/0004-rhai-deferred.md).
 
 ## benchmark — Full development benchmark and aggregate telemetry
 
