@@ -2,6 +2,7 @@ use crate::capability::{Capability, Inventory};
 
 pub mod assessment;
 pub mod engine;
+pub mod fallback;
 pub mod reasoning;
 pub mod reasoning_args;
 

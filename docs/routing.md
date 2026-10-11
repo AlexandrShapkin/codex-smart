@@ -172,3 +172,86 @@ refactor/size independence, stable reasons/rendering, and in-memory fake argv ca
 through facts → assessment → Router decision → reasoning → argv plan. No automatic
 fallback (#12), Rhai (#13) or production Router activation is included. See
 [version/model source evidence](tool-compatibility.md#reasoning-argv-reference-evidence).
+
+## Router v2 fallback and bounded evidence plan (#12)
+
+`routing::fallback::plan_fallback` consumes #10 RouterDecision (including the #9
+assessment), #11 ReasoningDecision and caller-collected PlanEvidence. It returns a
+finite typed RoutingPlan; it does not execute fallback or escalation. There is no
+capability snapshot lookup, reasoning reselection, retry, file/command planning,
+network, tool activation, index creation or second agent. Production run remains
+passthrough. Codex chooses how to satisfy the plan's obligations in its one session.
+
+Modes have monotonic precedence: Proceed < ProceedWithFallback < NeedsEvidence <
+Blocked. Proceed permits the selected route subject to its retained obligations; it
+never certifies tests already completed. ProceedWithFallback offers native targeted
+repository/source evidence in place of a degraded augmentation. NeedsEvidence requires
+additional prerequisite evidence before proceeding. Blocked means a known prerequisite
+cannot be satisfied under the current contract, or required reasoning is incompatible.
+No alternative heavy backend is guessed. A blocked augmentation alone does not block
+the whole task if a native path and required evidence remain sufficient.
+
+Every Edit/Refactor retains RelevantTests and BuildOrStaticValidation. RelevantTests
+includes applicable behavior/regression checks, without prescribing commands or an
+entire test suite. Refactor and every StructuralImpact request retain ImpactAnalysis.
+Unknown/ambiguous tasks conservatively retain all three until clarified, preventing
+ambiguity from erasing verification. Symbol requests retain SymbolReferences (adequate
+symbol, caller and reference evidence), even when Serena is unavailable. Need obligations
+come from #10's normalized decision reasons, including unselected requests; the engine
+is not run twice and existing degraded reasons are preserved verbatim as typed codes.
+
+High risk retains AdditionalVerification: substantiate correctness beyond the ordinary
+checks in proportion to the known risk. Authoritative #9 SecuritySensitive,
+MigrationSensitive and ConcurrencySensitive reasons add SecurityReview,
+MigrationRollbackValidation (rollback/idempotency/transaction evidence where applicable)
+and ConcurrencyReview (race/locking/shared-state evidence). No hazard inference or
+migration/concurrency mechanism is introduced here. Tests and impact analysis survive
+all fallback/escalation modes.
+
+PlanEvidence separates capability readiness from prerequisite evidence. Satisfied is
+a trusted caller assertion, Unknown requires more evidence and Unavailable blocks the
+current contract. Native fallback feasibility is explicit; absent proof yields
+NeedsEvidence, known impossibility yields Blocked. An unavailable/unknown/blocked/
+ambiguity-deferred direct backend can use a feasible native path without selecting
+another backend. The legacy CodeGraphWrapper remains unsupported and never becomes
+a rescue path; malformed router input purporting to use it is blocked.
+
+External API needs retain ExternalReferenceValidation and require authoritative
+reference evidence (for example already present local official docs). Current remote
+needs retain RemoteStateValidation and require an adequate remote-state snapshot;
+local history alone cannot replace current remote issue/PR/CI evidence. The caller
+explicitly chooses LocalHistory or CurrentRemoteState for repository intent. LocalHistory
+retains LocalRepositoryEvidence and may use native git/source evidence. Even a Verified
+Context7/GitHub backend does not certify the required evidence was obtained. Missing
+reference/remote prerequisites produce NeedsEvidence; known inability produces Blocked.
+No authoritative facts are invented and no fetch/auth/probe is executed.
+
+Explicit verification entries are prerequisite gates as well as retained obligations:
+Unknown yields NeedsEvidence and Unavailable yields Blocked. Satisfied duplicates cannot
+cancel failures; equivalent entry ordering/duplicates leave the plan unchanged. Empty
+entries do not assert verification completed; ordinary edit plans keep verification as
+mandatory session work. Context insufficiency yields NeedsEvidence without dropping
+any obligation; context budgets never waive evidence. Repository size/cost metadata
+are absent from the API.
+
+ReasoningApplication distinguishes advisory Passthrough, RequiredSyntheticOverride and
+UserOwned compatibility. Required synthetic Unknown yields NeedsEvidence; Unsupported
+blocks, with ReasoningCompatibilityValidation retained and no effort substitution.
+UserOwned uses the user's own normalized support status, not automatic candidate support,
+and never rewrites argv; Unknown/Unsupported likewise require evidence/block. Passthrough
+reports advisory compatibility degradation without gating on an unapplied candidate.
+This does not activate #11's fake argv planner or expand its supported grammar.
+
+RoutingPlan contains mode, native-fallback offer, a deterministic ordered obligation
+set, stable reasons (including reused #10 reasons) and relevant reasoning support.
+Render includes escalation status and omits paths, prompts, config, argv values,
+credentials and tool output. A fallback offer can coexist with NeedsEvidence/Blocked;
+mode determines whether proceeding is permitted. MoreEvidenceRequired marks unresolved
+prerequisites, including blocked current contracts, without initiating any execution.
+
+Validation includes pure prerequisite precedence tests and in-memory failure/degraded
+sessions across #9 → #10 → #11 → #12 → explanation; invariant loops cover capability
+and risk degradation, ambiguity, additional needs, prerequisite failures, ordering,
+duplicates, external size metadata and context insufficiency. #13 remains unresolved;
+Router is partial. No production Verified producer, probes, automatic evidence execution
+or production Router activation is delivered. Rhai need will be assessed separately.

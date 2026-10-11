@@ -13,6 +13,9 @@ augmentations may be selected. Offline evidence never fabricates verified readin
 Pure reasoning selection uses the same authoritative assessment, a resolved explicit
 override and independent CLI/model support evidence. A separate bounded OS-argv planner
 models compatible injection and user override preservation without launching Codex.
+A finite fallback/evidence plan consumes these decisions and preserves typed verification
+obligations under degraded capabilities, ambiguity and incompatible reasoning. It directs
+required evidence, while the Codex session owns file, command and implementation choices.
 The legacy preview and passthrough launch stay unchanged until controlled integration. See [routing](routing.md).
 
 Read-only commands inspect bounded PATH and local filesystem evidence. Doctor additionally reads bounded local Git config and explicitly supplied Codex TOML without executing tools or following referenced stores; see [the Doctor contract](doctor.md). Presence is distinguished from readiness. MCP, index health and auth are unknown until a future explicitly controlled compatibility probe can validate them without mutation. Runtime version strings are not obtained by launching arbitrary wrappers.
