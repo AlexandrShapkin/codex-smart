@@ -103,3 +103,36 @@ Metadata and digest rechecks narrow TOCTOU; they do not eliminate the last pathn
 check/exec race or prove ancestor-directory trust. Descriptor execution and PATH ownership/
 ancestor hardening remain #17. No tools are run to obtain versions, no authentication/config/
 plugin stores are read by this lock path, and no install/network/cache write occurs at runtime.
+
+## Reasoning argv reference evidence
+
+Checked 2026-10-11 against the current official
+[config reference](https://learn.chatgpt.com/docs/config-file/config-reference),
+[config precedence](https://learn.chatgpt.com/docs/config-file/config-basic) and
+[CLI reference](https://learn.chatgpt.com/docs/developer-commands?surface=cli).
+The exact key is `model_reasoning_effort`; available strings depend on model and client.
+Current docs list examples including low/medium/high/xhigh/max/ultra, rather than a
+fixed portable effort enum. CLI overrides have highest configuration precedence;
+model/profile overrides can change effective defaults. No current model catalog is
+hardcoded into codex-smart.
+
+Pinned/reference Codex 0.160.0 commit
+`a956835d020762cb2b570053af06f643a11c0ecc` independently confirms:
+
+- [CliConfigOverrides](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/utils/cli/src/config_override.rs):
+  repeatable global `--config`/`-c key=value`, split at first equals, trimmed key,
+  TOML values with raw-string fallback. Root overrides precede subcommand overrides.
+- [ConfigToml](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/core/src/config/mod.rs)
+  contains `model_reasoning_effort`; [ReasoningEffort/model metadata](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/protocol/src/openai_models.rs)
+  include Medium/High, other/custom strings and separate supported model effort levels.
+- [SharedCliOptions](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/utils/cli/src/shared_options.rs):
+  `--model/-m` and `--profile/-p`; [CLI entry](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/cli/src/main.rs)
+  supplies interactive/exec composition and the `e` alias.
+
+These are static source contracts, not runtime/model attestation. Current web docs
+cannot establish applicability to a discovered executable. #11's pure normalized
+compatibility input distinguishes CLI-contract support from effective-model support;
+no reference version or matching digest automatically makes either Supported. Its
+fake argv planner synthesizes only the confirmed config key and Medium/High values,
+with a bounded reviewed argv subset; existing user arguments win and remain byte exact.
+No reasoning injection is active in `run`. See [Router reasoning](routing.md#router-v2-reasoning-effort-selection-11).

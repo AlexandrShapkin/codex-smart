@@ -19,6 +19,12 @@ All three policy fields are optional. Task: local, architecture, refactor, exter
 
 Unknown fields are inert and preserved. Project-local executable, shell, codex_path, MCP, plugins, auth, sandbox, approval and policy-script overrides are explicitly rejected. No config field can execute a program. `explain --task ... --reasoning ... --context-limit ...` has the highest precedence. `config show` and `doctor` validate/display only the recognized derived fields and origins. `run` remains exact Codex passthrough until Router v2 integrates these decisions; it does not silently apply preview policy or override user Codex arguments.
 
+Router v2's separate pure reasoning API consumes a resolved explicit override rather
+than repeating these layer rules. User/Project/Cli reasoning origins pass the selected
+Medium/High; BuiltIn passes None. Its fake argv adapter does not read Codex profiles
+or apply synthetic overrides to production run. See
+[the reasoning contract](routing.md#router-v2-reasoning-effort-selection-11).
+
 ## Transactions
 
 This migrates **codex-smart's marked schema 0 → 1**, not Codex config or an unverified codex-toolkit archive. Schema 0's `reasoning_effort` is renamed to `reasoning`; schema_version is updated. A conflicting old/new key is rejected. Unknown data and comments survive, including comments attached to the renamed key. TOML formatting may normalize (e.g. newline and dotted-key order); rollback restores exact original bytes. The actual toolkit migration adapter remains deferred until provenance evidence exists.

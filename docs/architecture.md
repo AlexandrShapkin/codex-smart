@@ -10,6 +10,9 @@ reasons. Its pure boundary excludes repository size, capability selection and re
 effort. The separate pure decision engine consumes this assessment, explicit capability needs
 and one normalized evidence snapshot. Native tools remain the baseline; only caller-verified
 augmentations may be selected. Offline evidence never fabricates verified readiness.
+Pure reasoning selection uses the same authoritative assessment, a resolved explicit
+override and independent CLI/model support evidence. A separate bounded OS-argv planner
+models compatible injection and user override preservation without launching Codex.
 The legacy preview and passthrough launch stay unchanged until controlled integration. See [routing](routing.md).
 
 Read-only commands inspect bounded PATH and local filesystem evidence. Doctor additionally reads bounded local Git config and explicitly supplied Codex TOML without executing tools or following referenced stores; see [the Doctor contract](doctor.md). Presence is distinguished from readiness. MCP, index health and auth are unknown until a future explicitly controlled compatibility probe can validate them without mutation. Runtime version strings are not obtained by launching arbitrary wrappers.

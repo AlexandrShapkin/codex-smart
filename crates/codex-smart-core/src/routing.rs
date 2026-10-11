@@ -2,6 +2,8 @@ use crate::capability::{Capability, Inventory};
 
 pub mod assessment;
 pub mod engine;
+pub mod reasoning;
+pub mod reasoning_args;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Task {
