@@ -15,7 +15,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [Roadmap](../ROADMAP.md) | engineering | generated | workflow |
 | [Security](../SECURITY.md) | security | current | hardening |
 | [Codex Smart — project brief and engineering backlog](../codex-smart-project-brief.md) | provenance | input | baseline |
-| [Architecture](../docs/architecture.md) | architecture | current | baseline, router |
+| [Architecture](../docs/architecture.md) | architecture | current | baseline, router, playbooks, adaptive, automation, distribution |
 | [Development benchmark protocol](../docs/benchmarking.md) | benchmark | current | benchmark |
 | [Configuration](../docs/configuration.md) | engineering | current | baseline |
 | [ADR-0001: Rust core and CLI](../docs/decisions/0001-rust-core.md) | architecture | contract | baseline |
@@ -25,6 +25,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [ADR-0005: Marked TOML and descriptor-based config transactions](../docs/decisions/0005-safe-config-transactions.md) | architecture | contract | baseline |
 | [ADR-0006: Repository-owned bounded stage context](../docs/decisions/0006-bounded-context.md) | architecture | contract | workflow |
 | [ADR-0007: Explicit Codex artifact pins and honest offline evidence](../docs/decisions/0007-owned-executable-pins.md) | architecture | contract | tools |
+| [Deterministic workflow playbooks and bounded adaptive execution](../docs/decisions/0008-deterministic-workflows.md) | architecture | contract | playbooks, adaptive, automation, distribution, hardening, stable |
 | [Development](../docs/development.md) | engineering | current | workflow |
 | [Post-bootstrap correction gate — 2026-10-06](../docs/diagnostics/2026-10-06-baseline.md) | engineering | historical | baseline |
 | [Configuration and transaction slice — 2026-10-06](../docs/diagnostics/2026-10-06-config.md) | engineering | historical | baseline |
@@ -33,6 +34,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [External executable pin validation — 2026-10-06](../docs/diagnostics/2026-10-06-tools.md) | engineering | historical | tools |
 | [Bounded workflow validation — 2026-10-06](../docs/diagnostics/2026-10-06-workflow.md) | engineering | historical | workflow |
 | [Initial engineering diagnostic — 2026-10-06](../docs/diagnostics/2026-10-06.md) | engineering | historical | baseline |
+| [Distribution and release lifecycle target](../docs/distribution.md) | release | contract | playbooks, adaptive, automation, distribution, hardening, stable |
 | [Offline Doctor contract](../docs/doctor.md) | engineering | current | doctor |
 | [Documentation index](../docs/index.md) | engineering | generated | workflow |
 | [P0: Establish repository provenance and baseline](../docs/issues/01.md) | engineering | reference | baseline |
@@ -50,17 +52,21 @@ GitHub Issues own live state; local issue files preserve design references.
 | [P1: Evaluate and integrate sandboxed Rhai policies](../docs/issues/13.md) | engineering | reference | router |
 | [P2: Build end-to-end development benchmark](../docs/issues/14.md) | engineering | reference | benchmark |
 | [P2: Add token/tool/latency telemetry](../docs/issues/15.md) | engineering | reference | benchmark |
-| [P3: Implement release and migration workflow](../docs/issues/16.md) | engineering | reference | hardening |
-| [P3: Production hardening and 1.0 readiness](../docs/issues/17.md) | engineering | reference | hardening, stable |
+| [P3: Implement release and migration workflow](../docs/issues/16.md) | engineering | reference | distribution |
+| [P3: Production hardening and 1.0 readiness](../docs/issues/17.md) | engineering | reference | stable |
 | [P0: Launch Codex safely with exact OS arguments](../docs/issues/18.md) | engineering | reference | baseline |
 | [Issue index](../docs/issues/index.md) | engineering | reference | baseline |
 | [Provenance gate](../docs/provenance.md) | provenance | current | baseline |
-| [Release readiness](../docs/releasing.md) | release | current | hardening |
+| [Release readiness](../docs/releasing.md) | release | current | distribution, hardening |
 | [Routing](../docs/routing.md) | engineering | current | router |
+| [Adaptive model routing and runtime escalation](../docs/stages/adaptive.md) | engineering | contract | adaptive |
+| [Reusable automation and prepared workflows](../docs/stages/automation.md) | engineering | contract | automation |
 | [Recover trustworthy repository baseline](../docs/stages/baseline.md) | engineering | contract | baseline |
 | [Full development benchmark and aggregate telemetry](../docs/stages/benchmark.md) | engineering | contract | benchmark |
+| [Installer, updater and release lifecycle](../docs/stages/distribution.md) | engineering | contract | distribution |
 | [Complete offline diagnostic contracts](../docs/stages/doctor.md) | engineering | contract | doctor |
-| [Packaging, migration and security hardening](../docs/stages/hardening.md) | engineering | contract | hardening |
+| [Production security and reliability hardening](../docs/stages/hardening.md) | engineering | contract | hardening |
+| [Workflow playbooks and resource planning](../docs/stages/playbooks.md) | engineering | contract | playbooks |
 | [Router v2 composition and controlled integration](../docs/stages/router.md) | engineering | contract | router |
 | [1.0 readiness and durable public contracts](../docs/stages/stable.md) | engineering | contract | stable |
 | [External capability pins and compatibility](../docs/stages/tools.md) | engineering | contract | tools |
@@ -68,4 +74,5 @@ GitHub Issues own live state; local issue files preserve design references.
 | [External version and execution compatibility](../docs/tool-compatibility.md) | engineering | current | tools, doctor |
 | [Tooling and capability trust](../docs/tooling.md) | engineering | current | tools, doctor |
 | [Versioning](../docs/versioning.md) | release | current | stable |
+| [Workflow intelligence target](../docs/workflow-intelligence.md) | architecture | contract | playbooks, adaptive, automation, distribution, hardening, stable |
 | [Bounded development workflow](../docs/workflow.md) | engineering | current | workflow |

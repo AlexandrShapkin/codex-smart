@@ -116,6 +116,10 @@ body:
         - "stage:doctor"
         - "stage:router"
         - "stage:benchmark"
+        - "stage:playbooks"
+        - "stage:adaptive"
+        - "stage:automation"
+        - "stage:distribution"
         - "stage:hardening"
         - "stage:stable"
     validations:

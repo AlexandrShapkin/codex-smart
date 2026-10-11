@@ -196,24 +196,137 @@
       ]
     },
     {
-      "id": "hardening",
-      "title": "Packaging, migration and security hardening",
-      "milestone": "0.4 Hardening",
+      "id": "playbooks",
+      "title": "Workflow playbooks and resource planning",
+      "milestone": "0.4 Workflow Intelligence",
       "progress": "planned",
       "depends_on": [
         "benchmark"
       ],
       "issues": [
+        40,
+        41,
+        42
+      ],
+      "contract": "docs/stages/playbooks.md",
+      "reads": [
+        "docs/workflow-intelligence.md",
+        "docs/architecture.md",
+        "docs/decisions/0008-deterministic-workflows.md",
+        "docs/distribution.md"
+      ],
+      "sources": [
+        "docs/stages.json",
+        "docs/documents.json"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "adaptive",
+      "title": "Adaptive model routing and runtime escalation",
+      "milestone": "0.5 Adaptive Execution",
+      "progress": "planned",
+      "depends_on": [
+        "playbooks"
+      ],
+      "issues": [
+        43,
+        44,
+        45,
+        46
+      ],
+      "contract": "docs/stages/adaptive.md",
+      "reads": [
+        "docs/workflow-intelligence.md",
+        "docs/architecture.md",
+        "docs/decisions/0008-deterministic-workflows.md",
+        "docs/distribution.md"
+      ],
+      "sources": [
+        "docs/stages.json",
+        "docs/documents.json"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "automation",
+      "title": "Reusable automation and prepared workflows",
+      "milestone": "0.6 Reusable Automation",
+      "progress": "planned",
+      "depends_on": [
+        "adaptive"
+      ],
+      "issues": [
+        47,
+        48,
+        49
+      ],
+      "contract": "docs/stages/automation.md",
+      "reads": [
+        "docs/workflow-intelligence.md",
+        "docs/architecture.md",
+        "docs/decisions/0008-deterministic-workflows.md",
+        "docs/distribution.md"
+      ],
+      "sources": [
+        "docs/stages.json",
+        "docs/documents.json"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "distribution",
+      "title": "Installer, updater and release lifecycle",
+      "milestone": "0.7 Distribution",
+      "progress": "planned",
+      "depends_on": [
+        "automation"
+      ],
+      "issues": [
         16,
-        17
+        50,
+        51,
+        52
+      ],
+      "contract": "docs/stages/distribution.md",
+      "reads": [
+        "docs/workflow-intelligence.md",
+        "docs/architecture.md",
+        "docs/decisions/0008-deterministic-workflows.md",
+        "docs/distribution.md"
+      ],
+      "sources": [
+        "docs/stages.json",
+        "docs/documents.json"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "hardening",
+      "title": "Production security and reliability hardening",
+      "milestone": "0.8 Hardening",
+      "progress": "planned",
+      "depends_on": [
+        "adaptive",
+        "automation",
+        "distribution"
+      ],
+      "issues": [
+        53,
+        54
       ],
       "contract": "docs/stages/hardening.md",
       "reads": [
+        "docs/workflow-intelligence.md",
+        "docs/distribution.md",
         "docs/releasing.md",
+        "docs/versioning.md",
         "docs/configuration.md",
         "SECURITY.md"
       ],
       "sources": [
+        "docs/stages.json",
+        "docs/documents.json",
         ".github/workflows/release.yml",
         "crates/codex-smart-core/src/process.rs",
         "crates/codex-smart-core/src/migration.rs"
@@ -229,15 +342,20 @@
         "hardening"
       ],
       "issues": [
-        17
+        17,
+        55
       ],
       "contract": "docs/stages/stable.md",
       "reads": [
-        "docs/versioning.md",
+        "docs/workflow-intelligence.md",
+        "docs/distribution.md",
         "docs/releasing.md",
+        "docs/versioning.md",
         "docs/benchmarking.md"
       ],
       "sources": [
+        "docs/stages.json",
+        "docs/documents.json",
         "Cargo.toml",
         "CHANGELOG.md"
       ],

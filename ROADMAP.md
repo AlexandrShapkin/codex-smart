@@ -50,14 +50,38 @@ Dependencies: router.
 [Stage contract](docs/stages/benchmark.md); issues: [#14](https://github.com/AlexandrShapkin/codex-smart/issues/14), [#15](https://github.com/AlexandrShapkin/codex-smart/issues/15).
 Evidence: [docs/benchmarking.md](docs/benchmarking.md).
 
-## hardening — Packaging, migration and security hardening
+## playbooks — Workflow playbooks and resource planning
 
-Milestone: 0.4 Hardening; recorded progress: **planned**.
+Milestone: 0.4 Workflow Intelligence; recorded progress: **planned**.
 Dependencies: benchmark.
-[Stage contract](docs/stages/hardening.md); issues: [#16](https://github.com/AlexandrShapkin/codex-smart/issues/16), [#17](https://github.com/AlexandrShapkin/codex-smart/issues/17).
+[Stage contract](docs/stages/playbooks.md); issues: [#40](https://github.com/AlexandrShapkin/codex-smart/issues/40), [#41](https://github.com/AlexandrShapkin/codex-smart/issues/41), [#42](https://github.com/AlexandrShapkin/codex-smart/issues/42).
+
+## adaptive — Adaptive model routing and runtime escalation
+
+Milestone: 0.5 Adaptive Execution; recorded progress: **planned**.
+Dependencies: playbooks.
+[Stage contract](docs/stages/adaptive.md); issues: [#43](https://github.com/AlexandrShapkin/codex-smart/issues/43), [#44](https://github.com/AlexandrShapkin/codex-smart/issues/44), [#45](https://github.com/AlexandrShapkin/codex-smart/issues/45), [#46](https://github.com/AlexandrShapkin/codex-smart/issues/46).
+
+## automation — Reusable automation and prepared workflows
+
+Milestone: 0.6 Reusable Automation; recorded progress: **planned**.
+Dependencies: adaptive.
+[Stage contract](docs/stages/automation.md); issues: [#47](https://github.com/AlexandrShapkin/codex-smart/issues/47), [#48](https://github.com/AlexandrShapkin/codex-smart/issues/48), [#49](https://github.com/AlexandrShapkin/codex-smart/issues/49).
+
+## distribution — Installer, updater and release lifecycle
+
+Milestone: 0.7 Distribution; recorded progress: **planned**.
+Dependencies: automation.
+[Stage contract](docs/stages/distribution.md); issues: [#16](https://github.com/AlexandrShapkin/codex-smart/issues/16), [#50](https://github.com/AlexandrShapkin/codex-smart/issues/50), [#51](https://github.com/AlexandrShapkin/codex-smart/issues/51), [#52](https://github.com/AlexandrShapkin/codex-smart/issues/52).
+
+## hardening — Production security and reliability hardening
+
+Milestone: 0.8 Hardening; recorded progress: **planned**.
+Dependencies: adaptive, automation, distribution.
+[Stage contract](docs/stages/hardening.md); issues: [#53](https://github.com/AlexandrShapkin/codex-smart/issues/53), [#54](https://github.com/AlexandrShapkin/codex-smart/issues/54).
 
 ## stable — 1.0 readiness and durable public contracts
 
 Milestone: 1.0 Stable; recorded progress: **planned**.
 Dependencies: hardening.
-[Stage contract](docs/stages/stable.md); issues: [#17](https://github.com/AlexandrShapkin/codex-smart/issues/17).
+[Stage contract](docs/stages/stable.md); issues: [#17](https://github.com/AlexandrShapkin/codex-smart/issues/17), [#55](https://github.com/AlexandrShapkin/codex-smart/issues/55).
