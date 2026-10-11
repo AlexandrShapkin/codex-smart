@@ -1,8 +1,7 @@
 # Development benchmark protocol
 
 This is the first harness slice of #14, not a measured campaign. Router remains
-validated; benchmark progress remains planned until the harness is merged (then
-partial). No benefit or winner is claimed. #15 production telemetry is separate.
+validated; benchmark progress is partial after the harness merge. No benefit or winner is claimed. #15 production telemetry is separate.
 
 ## Quality before cost
 
@@ -64,7 +63,8 @@ under `benchmarks/.artifacts`. Remove that local directory explicitly before rep
 the same run identifiers (the runner refuses to overwrite evidence). Configure
 `--repetitions`, `--seed`, `--retries`, `--timeout` and `--cold-warm`. Seed plus manifest
 produces stable shuffled scenario/variant/repetition order, including unavailable rows.
-CI uses fake runs and needs no OpenAI credentials. No paid model run was performed.
+CI uses fake runs and needs no OpenAI credentials. The one live preflight invocation
+failed during local app-server initialization; no live model trace was emitted.
 
 A bounded real campaign invocation requires `--real --codex /absolute/executable
 --model MODEL`. The harness only accepts the inspected `codex-cli 0.162.1`; it records
@@ -79,7 +79,7 @@ defines `codex exec --json` and the sample `turn.completed.usage` fields. Local 
 `exec --help` confirms the flags. `benchmarks/fixtures/official-example.jsonl` is a
 sanitized captured documentation example, not a live model trace or measurement.
 Parser tests validate that example. A live trace contract smoke remains required before
-claiming measured results for this pinned binary.
+claiming measured results for this pinned binary; the preflight below did not pass.
 
 Only input, cached input, output and reasoning-output counters are read. Total and
 fresh input stay unknown; neither is derived or estimated. Observed command/MCP/search
@@ -114,9 +114,55 @@ prompt/source logging or telemetry.
 
 ## Remaining acceptance campaign
 
-After merge, independently verify the live pinned trace, expand realistic task coverage,
+Independently verify the live pinned trace, expand realistic task coverage,
 pin toolchains and campaign model/settings, validate all graders in isolated environments,
 and run repeated seeded quality-first measurements with cache/overhead evidence.
 Obtain exact legacy provenance or retain unavailable status. Implement and verify a
 separate decision-applying adapter before any Router v2 measurement. #14 stays open
 until those measured acceptance criteria are satisfied; #15 remains separate.
+
+## Initial campaign preflight
+
+PR #32 merged the harness at `d6b74d4`. Exactly one vanilla Codex invocation used
+`iac-security`, `gpt-6-sol`, explicit low reasoning, workspace-write, ephemeral mode,
+ignored user config/rules, unknown cache state, timeout 120 seconds and zero retries.
+Codex 0.162.1 exited 1 before emitting any JSONL because its in-process app-server
+client could not initialize on the read-only filesystem. No second live invocation
+was attempted. No terminal or usage fields were verified, and independent grading
+was correctly skipped. The failed normalized attempt and empty raw trace remain local.
+All documented input/cached-input/output/reasoning metrics are **not observed**;
+fresh/total counters are unsupported by the documented parser contract and remain
+null. Full tool-call count remains unknown. No comparative performance claim follows.
+
+Privacy review found no auth-field categories in raw output, no arbitrary event payload
+or absolute path in the normalized record, and private gitignored artifact directories.
+Raw stderr is retained locally and is not committed; the reviewed failure contained
+no auth-field categories or absolute paths. No live raw JSONL or
+sanitized live fixture is committed: the empty stream supplies no useful regression
+fixture. Existing parser tests cover the failed/truncated stream and nonzero exit.
+
+`benchmarks/campaign-v1.json` freezes the **plan**, with live preflight blocked. It pins
+Codex version/artifact checksum, requested model, low reasoning, sandbox/config/rules
+auth equivalence, scenario/grader/harness/campaign-runner checksums, seed `[14]`, three
+repetitions, zero retries, timeout 120 seconds and unknown cache protocol. Planned work
+is 7 scenarios × 3 repetitions × 2 variants = **42 primary runs**, vanilla and native.
+Legacy and Router v2 remain unavailable. Native differs only by the public instruction
+already documented; command settings, auth, fixtures and graders are identical.
+
+Toolchain pins are Rust 1.98.0 (`88d9e12ae`), Go `go1.27.2-X:nodwarf5 linux/amd64`, and
+Python 3.14.8. They are installed locally; the campaign planner checks exact version
+strings. Missing/mismatched tools make affected scenarios not runnable; none are
+installed automatically. IaC checks JSON configuration semantics, not Terraform.
+Fresh fixture setup is guaranteed; inherited host caches are not controlled, so no
+cold/warm claim is made and bootstrap/index timing stays unknown/not applicable.
+
+`python3 -B scripts/benchmark_campaign.py` prints a no-execution plan.
+`python3 -B scripts/benchmark_campaign.py --dry-run` uses the exact frozen config for
+42 local fake-agent jobs with real independent graders. It never invokes Codex, and
+labels all counters synthetic. Records include pinned references and stay under
+`benchmarks/.artifacts/campaign-v1-dryrun`. Existing evidence is never overwritten.
+The campaign entry point deliberately has no model-execution mode while live preflight
+is blocked. It must not be treated as ready for the measured campaign. A writable,
+approved benchmark environment with existing authentication must first pass a bounded
+live smoke; do not modify permissions or copy credentials to bypass this environment.
+Review and update preflight evidence before enabling any measured execution.
