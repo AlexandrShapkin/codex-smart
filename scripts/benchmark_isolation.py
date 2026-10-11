@@ -60,6 +60,34 @@ def grade(scenario, workspace):
     return GradeResult(evidence.status, evidence.reason)
 
 
+@dataclass(frozen=True)
+class SubmissionPolicy:
+    task_files_immutable: bool = False
+    allowed_answer_artifacts: tuple[str, ...] = ()
+
+
+def representative_contract_verified(qualification):
+    # No accepted implementation/runtime receipt exists. A host evidence object
+    # cannot turn candidate namespace probes into a verified grading backend.
+    return False
+
+
+def grade_representative(scenario, workspace, qualification, *, policy=SubmissionPolicy()):
+    """Submission boundary; qualification is required, never a host-grader fallback.
+
+    The accepted isolated backend is not implemented/verified yet. This refusal
+    reads no submitted file and performs no host capability investigation.
+    """
+    import benchmark_host as host
+    if type(qualification) is not host.QualifiedHostContract or qualification.status != 'verified':
+        return GradeResult('blocked', 'qualified-host-not-verified')
+    expected = (SubmissionPolicy(True, ('answer.json',)) if scenario == 'explore-notification'
+                else SubmissionPolicy())
+    if policy != expected:
+        return GradeResult('blocked', 'submission-policy-mismatch')
+    return GradeResult('blocked', 'grading-isolation-contract-not-verified')
+
+
 def _probe(script, workspace, timeout=5):
     """Run repository-owned synthetic probe code only; no grader/operator CLI."""
     with tempfile.TemporaryDirectory(prefix='isolation-probe-') as tmp:

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "contract_id": "benchmark-qualified-host-v1",
+  "platform": "linux-x86_64",
+  "required_components": [
+    "platform",
+    "codex_identity",
+    "toolchains",
+    "cargo_identity",
+    "isolation_backend",
+    "aggregate_memory",
+    "aggregate_tasks",
+    "descendants",
+    "cleanup",
+    "network",
+    "filesystem",
+    "environment",
+    "privilege",
+    "trusted_grader_immutability",
+    "runtime_inventory",
+    "grader_compatibility"
+  ],
+  "accepted_states": [
+    "blocked",
+    "not-verified",
+    "unavailable",
+    "verified"
+  ],
+  "required_state": "verified",
+  "backend": "bubblewrap-equivalent-reviewed-unprivileged",
+  "candidate_backend_version": "bubblewrap 0.13.0",
+  "codex_version": "0.162.1",
+  "codex_executable_sha256": "89cc44e820780120ba2c8bc4585c014815bdc7a1fc494c337a585a2c78dc59eb",
+  "toolchain_versions": {
+    "rustc": "rustc 1.98.0 (88d9e12ae 2026-08-18)",
+    "go": "go version go1.27.2-X:nodwarf5 linux/amd64",
+    "python3": "Python 3.14.8",
+    "cargo": "cargo 1.98.0 (797e8a9bc 2026-08-05)"
+  },
+  "verification": "independent bounded probes and grader controls; reviewed immutable runtime inventory",
+  "accepted_qualification_receipts": [],
+  "authorization_overrides_security": false
+}

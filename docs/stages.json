@@ -172,7 +172,8 @@
       "contract": "docs/stages/benchmark.md",
       "reads": [
         "docs/benchmarking.md",
-        "docs/provenance.md"
+        "docs/provenance.md",
+        "docs/benchmark-host.md"
       ],
       "sources": [
         "docs/benchmarking.md",
@@ -189,7 +190,11 @@
         "benchmarks/representative-campaign-v1.json",
         "benchmarks/representative_graders.py",
         "scripts/benchmark_coverage.py",
-        "scripts/test_benchmark_coverage.py"
+        "scripts/test_benchmark_coverage.py",
+        "scripts/benchmark_host.py",
+        "scripts/benchmark_representative.py",
+        "scripts/test_benchmark_representative.py",
+        "benchmarks/host-contract-v1.json"
       ],
       "evidence": [
         "docs/benchmarking.md"

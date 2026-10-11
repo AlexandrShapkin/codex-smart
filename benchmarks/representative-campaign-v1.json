@@ -92,8 +92,9 @@
     "scope": "Codex startup/auth/JSONL only; not representative grading compatibility"
   },
   "readiness": {
-    "real_runner_contract": "not-adapted",
+    "real_runner_contract": "prepared",
     "grading_isolation_contract": "required-not-verified",
+    "qualified_host_contract": "required-not-verified",
     "representative_campaign_ready": false
   },
   "execution_dependencies": {
@@ -101,10 +102,18 @@
     "qualified_host_contract": "verified"
   },
   "measured_records": [],
+  "runner_pins": {
+    "runner_sha256": "e8d2aae2ad818ba171b4b88831ea36b03fe08d60f59564768abdbfbba390ed8b",
+    "host_validator_sha256": "4141d39d7a4cd148c2fc4e395c3560278fdf67a701c24b7fdecde016b5992829",
+    "host_contract_sha256": "40b8bdfd3cf7be3d528951b8d0c58ade134cf241bc0bf3ba1264cd02f75799b0",
+    "isolation_sha256": "23fd80123c66480c05649b641f543814e74b6610332b0b16d07b8ed7cb6a9aa7",
+    "resource_contract_sha256": "36bc96d8323fd12812c6280f7067ca286a716fc9e5fce682b33f57d8e105f1bc",
+    "harness_sha256": "0cc84b32d1418ddaed4ed620c122098adbb10bfe0f9061a694e8c2a9cd3af7b7"
+  },
   "pins": {
     "manifest_sha256": "90feb15e92815b3b9d6269f33a2f85b76b52350cdad72eb72a3f61916ac1ee7e",
     "grader_sha256": "a6c29565533fcc7fac548f78bfa4c8a45561284a468e0398d923c0308cd4df6d",
-    "coverage_validator_sha256": "0b7337512d298fc946267d836808ba50531585719ebb4f2922a21f7335f8cb1b",
+    "coverage_validator_sha256": "d96a05269b15b3b1847792f57a6a46ade72db00f0ee8a9d88fc99413b99070a4",
     "fixture_sha256": {
       "rust-ledger": "a1264d1c636814b10236bf3274955c8784ba36f6072b087c969494d9075f813c",
       "rust-duration": "efc103d011c309c4f7e42f82c399db717b912a7fad833e257ba930c16742713b",
