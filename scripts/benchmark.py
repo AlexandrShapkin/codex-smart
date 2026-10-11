@@ -179,7 +179,7 @@ class FakeRunner:
                 'timeout': mode == 'timeout', 'duration': 0.001}
 
 
-def run(s, variant, seed, repetition, runner, retries=0, cold='unknown', references=None, artifacts=None):
+def run(s, variant, seed, repetition, runner, retries=0, cold='unknown', references=None, artifacts=None, grader=None):
     if variant not in ('vanilla', 'native') or variant not in s['allowed_variants']:
         raise ValueError('unsupported variant')
     if retries < 0:
@@ -206,7 +206,7 @@ def run(s, variant, seed, repetition, runner, retries=0, cold='unknown', referen
             reason = ('launch-failure' if observation.get('launch_failure') else 'timeout' if observation['timeout'] else 'agent-failure' if not parsed['errors'] and parsed['terminal_status'] == 'failed'
                       else 'process-failure' if observation['exit_status']
                       else 'trace-invalid' if parsed['errors'] else None)
-            quality = grade(s, directory) if reason is None else False
+            quality = (grader or grade)(s, directory) if reason is None else False
             if reason is None and not quality:
                 reason = 'quality-failure'
             if artifacts is not None:

@@ -314,8 +314,68 @@ legacy/Router variants remain unavailable. Repetitions cannot fill those coverag
 The current 42 jobs may be separately approved later as preliminary harness evidence;
 no coverage expansion or campaign execution occurs here.
 
-Implementation validation: 54 Python tests, docs-check, just check, nextest (85/85),
-diff checks and bounded benchmark context pass using fake/mocked runners only.
+## Grading isolation investigation after #36
+
+Owner-accepted #36 merged at `bff575dce5498159939ddea4814a53e4da478f55`.
+The next slice examines an already installed Linux backend without installing packages,
+using sudo, changing security configuration or invoking models. No backend is accepted
+for submitted-code grading. `scripts/benchmark_isolation.py` offers small typed
+availability/grade results and an explicit `--probe` command for fixed synthetic code.
+Its grade entry refuses without reading/executing submitted files; the prepared real
+runner uses this entry instead of the host grader, with no fallback. The probe command
+exits nonzero even when component probes pass, because
+component success does not establish an accepted isolation contract.
+
+| Mechanism | Local evidence | Privilege / decision |
+| --- | --- | --- |
+| Bubblewrap | 0.13.0 available; non-setuid/non-setgid executable | Unprivileged user/mount/PID/network namespaces work; candidate only |
+| Rootless Podman | Not installed | Unavailable; no installation attempted |
+| Docker | 29.9.0 available; daemon reports seccomp/cgroupns, not rootless mode | No approved rootless boundary; no container run or daemon changes |
+| unshare | util-linux 2.42.4; user/network/PID namespace control succeeded | Namespace primitives, not a complete grading backend |
+| Resource delegation | cgroup hierarchy mounted read-only | Aggregate memory/process budgets cannot be provisioned here without separate host setup |
+
+Bubblewrap uses an empty root, read-only synthetic probe/runtime mounts, a single
+writable disposable directory, bounded temporary tmpfs, a new procfs/PID namespace,
+minimal Bubblewrap runtime devices, all capabilities dropped, a non-root namespace UID,
+nested user namespaces disabled, a new session and die-with-parent. HOME/CODEX_HOME
+are empty synthetic directories. It neither mounts normal home, repository checkout,
+benchmark artifacts nor credentials. The launcher constructs an environment with PATH
+only; the sandbox clears it and sets PATH/HOME/CODEX_HOME (Bubblewrap/Python add PWD and
+LC_CTYPE). Probe source/configuration stays read-only outside the writable directory.
+
+Local synthetic probes pass for an external sentinel read/write, symlink escape,
+HOME/CODEX_HOME visibility, synthetic secret environment inheritance, local TCP listener
+and remote TEST-NET TCP reachability, local UDP listener and remote TEST-NET UDP routing,
+and immutable probe source. The host UDP listener receives no packet; successful local
+socket creation within a namespace is not host connectivity. A forked child calls setsid
+and attempts a delayed marker write; killing the controller on timeout prevents that
+write. Interruption cleanup is also tested with mocked processes. No real credentials
+or private source are probed; outputs contain only safe status/reason/check fields.
+
+These are **partial namespace controls**, not full escape acceptance. Bubblewrap itself
+does not enforce aggregate memory/process quotas; timeouts and a namespace alone cannot
+prevent resource exhaustion. No delegated writable cgroup is available, and no controller
+limits are configured by this slice. The synthetic probe's broad read-only system-runtime
+mount is not an accepted minimal toolchain inventory. Rust uses a Rustup-managed sysroot
+under normal home, which is deliberately not exposed; exact Rust/Go/Python grader
+compatibility inside an approved boundary remains **not verified**. Positive/wrong
+controls continue to test trusted public fixtures locally, not submitted-code isolation.
+No submitted-code grader is launched through this blocked candidate.
+
+The candidate reports `blocked / aggregate-resource-controls-not-verified` when the
+reviewed version and namespace probes work. Missing backend reports unavailable;
+unreviewed versions, privileged installations or failed probes stay blocked. No result
+promotes the campaign gate: live_contract verified, real_runner_contract prepared,
+grading_isolation_contract required-not-verified, representative_campaign_ready false.
+All 42 jobs remain unexecuted. Linux namespace policy and installed version vary by host;
+there is no portable abstraction or silent fallback. Next: provide and verify delegated
+resource containment plus a minimal immutable toolchain inventory, run the full escape
+suite and all positive/wrong graders inside that boundary, then finalize coverage.
+This requires a separate approved host capability/contract, not a permission bypass.
+
+Implementation validation: 60 Python tests, docs-check, just check, nextest (85/85),
+diff checks and bounded benchmark context pass with synthetic namespace probes
+and fake/mocked benchmark runners.
 Local deny is skipped because the advisory cache is mounted read-only; exact-head
 green Security CI and check/review success from GitHub Actions app 15368 are required
 before owner acceptance. No merge or further live invocation is authorized here.

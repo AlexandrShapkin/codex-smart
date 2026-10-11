@@ -248,6 +248,14 @@ class CampaignTests(unittest.TestCase):
             artifacts.assert_not_called()
             runner.assert_not_called()
 
+    def test_prepared_submission_grade_has_no_host_fallback(self):
+        with patch.object(c.isolation, 'grade', return_value=c.isolation.GradeResult('blocked', 'test-blocker')) as grade, \
+             patch.object(b, 'grade') as host, patch.object(b, 'execute') as execute:
+            self.assertFalse(c._grade_submission(self.scenario, Path('/synthetic-workspace')))
+            grade.assert_called_once_with(self.scenario['id'], Path('/synthetic-workspace'))
+            host.assert_not_called()
+            execute.assert_not_called()
+
     def test_verified_live_contract(self):
         live = self.config['live_contract']
         for key in ['status', 'startup', 'auth_routing']:
@@ -325,7 +333,7 @@ class CampaignTests(unittest.TestCase):
         def wrapped(*args, **kwargs):
             with patch.object(b, 'run', original): return run(*args, **kwargs)
         with tempfile.TemporaryDirectory() as tmp, patch.object(b, 'run', wrapped), \
-             patch.object(b, 'grade', return_value=True), patch.object(b, 'execute') as execute:
+             patch.object(c, '_grade_submission', return_value=True), patch.object(b, 'execute') as execute:
             with self.assertRaises(KeyboardInterrupt):
                 c._real_run(self.config, '/fake/codex', Path(tmp))
             self.assertEqual(len(list(Path(tmp).glob('*.json'))), 1)
@@ -337,7 +345,7 @@ class CampaignTests(unittest.TestCase):
                        'exit_status':0, 'timeout':False, 'duration':0.01}
         with tempfile.TemporaryDirectory() as tmp, patch.object(c, 'jobs', return_value=[job]), \
              patch.object(b, 'execute', return_value=observation) as execute, \
-             patch.object(b, 'grade', return_value=False):
+             patch.object(c, '_grade_submission', return_value=False):
             report = c._real_run(self.config, '/fake/codex', Path(tmp))
             call = execute.call_args
             self.assertEqual(call.args[0], c.command_plan(self.config, job[1], '/fake/codex'))
