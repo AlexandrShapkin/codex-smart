@@ -1,0 +1,22 @@
+{
+  "files": {
+    "entry.rs": "#[derive(Clone, Copy)]\npub enum Kind { Charge, Refund }\npub struct Entry { pub kind: Kind, pub cents: i64, pub posted: bool }\npub fn delta(e: &Entry) -> i64 { e.cents }\n",
+    "ledger.rs": "use crate::entry::{Entry,delta};\npub fn balance(xs: &[Entry]) -> i64 { xs.iter().filter(|e|e.posted).map(delta).sum() }\n",
+    "report.rs": "use crate::ledger::balance;\nuse crate::entry::Entry;\npub fn statement(xs: &[Entry]) -> String { format!(\"balance={}\",balance(xs)) }\n",
+    "lib.rs": "mod entry; mod ledger; mod report;\n"
+  },
+  "reference": {
+    "entry.rs": "#[derive(Clone, Copy)]\npub enum Kind { Charge, Refund }\npub struct Entry { pub kind: Kind, pub cents: i64, pub posted: bool }\npub fn delta(e: &Entry) -> i64 { match e.kind { Kind::Charge => e.cents, Kind::Refund => -e.cents } }\n",
+    "regression.rs": "#[test] fn refund(){ let e=crate::entry::Entry{kind:crate::entry::Kind::Refund,cents:8,posted:true}; assert_eq!(crate::ledger::balance(&[e]),-8); }\n",
+    "lib.rs": "mod entry; mod ledger; mod report; #[cfg(test)] mod regression;\n"
+  },
+  "wrong_controls": [
+    {
+      "ledger.rs": "use crate::entry::{Entry,delta};\npub fn balance(xs: &[Entry]) -> i64 { xs.iter().map(delta).sum() }\n"
+    },
+    {
+      "entry.rs": "#[derive(Clone, Copy)]\npub enum Kind { Charge, Refund }\npub struct Entry { pub kind: Kind, pub cents: i64, pub posted: bool }\npub fn delta(e:&Entry)->i64 { -e.cents }\n"
+    }
+  ],
+  "oracle": "mod entry; mod ledger; mod report;\n#[test] fn behavioral_contract(){use entry::{Entry,Kind}; let xs=[Entry{kind:Kind::Charge,cents:125,posted:true},Entry{kind:Kind::Refund,cents:31,posted:true},Entry{kind:Kind::Refund,cents:900,posted:false}]; assert_eq!(ledger::balance(&xs),94); assert_eq!(report::statement(&xs),\"balance=94\"); assert_eq!(ledger::balance(&[]),0);}\n"
+}

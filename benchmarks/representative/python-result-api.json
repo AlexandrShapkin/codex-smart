@@ -1,0 +1,21 @@
+{
+  "files": {
+    "store.py": "def lookup(data,key): return data.get(key)\n",
+    "cache.py": "from store import lookup\ndef cached(data,key,default):\n value=lookup(data,key)\n return value if value else default\n",
+    "view.py": "from store import lookup\ndef render(data,key):\n value=lookup(data,key)\n return str(value) if value else \"missing\"\n"
+  },
+  "reference": {
+    "store.py": "from dataclasses import dataclass\n@dataclass(frozen=True)\nclass LookupResult:\n found: bool\n value: object\ndef lookup(data,key): return LookupResult(key in data,data.get(key))\n",
+    "cache.py": "from store import lookup\ndef cached(data,key,default):\n result=lookup(data,key)\n return result.value if result.found else default\n",
+    "view.py": "from store import lookup\ndef render(data,key):\n result=lookup(data,key)\n return str(result.value) if result.found else \"missing\"\n"
+  },
+  "wrong_controls": [
+    {
+      "cache.py": "from store import lookup\ndef cached(data,key,default):\n r=lookup(data,key)\n return r.value or default\n"
+    },
+    {
+      "store.py": "from dataclasses import dataclass\n@dataclass(frozen=True)\nclass LookupResult:\n found:bool\n value:object\ndef lookup(data,key):return LookupResult(bool(data.get(key)),data.get(key))\n"
+    }
+  ],
+  "oracle": "from store import lookup,LookupResult\nfrom cache import cached\nfrom view import render\nfor value in [0,False,\"\",None,\"present\"]:\n data={\"key\":value};r=lookup(data,\"key\");assert isinstance(r,LookupResult) and r.found and r.value==value\n assert cached(data,\"key\",\"fallback\")==value and render(data,\"key\")==str(value)\nassert not lookup({},\"absent\").found and cached({},\"absent\",\"fallback\")==\"fallback\" and render({},\"absent\")==\"missing\"\n"
+}

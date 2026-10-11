@@ -1,0 +1,66 @@
+{
+  "files": {
+    "PIPELINE.md": "Pipeline JSON maps jobs to needs, events and artifact. needs are prerequisite job names; events are pull_request or push_main. check commands are named in checks.json.\n",
+    "checks.json": "{\"lint\": \"python3 -m compileall app\", \"unit\": \"python3 -m unittest discover\", \"integration\": \"python3 integration.py\"}",
+    "pipeline.json": "{\"lint\": {\"needs\": [], \"events\": [\"pull_request\", \"push_main\"]}, \"unit\": {\"needs\": [], \"events\": [\"pull_request\", \"push_main\"]}, \"package\": {\"needs\": [\"unit\"], \"events\": [\"pull_request\", \"push_main\"], \"artifact\": \"bundle\"}, \"integration\": {\"needs\": [\"package\"], \"events\": [\"pull_request\", \"push_main\"]}, \"publish\": {\"needs\": [\"package\"], \"events\": [\"pull_request\", \"push_main\"], \"artifact\": \"bundle\"}}"
+  },
+  "reference": {
+    "pipeline.json": "{\"lint\": {\"needs\": [], \"events\": [\"pull_request\", \"push_main\"]}, \"unit\": {\"needs\": [], \"events\": [\"pull_request\", \"push_main\"]}, \"package\": {\"needs\": [\"lint\", \"unit\"], \"events\": [\"pull_request\", \"push_main\"], \"artifact\": \"bundle\"}, \"integration\": {\"needs\": [\"package\"], \"events\": [\"pull_request\", \"push_main\"]}, \"publish\": {\"needs\": [\"integration\", \"package\"], \"events\": [\"push_main\"], \"artifact\": \"bundle\"}}"
+  },
+  "wrong_controls": [
+    {
+      "pipeline.json": "{\"lint\": {\"needs\": [], \"events\": [\"pull_request\", \"push_main\"]}, \"unit\": {\"needs\": [], \"events\": [\"pull_request\", \"push_main\"]}, \"package\": {\"needs\": [\"lint\", \"unit\"], \"events\": [\"pull_request\", \"push_main\"], \"artifact\": \"bundle\"}, \"integration\": {\"needs\": [\"package\"], \"events\": [\"pull_request\", \"push_main\"]}, \"publish\": {\"needs\": [\"package\"], \"events\": [\"push_main\"], \"artifact\": \"bundle\"}}"
+    },
+    {
+      "pipeline.json": "{\"lint\": {\"needs\": [], \"events\": [\"pull_request\", \"push_main\"]}, \"unit\": {\"needs\": [], \"events\": [\"pull_request\", \"push_main\"]}, \"package\": {\"needs\": [\"lint\", \"unit\"], \"events\": [\"pull_request\", \"push_main\"], \"artifact\": \"bundle\"}, \"integration\": {\"needs\": [\"package\"], \"events\": [\"pull_request\", \"push_main\"]}, \"publish\": {\"needs\": [\"integration\", \"package\"], \"events\": [\"pull_request\", \"push_main\"], \"artifact\": \"bundle\"}}"
+    }
+  ],
+  "oracle": {
+    "pipeline.json": {
+      "lint": {
+        "needs": [],
+        "events": [
+          "pull_request",
+          "push_main"
+        ]
+      },
+      "unit": {
+        "needs": [],
+        "events": [
+          "pull_request",
+          "push_main"
+        ]
+      },
+      "package": {
+        "needs": [
+          "lint",
+          "unit"
+        ],
+        "events": [
+          "pull_request",
+          "push_main"
+        ],
+        "artifact": "bundle"
+      },
+      "integration": {
+        "needs": [
+          "package"
+        ],
+        "events": [
+          "pull_request",
+          "push_main"
+        ]
+      },
+      "publish": {
+        "needs": [
+          "integration",
+          "package"
+        ],
+        "events": [
+          "push_main"
+        ],
+        "artifact": "bundle"
+      }
+    }
+  }
+}

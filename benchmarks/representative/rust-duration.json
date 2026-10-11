@@ -1,0 +1,22 @@
+{
+  "files": {
+    "duration.rs": "pub fn parse(s:&str)->Option<(u32,u32)>{let (h,m)=s.split_once(\":\")?;let h=h.parse().ok()?;let m:u32=m.parse().ok()?;if m>=60{return None}Some((h,m))}\n",
+    "display.rs": "pub fn label(s:&str)->Option<String>{let (h,m)=crate::duration::parse(s)?;Some(format!(\"{}h {}m\",h,m))}\n",
+    "schedule.rs": "pub fn minutes(s:&str)->Option<u32>{let (h,m)=crate::duration::parse(s)?;Some(h*60+m)}\n",
+    "lib.rs": "mod duration; mod display; mod schedule;\n"
+  },
+  "reference": {
+    "duration.rs": "pub struct Duration { pub hours:u32, pub minutes:u32 }\npub fn parse(s:&str)->Option<Duration>{let (h,m)=s.split_once(\":\")?;let h=h.parse().ok()?;let m:u32=m.parse().ok()?;if m>=60{return None}Some(Duration{hours:h,minutes:m})}\n",
+    "display.rs": "pub fn label(s:&str)->Option<String>{let d=crate::duration::parse(s)?;Some(format!(\"{}h {}m\",d.hours,d.minutes))}\n",
+    "schedule.rs": "pub fn minutes(s:&str)->Option<u32>{let d=crate::duration::parse(s)?;Some(d.hours*60+d.minutes)}\n"
+  },
+  "wrong_controls": [
+    {
+      "schedule.rs": "pub fn minutes(s:&str)->Option<u32>{let d=crate::duration::parse(s)?;Some(d.hours+d.minutes)}\n"
+    },
+    {
+      "display.rs": "pub fn label(s:&str)->Option<String>{let d=crate::duration::parse(s)?;Some(format!(\"{}h {}m\",d.minutes,d.hours))}\n"
+    }
+  ],
+  "oracle": "mod duration; mod display; mod schedule;\n#[test] fn contract(){for (s,h,m) in [(\"2:17\",2,17),(\"0:00\",0,0),(\"11:59\",11,59)]{let d:duration::Duration=duration::parse(s).unwrap();assert_eq!((d.hours,d.minutes),(h,m));assert_eq!(schedule::minutes(s),Some(h*60+m));assert_eq!(display::label(s),Some(format!(\"{}h {}m\",h,m)));}for s in [\"oops\",\"1:60\",\"-1:02\"]{assert!(duration::parse(s).is_none());}}\n"
+}

@@ -1,0 +1,21 @@
+{
+  "files": {
+    "pricing.py": "def discounted(cents, percent):\n    return cents\n",
+    "checkout.py": "from pricing import discounted\ndef total(lines,percent): return sum(discounted(c,p)*q for c,q in lines for p in [percent])\n",
+    "receipt.py": "def receipt(lines,percent): return [c*q for c,q in lines]\n"
+  },
+  "reference": {
+    "pricing.py": "def discounted(cents, percent):\n    if not 0 <= percent <= 100: raise ValueError(\"percentage\")\n    return cents * (100-percent) // 100\n",
+    "receipt.py": "from pricing import discounted\ndef receipt(lines,percent): return [discounted(c,percent)*q for c,q in lines]\n",
+    "test_pricing.py": "import unittest\nfrom pricing import discounted\nfrom checkout import total\nfrom receipt import receipt\nclass PricingTests(unittest.TestCase):\n def test_rounding_and_callers(self):\n  self.assertEqual(discounted(7,25),5)\n  self.assertEqual(total([(7,2)],25),10)\n  self.assertEqual(receipt([(7,2)],25),[10])\n def test_invalid(self):\n  with self.assertRaises(ValueError): discounted(7,110)\n"
+  },
+  "wrong_controls": [
+    {
+      "pricing.py": "def discounted(cents,percent): return round(cents*(100-percent)/100)\n"
+    },
+    {
+      "receipt.py": "def receipt(lines,percent): return [c*q for c,q in lines]\n"
+    }
+  ],
+  "oracle": "from pricing import discounted\nfrom checkout import total\nfrom receipt import receipt\nfor lines,p in [([(137,2),(89,3)],17),([],0),([(5,2)],100)]:\n expected=[(c*(100-p)//100)*q for c,q in lines]\n assert receipt(lines,p)==expected and total(lines,p)==sum(expected)\nfor p in [-1,101]:\n try: discounted(53,p)\n except ValueError: pass\n else: raise AssertionError(\"invalid percent\")\n"
+}

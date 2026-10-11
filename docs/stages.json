@@ -184,7 +184,12 @@
         "scripts/benchmark_isolation.py",
         "scripts/test_benchmark_isolation.py",
         "scripts/benchmark_resource_contract.py",
-        "scripts/test_benchmark_resource_contract.py"
+        "scripts/test_benchmark_resource_contract.py",
+        "benchmarks/representative-manifest.json",
+        "benchmarks/representative-campaign-v1.json",
+        "benchmarks/representative_graders.py",
+        "scripts/benchmark_coverage.py",
+        "scripts/test_benchmark_coverage.py"
       ],
       "evidence": [
         "docs/benchmarking.md"

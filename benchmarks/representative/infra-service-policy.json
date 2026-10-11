@@ -1,0 +1,43 @@
+{
+  "files": {
+    "policy.json": "{\"api_port\": 8443, \"private_cidr\": \"10.42.0.0/16\"}",
+    "deployment.json": "{\"api\": {\"image\": \"example/api:2.4.1\", \"replicas\": 3, \"runAsNonRoot\": false, \"allowPrivilegeEscalation\": true, \"readOnlyRootFilesystem\": false, \"capabilities\": [\"NET_ADMIN\"]}, \"audit\": {\"enabled\": true, \"retention_days\": 30}}",
+    "ingress.json": "{\"ports\": [8443, 22], \"cidrs\": [\"0.0.0.0/0\"]}"
+  },
+  "reference": {
+    "deployment.json": "{\"api\": {\"image\": \"example/api:2.4.1\", \"replicas\": 3, \"runAsNonRoot\": true, \"allowPrivilegeEscalation\": false, \"readOnlyRootFilesystem\": true, \"capabilities\": []}, \"audit\": {\"enabled\": true, \"retention_days\": 30}}",
+    "ingress.json": "{\"ports\": [8443], \"cidrs\": [\"10.42.0.0/16\"]}"
+  },
+  "wrong_controls": [
+    {
+      "ingress.json": "{\"ports\": [8443], \"cidrs\": [\"0.0.0.0/0\"]}"
+    },
+    {
+      "deployment.json": "{\"api\": {\"image\": \"example/api:2.4.1\", \"replicas\": 3, \"runAsNonRoot\": true, \"allowPrivilegeEscalation\": true, \"readOnlyRootFilesystem\": true, \"capabilities\": []}, \"audit\": {\"enabled\": true, \"retention_days\": 30}}"
+    }
+  ],
+  "oracle": {
+    "deployment.json": {
+      "api": {
+        "image": "example/api:2.4.1",
+        "replicas": 3,
+        "runAsNonRoot": true,
+        "allowPrivilegeEscalation": false,
+        "readOnlyRootFilesystem": true,
+        "capabilities": []
+      },
+      "audit": {
+        "enabled": true,
+        "retention_days": 30
+      }
+    },
+    "ingress.json": {
+      "ports": [
+        8443
+      ],
+      "cidrs": [
+        "10.42.0.0/16"
+      ]
+    }
+  }
+}

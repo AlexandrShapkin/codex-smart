@@ -1,0 +1,36 @@
+{
+  "files": {
+    "entry.py": "from service import notify\ndef dispatch(user): return notify(user)\n",
+    "service.py": "from policy import allowed\nfrom transport import send\ndef notify(user):\n if not allowed(user): return \"suppressed\"\n return send(user)\n",
+    "policy.py": "def allowed(user): return user[\"active\"] and not user[\"muted\"]\n",
+    "transport.py": "# Local test double for the external notification boundary.\ndef send(user): return \"sent\"\n",
+    "archive.py": "def save(user): return \"saved\"\n"
+  },
+  "reference": {
+    "answer.json": "{\"delivered_path\": [\"entry.dispatch\", \"service.notify\", \"policy.allowed\", \"transport.send\"], \"suppressed_path\": [\"entry.dispatch\", \"service.notify\", \"policy.allowed\"], \"external_effect\": \"transport.send\"}"
+  },
+  "wrong_controls": [
+    {
+      "answer.json": "{\"delivered_path\": [\"entry.dispatch\", \"service.notify\", \"transport.send\"], \"suppressed_path\": [\"entry.dispatch\", \"service.notify\"], \"external_effect\": \"transport.send\"}"
+    },
+    {
+      "answer.json": "{\"delivered_path\": [\"entry.dispatch\", \"service.notify\", \"policy.allowed\", \"archive.save\"], \"suppressed_path\": [\"entry.dispatch\", \"service.notify\", \"policy.allowed\"], \"external_effect\": \"archive.save\"}"
+    }
+  ],
+  "oracle": {
+    "answer.json": {
+      "delivered_path": [
+        "entry.dispatch",
+        "service.notify",
+        "policy.allowed",
+        "transport.send"
+      ],
+      "suppressed_path": [
+        "entry.dispatch",
+        "service.notify",
+        "policy.allowed"
+      ],
+      "external_effect": "transport.send"
+    }
+  }
+}

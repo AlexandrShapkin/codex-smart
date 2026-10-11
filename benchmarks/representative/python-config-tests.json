@@ -1,0 +1,19 @@
+{
+  "files": {
+    "config.py": "def parse_bool(value):\n    if value == \"true\": return True\n    if value == \"false\": return False\n    raise ValueError(\"invalid boolean\")\n",
+    "service.py": "from config import parse_bool\ndef enabled(values): return parse_bool(values[\"enabled\"])\n",
+    "test_config.py": "import unittest\n"
+  },
+  "reference": {
+    "test_config.py": "import unittest\nfrom config import parse_bool\nfrom service import enabled\nclass Contract(unittest.TestCase):\n def test_valid(self):\n  self.assertIs(parse_bool(\"true\"),True)\n  self.assertIs(parse_bool(\"false\"),False)\n  self.assertIs(enabled({\"enabled\":\"false\"}),False)\n def test_invalid(self):\n  for x in [\"\", \"TRUE\", \"0\", None]:\n   with self.assertRaises(ValueError): parse_bool(x)\n  with self.assertRaises(ValueError): enabled({\"enabled\":\"yes\"})\n"
+  },
+  "wrong_controls": [
+    {
+      "test_config.py": "import unittest\nfrom config import parse_bool\nclass Contract(unittest.TestCase):\n def test_valid(self): self.assertTrue(parse_bool(\"true\"))\n"
+    },
+    {
+      "test_config.py": "import unittest\nclass Contract(unittest.TestCase):\n def test_valid(self): self.assertTrue(True)\n"
+    }
+  ],
+  "oracle": null
+}

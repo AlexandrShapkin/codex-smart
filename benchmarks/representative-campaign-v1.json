@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "campaign_id": "representative-development-v1",
+  "status": "frozen-plan-isolation-blocked",
+  "coverage_role": "representative",
+  "provenance": {
+    "preliminary_campaign": "initial-development-v1",
+    "preliminary_sha256": "cfc97144156b9321555cc98937d30d85f8e7bd39a5009954ae84d294156502f7"
+  },
+  "scenario_ids": [
+    "rust-ledger",
+    "rust-duration",
+    "go-pagination",
+    "go-reservations",
+    "python-config-tests",
+    "python-billing",
+    "python-result-api",
+    "infra-service-policy",
+    "repo-ci-gates",
+    "explore-notification"
+  ],
+  "variants": [
+    "vanilla",
+    "native"
+  ],
+  "unavailable_variants": {
+    "legacy": "provenance archive absent",
+    "router-v2": "no verified decision-applying adapter"
+  },
+  "repetitions": 2,
+  "seeds": [
+    14
+  ],
+  "retries": 0,
+  "timeout_seconds": 120,
+  "planned_primary_runs": 40,
+  "maximum_model_calls": 40,
+  "settings": {
+    "model": "gpt-6-sol",
+    "reasoning_effort": "low",
+    "sandbox": "workspace-write",
+    "ignore_user_config": true,
+    "ignore_rules": true,
+    "ephemeral": true,
+    "auth": {
+      "source": "existing normal CODEX_HOME",
+      "credential_store": "keyring",
+      "credentials_copied": false,
+      "user_config_loaded": false
+    }
+  },
+  "codex": {
+    "version": "0.162.1",
+    "reference": "codex-cli 0.162.1; inspected installed artifact",
+    "executable_sha256": "89cc44e820780120ba2c8bc4585c014815bdc7a1fc494c337a585a2c78dc59eb"
+  },
+  "toolchains": {
+    "rustc": {
+      "version": "rustc 1.98.0 (88d9e12ae 2026-08-18)",
+      "version_arguments": [
+        "--version"
+      ]
+    },
+    "go": {
+      "version": "go version go1.27.2-X:nodwarf5 linux/amd64",
+      "version_arguments": [
+        "version"
+      ]
+    },
+    "python3": {
+      "version": "Python 3.14.8",
+      "version_arguments": [
+        "--version"
+      ]
+    }
+  },
+  "cold_warm": {
+    "classification": "unknown",
+    "protocol": "fresh disposable fixture per attempt; inherited host caches not controlled; do not claim cold or warm",
+    "index": "not applicable: no indexing requested",
+    "bootstrap": "unknown"
+  },
+  "live_contract": {
+    "status": "inherited-execution-contract-only",
+    "source_campaign": "initial-development-v1",
+    "scope": "Codex startup/auth/JSONL only; not representative grading compatibility"
+  },
+  "readiness": {
+    "real_runner_contract": "not-adapted",
+    "grading_isolation_contract": "required-not-verified",
+    "representative_campaign_ready": false
+  },
+  "execution_dependencies": {
+    "grading_isolation_contract": "verified",
+    "qualified_host_contract": "verified"
+  },
+  "measured_records": [],
+  "pins": {
+    "manifest_sha256": "17515d454d0cca894bd81812a5b0d0b4b8ceaf91b614d6cc90e11f47ffa0de5a",
+    "grader_sha256": "80c495423a2fab893b7671685d6908c3e0b55ffbd408fc7546f2e8bf36ad5251",
+    "coverage_validator_sha256": "b5a70aeccae7392aa64791f9dd34a88bc53f00eaa1e5623f9e7ada7b98092c31",
+    "fixture_sha256": {
+      "rust-ledger": "afe92345beeb6700cbef130b26bde048e84f5b936c7a658897072b5bdcd374a7",
+      "rust-duration": "d80057d9b7eb279b3ffdc8086862966f28a4b38d6454f7cba374d021d3d5c728",
+      "go-pagination": "06bb3dc5c22c6cf5070e88c16a112505e3b8013a321e43e2a27ea8cd1d7c6817",
+      "go-reservations": "dcc71ce26bb66804b1279c3fa67190bc96cd3789d0e737b441a10e8b704ab379",
+      "python-config-tests": "7e9ff981e5748f6b8bfdfebe7fa6d5b351b1625aa8caa05f8ffcc78bc9c24034",
+      "python-billing": "d323c0457d49c5764851acc758236a0dcc3c3cf8b9f747f92cea8269678edfc8",
+      "python-result-api": "31782650085d7ff2eeef0428fded22ecdd9a52152640bb47a754ad6e96fbd0b6",
+      "infra-service-policy": "629d5b625b6e6310be1cd9f91d2cf5a77159df69f7b001b7d04e5afc4c61a3a9",
+      "repo-ci-gates": "43d994e6e287f160aa68ee975496893717872f0059b3343f823b65b8ce892251",
+      "explore-notification": "d9d511f2bd74dfc1cc9d7313aa50c3fc1c593c6202e4d1bc369be505be7251b2"
+    }
+  }
+}

@@ -303,7 +303,7 @@ stay null and cost comparison still requires quality-equivalent matched runs.
 The dry-run remains credential-free and synthetic. Real mode was not executed during
 this implementation or its tests; all runner tests use fakes/mocks.
 
-Recommended next #14 task: **Design and verify the grading isolation boundary, then
+Recommendation at #36 (superseded by the representative-design slice below): **Design and verify the grading isolation boundary, then
 finalize representative coverage.** Define a boundary that prevents submitted code from
 accessing the authenticated host's files, credentials and network, and test attempted
 escapes before accepting it. No container/orchestration system is implemented here.
@@ -317,7 +317,7 @@ no coverage expansion or campaign execution occurs here.
 ## Grading isolation investigation after #36
 
 Owner-accepted #36 merged at `bff575dce5498159939ddea4814a53e4da478f55`.
-The next slice examines an already installed Linux backend without installing packages,
+The #37 slice examined an already installed Linux backend without installing packages,
 using sudo, changing security configuration or invoking models. No backend is accepted
 for submitted-code grading. `scripts/benchmark_isolation.py` offers small typed
 availability/grade results and an explicit `--probe` command for fixed synthetic code.
@@ -466,3 +466,125 @@ and fake/mocked benchmark runners.
 Local deny is skipped because the advisory cache is mounted read-only; exact-head
 green Security CI and check/review success from GitHub Actions app 15368 are required
 before owner acceptance. No merge or further live invocation is authorized here.
+
+## Representative development design (separate frozen plan)
+
+The primary question is whether a thin deterministic policy/capability layer can
+preserve or improve **completed development-task quality** while reducing unnecessary
+context/tool/token cost versus an equivalent native Codex workflow. Retrieval alone
+is not the quality unit. The present vanilla/native comparison tests an instruction
+policy only; it cannot establish the benefit of a decision-applying Router adapter.
+That variant remains unavailable until a genuine adapter exists.
+
+Six kinds of evidence must remain separate:
+
+1. **Harness validation:** the original seven scenarios are harness/component coverage.
+2. **Codex live-contract smoke:** one successful bounded JSON-only IaC smoke verifies
+   startup/auth/JSONL execution; its counters remain smoke observations, not comparisons.
+3. **Historical preliminary plan:** `initial-development-v1` remains unchanged at
+   seven scenarios × two variants × three repetitions = 42 unexecuted calls.
+4. **Representative design:** `representative-development-v1` proposes ten tasks with
+   independent graders and trusted controls; this PR seeks acceptance of that matrix.
+5. **Grading isolation:** required-not-verified; correctness checks do not establish it.
+6. **Measured evidence:** none. No comparative result, savings or winner exists.
+
+The separate [representative manifest](../benchmarks/representative-manifest.json)
+uses measurement-only metadata. It is never Router input; qualitative tiers describe
+fixture structure, not LOC, language-based routing, or repository-size heuristics.
+Purpose-built fixtures remain bounded local systems, not evidence for all repositories,
+frameworks or workloads. The matrix is selected for distinct quality risks, not likely
+savings. Python occupies three of ten tasks rather than dominating the suite.
+
+| Scenario | Domain | Task/risk | Tier | Lifecycle |
+| --- | --- | --- | --- | --- |
+| rust-ledger | Rust | Signed refund bug; posted/pending callers | multi-file | inspect, edit, tests, build, impact |
+| rust-duration | Rust | Named API refactor; formatting/scheduling callers | cross-cutting | inspect, edit, tests, build, impact |
+| go-pagination | Go | Feature/API; offsets, exhaustion, response adapter | multi-file | inspect, edit, tests, build, impact |
+| go-reservations | Go | Expiry bug/refactor; availability/report agreement | multi-file | inspect, edit, tests, build, impact |
+| python-config-tests | Python | Test work; parser/consumer mutation detection | focused | inspect, edit, tests |
+| python-billing | Python | Behavioral feature; monetary rounding/receipts | multi-file | inspect, edit, tests, impact |
+| python-result-api | Python | Tagged-result API migration; absence vs falsy | cross-cutting | inspect, edit, tests, impact |
+| infra-service-policy | Infrastructure | Least privilege and ingress across configs | multi-file | inspect, edit, declarative tests, impact |
+| repo-ci-gates | Repository/CI | Build/test dependency graph and publish trust | cross-cutting | inspect, edit, declarative tests, impact |
+| explore-notification | Exploration | Read-only conditional call flow and side effect | focused | inspect, impact |
+
+Inspection and exploration correctness are independently checked. Edit scenarios
+require several lifecycle steps and six or more multi-file/cross-cutting tasks; all
+compiled-language tasks require build/check validation. Independent compilation/tests
+verify the functional contract; lifecycle metadata states requested work, not observed
+proof that an agent actually performed each step. Future trace review must distinguish
+those. Declarative tasks do not deploy infrastructure or contact a CI service.
+
+### Independent controls and leakage
+
+[Representative graders](../benchmarks/representative_graders.py) use trusted oracles
+outside the staged workspace. Only baseline files and developer-intent prompts are
+staged. Reference patches, two plausible wrong controls per task, and oracle assertions
+remain in benchmark-owned fixture JSON and are not staged. Agent sessions must be
+restricted to their fixture, with no access to this repository's controls/oracles.
+Snapshot pins cover initial file maps; campaign pins cover complete fixtures and the
+grader, so hidden-control changes also require review/repinning.
+
+Correct references must pass; both wrong controls must fail. Behavioral oracles check
+refund signs and pending entries, caller units/invalid durations, pagination boundaries,
+exact expiry, integer rounding, and absent/falsy distinctions. The test task must pass
+on the real parser and fail three independent mutants (truthiness, invalid acceptance,
+and case coercion); production parser/consumer files must remain unchanged. CI/security
+oracles validate the complete JSON contract and preserve unrelated policy. Exploration
+checks both conditional paths and preserves all source. Submitted tests are never the
+sole quality oracle. Prompts describe intent, not hidden values or patch structure.
+Filename/phrase/reference-substring leakage checks are deterministic guards, supplemented
+by manual prompt review; they do not prove absence of all semantic leakage.
+
+Run `python3 -B scripts/benchmark_coverage.py` for a credential-free, read-only design
+validation; it executes no tools/models and creates no artifacts. The explicit
+`--trusted-controls` option executes **only repository-authored** references/wrong
+controls locally. That host subprocess path verifies grader correctness, not grader
+security isolation; it must never be used for model submissions. There is no real
+mode or new public model entry. The existing public campaign entry accepts only the
+historical frozen campaign and remains blocked.
+
+### Call budget and provenance
+
+The [new campaign](../benchmarks/representative-campaign-v1.json) has ten scenarios ×
+vanilla/native × **two repetitions** = **40 maximum model calls**, seed 14, zero retries,
+120-second timeout. Two repetitions are the minimum initial paired design to expose
+run variability; they do not justify significance or broad claims. More repetitions
+require a new reviewed budget. Failures remain evidence and in denominators; only
+quality-equivalent matched runs enter cost comparisons. Unknown counters remain null;
+there is no winner logic or derived fresh-input counter.
+
+Vanilla/native use equivalent frozen executable/model/reasoning/auth settings, with
+only the native instruction differing. Legacy lacks provenance; Router-v2 lacks an
+adapter. Neither is fabricated. The new plan is not yet adapted to real execution.
+It records a checksum/provenance link to the historical plan and inherits only applicable
+Codex startup/auth/JSONL evidence. It contains no smoke counters or comparative records.
+Any future representative smoke must have a separately approved budget; it is not
+included in these 40 calls. No smoke, preliminary campaign, or representative campaign
+calls were made in this design task.
+
+### Qualified host dependency and stopping current-host investigation
+
+#38 merged as `0f220d0caadfb08b15a640f3581bb01ff2b7f759`. Its current-host result is
+final: systemd/cgroup-v2 present, user resource manager unavailable, direct delegation
+unavailable, aggregate memory/tasks and grading isolation unverified. No further
+current-host workarounds, service/login/cgroup changes, installations, sudo, or
+privileged/rootful container fallback are planned. This machine cannot qualify for
+submitted-code grading. Running submissions on the normal authenticated host is not
+an approved campaign configuration.
+
+A separately qualified host must demonstrate all of:
+
+- unprivileged aggregate memory and task/process limits with observed enforcement;
+- descendant containment and whole-tree cleanup on timeout/interruption;
+- accepted immutable runtime/toolchain/grader inventory with exact pins;
+- Bubblewrap-equivalent filesystem, network, environment and privilege isolation;
+- complete escape probes and positive/wrong grader compatibility inside that same boundary.
+
+No distribution is prescribed. The eventual frozen execution contract must review its
+specific backend/version and evidence. No campaign flag can override isolation. The
+new plan explicitly depends on verified grading isolation and a verified qualified
+host; current readiness remains false and isolation required-not-verified. Coverage
+can be reviewed independently of host qualification. Next: accept this bounded matrix,
+then qualify a separate host and adapt/verify the guarded representative runner before
+any separately authorized model spending. Benchmark stays partial, #14 open, #15 separate.

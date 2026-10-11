@@ -22,4 +22,19 @@ Read [docs/benchmarking.md](../../docs/benchmarking.md), [docs/provenance.md](..
 
 ## Follow-ups
 
-The #14 harness supplies compact pinned fixtures, independent graders and fake-run validation. One successful corrected bounded writable-host smoke now verifies startup, keyring auth routing, terminal parsing and independent grading. Live contract is verified and real runner prepared; grading_isolation_contract is required-not-verified and real execution is disabled before artifact creation or executable/model execution; representative_campaign_ready remains false because representative task coverage has not yet been accepted. All 42 planned jobs remain unexecuted and preliminary. Bubblewrap 0.13.0 namespace probes pass locally, but aggregate resource containment and immutable toolchain/grader compatibility remain blocked/unverified on this host. Systemd 262 user-manager queries fail even with the normal local bus; memory/pids controller presence does not prove enforcement. Next: establish a usable unprivileged user resource path and verify tiny descendant limits/cleanup and immutable runtime closure, then finalize representative coverage before spending on those runs; see docs/benchmarking.md. Historical startup/auth failures remain documented. Progress remains partial, #14 open, and #15 production telemetry separate. No savings or winner is claimed.
+Harness/component coverage retains seven fixtures and the historical 42-job plan,
+unchanged and unexecuted. The successful JSON-only IaC smoke verifies the Codex
+execution contract; it is not comparative evidence. Ten distinct development tasks
+now form a separate representative-development-v1 design with independent trusted
+controls and a 40-call maximum (vanilla/native, two repetitions, zero retries).
+Coverage metadata is measurement-only. Review matrix acceptance independently of
+host qualification; no measured result, winner or savings exists.
+
+Current-host capability investigation is complete: systemd/cgroup-v2 present but
+user resource manager/delegation unavailable and aggregate memory/tasks unverified.
+Qualify a separate host with enforced aggregate limits, descendant cleanup, immutable
+runtime inventory and complete filesystem/network/environment isolation. Submitted
+code must not run on the authenticated host. Grading isolation remains required-not-verified,
+representative_campaign_ready false, public real execution disabled. Next qualify that
+host and verify the representative runner before any separately authorized spending.
+Benchmark stays partial, #14 open and #15 separate. See docs/benchmarking.md.

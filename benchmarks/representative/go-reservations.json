@@ -1,0 +1,22 @@
+{
+  "files": {
+    "go.mod": "module fixture\n\ngo 1.23\n",
+    "reservation.go": "package fixture\ntype Reservation struct{Units int; Expires int64; Canceled bool}\nfunc Active(r Reservation, now int64)bool{return !r.Canceled}\n",
+    "capacity.go": "package fixture\nfunc Available(total int, rs []Reservation, now int64)int{for _,r:=range rs{if Active(r,now){total-=r.Units}};return total}\n",
+    "report.go": "package fixture\nfunc ActiveCount(rs []Reservation, now int64)int{n:=0;for _,r:=range rs{if !r.Canceled{n++}};return n}\n"
+  },
+  "reference": {
+    "reservation.go": "package fixture\ntype Reservation struct{Units int; Expires int64; Canceled bool}\nfunc Active(r Reservation, now int64)bool{return !r.Canceled&&r.Expires>now}\n",
+    "report.go": "package fixture\nfunc ActiveCount(rs []Reservation, now int64)int{n:=0;for _,r:=range rs{if Active(r,now){n++}};return n}\n",
+    "reservation_test.go": "package fixture\nimport \"testing\"\nfunc TestExpired(t *testing.T){if Active(Reservation{1,10,false},10){t.Fatal(\"expired\")}}\n"
+  },
+  "wrong_controls": [
+    {
+      "reservation.go": "package fixture\ntype Reservation struct{Units int; Expires int64; Canceled bool}\nfunc Active(r Reservation,now int64)bool{return !r.Canceled&&r.Expires>=now}\n"
+    },
+    {
+      "report.go": "package fixture\nfunc ActiveCount(rs []Reservation,now int64)int{return len(rs)}\n"
+    }
+  ],
+  "oracle": "package fixture\nimport \"testing\"\nfunc TestContract(t *testing.T){rs:=[]Reservation{{3,21,false},{4,20,false},{7,99,true},{2,19,false}};if Available(30,rs,20)!=27||ActiveCount(rs,20)!=1{t.Fatal(\"expiry\")};if Available(30,nil,20)!=30||ActiveCount(nil,20)!=0{t.Fatal(\"empty\")};if !Active(rs[0],20)||Active(rs[1],20)||Active(rs[2],20){t.Fatal(\"activity\")}}\n"
+}
