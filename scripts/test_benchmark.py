@@ -14,6 +14,20 @@ class BenchmarkTests(unittest.TestCase):
         self.m = b.load_manifest()
         self.s = self.m['scenarios'][2]
 
+    def test_legacy_real_cli_is_disabled(self):
+        import contextlib, io, sys
+        for arguments in [['--real'], ['--real', '--codex', '/fake/codex', '--model', 'gpt-6-sol']]:
+            with self.subTest(arguments=arguments), \
+                 patch.object(sys, 'argv', ['benchmark.py', *arguments]), \
+                 patch.object(b, 'execute') as execute, patch.object(b, 'run') as run, \
+                 patch.object(b, 'load_manifest') as manifest, contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as raised: b.main()
+                self.assertEqual(raised.exception.code, 2)
+                execute.assert_not_called()
+                run.assert_not_called()
+                manifest.assert_not_called()
+        self.assertFalse(hasattr(b, 'real_run'))
+
     def test_manifest(self):
         self.assertEqual(len(self.m['scenarios']), 7)
         self.assertEqual({s['domain'] for s in self.m['scenarios']}, {'Rust','Go','Python','IaC'})

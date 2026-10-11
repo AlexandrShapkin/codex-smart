@@ -1,9 +1,10 @@
-"""Pinned campaign planning and credential-free self-validation; no model execution."""
+"""Pinned preliminary campaign; real execution requires two explicit opt-ins."""
 import argparse
 import hashlib
 import json
 from pathlib import Path
 import shutil
+import re
 
 import benchmark as b
 
@@ -15,6 +16,12 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def require_frozen(actual, expected, label):
+    # JSON comparison preserves scalar types (False != 0, True != 1).
+    if json.dumps(actual, sort_keys=True) != json.dumps(expected, sort_keys=True):
+        raise ValueError(f'unreviewed {label}')
+
+
 def load(path=CONFIG):
     c = json.loads(Path(path).read_text())
     if c['schema_version'] != 1 or c['campaign_id'] != 'initial-development-v1':
@@ -23,8 +30,14 @@ def load(path=CONFIG):
                 'harness_sha256': Path(b.__file__), 'campaign_runner_sha256': Path(__file__)}
     if any(c['pins'][key] != sha(file) for key, file in expected.items()):
         raise ValueError('campaign source mismatch; explicitly review and repin')
-    if c['codex']['version'] != '0.162.1' or len(c['codex']['executable_sha256']) != 64:
-        raise ValueError('unsupported Codex reference')
+    require_frozen(c['codex']['version'], '0.162.1', 'Codex version')
+    require_frozen(c['codex']['executable_sha256'],
+                   '89cc44e820780120ba2c8bc4585c014815bdc7a1fc494c337a585a2c78dc59eb',
+                   'Codex executable SHA')
+    require_frozen(c.get('toolchains'), {
+        'rustc': {'version': 'rustc 1.98.0 (88d9e12ae 2026-08-18)', 'version_arguments': ['--version']},
+        'go': {'version': 'go version go1.27.2-X:nodwarf5 linux/amd64', 'version_arguments': ['version']},
+        'python3': {'version': 'Python 3.14.8', 'version_arguments': ['--version']}}, 'toolchains')
     if c['variants'] != ['vanilla', 'native'] or c['repetitions'] != 3 or c['retries'] != 0:
         raise ValueError('initial campaign bounds')
     if c['seeds'] != [14] or c['timeout_seconds'] != 120 or c['planned_primary_runs'] != 42:
@@ -37,8 +50,33 @@ def load(path=CONFIG):
     if any(c['settings']['auth'][key] is not False
            for key in ('credentials_copied', 'user_config_loaded')):
         raise ValueError('auth evidence must use typed booleans')
-    if c['cold_warm']['classification'] != 'unknown':
-        raise ValueError('cache protocol mismatch')
+    require_frozen(c.get('cold_warm'), {
+        'classification': 'unknown',
+        'protocol': 'fresh disposable fixture per attempt; inherited host caches not controlled; do not claim cold or warm',
+        'index': 'not applicable: no indexing requested', 'bootstrap': 'unknown'}, 'cache protocol')
+    require_frozen(c.get('status'), 'frozen-plan-live-contract-verified', 'campaign status')
+    require_frozen(c.get('live_contract'), {
+        'status': 'verified', 'startup': 'verified', 'auth_routing': 'verified',
+        'scenario': 'iac-security', 'variant': 'vanilla', 'repetition': 0, 'seed': 14,
+        'retries': 0, 'cold_warm': 'unknown', 'terminal_status': 'completed',
+        'exit_status': 0, 'final_status': None, 'parser_errors': [], 'quality_pass': True,
+        'grader': 'passed', 'usage': 'observed', 'observed_tool_calls': 3,
+        'ready_for_measured_campaign': False}, 'live contract')
+    require_frozen(c.get('metrics'), {
+        'input': 58885, 'cached_input': 55040, 'output': 427, 'reasoning': 36,
+        'fresh_input': None, 'total': None, 'full_tool_calls': None}, 'smoke metrics')
+    require_frozen(c.get('readiness'), {
+        'real_runner_contract': 'prepared', 'representative_campaign_ready': False,
+        'grading_isolation_contract': 'required-not-verified',
+        'reason': 'representative task coverage has not yet been accepted'}, 'readiness')
+    history = c.get('historical_live_attempts')
+    if not isinstance(history, list) or len(history) != 1 or not isinstance(history[0], dict):
+        raise ValueError('retained historical live evidence required')
+    historical_fields = {'terminal_status': 'failed', 'exit_status': 1,
+                         'grader': 'not executed', 'usage': 'not observed',
+                         'ready_for_measured_campaign': False}
+    require_frozen({key: history[0].get(key) for key in historical_fields},
+                   historical_fields, 'historical live evidence')
     m = b.load_manifest()
     if c['scenario_ids'] != [s['id'] for s in m['scenarios']]:
         raise ValueError('scenario set mismatch')
@@ -112,24 +150,95 @@ def dry_run(c, path=CONFIG, artifacts=None):
             (artifacts/'records.json').write_text(json.dumps(records, indent=2)+'\n')
     return {'execution_kind': 'synthetic-self-validation', 'planned_jobs': len(records),
             'attempted_jobs': sum(bool(r['attempts']) for r in records), 'toolchains': status,
-            'live_campaign_ready': c['live_contract']['status'] == 'verified',
+            'live_campaign_ready': c['readiness']['representative_campaign_ready'],
             'summary': b.aggregate(records)}, records
+
+
+def real_preflight(c, executable):
+    if c['live_contract']['status'] != 'verified':
+        raise ValueError('live contract not verified')
+    if not executable or not Path(executable).is_absolute():
+        raise ValueError('explicit absolute Codex executable required')
+    if sha(executable) != c['codex']['executable_sha256']:
+        raise ValueError('Codex checksum mismatch')
+    version = b.execute([executable, '--version'], b.ROOT, timeout=10)
+    if version['timeout'] or version['exit_status'] != 0 or version['stdout'].strip() != 'codex-cli 0.162.1':
+        raise ValueError('Codex version mismatch')
+    if any(value != 'verified' for value in toolchains(c).values()):
+        raise ValueError('toolchain mismatch')
+
+
+def artifact_directory(run_id):
+    if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}', run_id):
+        raise ValueError('invalid run identifier')
+    root = b.ROOT / '.artifacts'
+    if root.is_symlink():
+        raise ValueError('symlink artifacts rejected')
+    root.mkdir(mode=0o700, exist_ok=True)
+    root.chmod(0o700)
+    target = root / run_id
+    if target.exists() or target.is_symlink():
+        raise ValueError('existing run evidence')
+    target.mkdir(mode=0o700)
+    return target
+
+
+def real_run(executable, run_id, path=CONFIG, *, allow_preliminary_campaign=False):
+    if allow_preliminary_campaign is not True:
+        raise ValueError('explicit preliminary campaign acknowledgement required')
+    c = load(path)
+    if c['readiness']['grading_isolation_contract'] != 'verified':
+        raise ValueError('grading isolation contract is not verified')
+    real_preflight(c, executable)
+    artifacts = artifact_directory(run_id)
+    return _real_run(c, executable, artifacts, path)
+
+
+def _real_run(c, executable, artifacts, path=CONFIG):
+    refs = {**references(c, path), 'runner': 'real-v1', 'execution_kind': 'real-preliminary'}
+    manifest = b.load_manifest()
+    records = []
+    def runner(s, variant, directory):
+        return b.execute(command_plan(c, variant, executable), directory,
+                         prompt(c, s, variant), timeout=c['timeout_seconds'])
+    for sid, variant, rep, seed in jobs(c):
+        s = next(s for s in manifest['scenarios'] if s['id'] == sid)
+        record = b.run(s, variant, seed, rep, runner, retries=0, cold='unknown',
+                       references=refs, artifacts=artifacts)
+        # One immutable normalized record per completed job survives interruption.
+        with (artifacts / f'{sid}-{variant}-{rep}.json').open('x') as output:
+            output.write(json.dumps(record, indent=2) + '\n')
+        records.append(record)
+    return {'execution_kind': 'real-preliminary', 'planned_jobs': len(jobs(c)),
+            'summary': b.aggregate(records)}
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--dry-run', action='store_true', help='execute only local fake agents and graders')
+    p.add_argument('--real', action='store_true')
+    p.add_argument('--allow-preliminary-campaign', action='store_true')
+    p.add_argument('--codex', help='explicit absolute pinned executable')
+    p.add_argument('--run-id', default='campaign-v1-real')
     args = p.parse_args()
     c = load()
-    if not args.dry_run:
+    if args.real and args.dry_run:
+        p.error('--real and --dry-run are mutually exclusive')
+    if not args.dry_run and (not args.real or not args.allow_preliminary_campaign):
         print(json.dumps({'planned_jobs': len(jobs(c)), 'live_contract': c['live_contract'],
                           'model_execution_enabled': False}, indent=2))
+        if args.real:
+            p.error('real execution requires --allow-preliminary-campaign; representative coverage not accepted')
         return
-    artifacts = b.ROOT/'.artifacts'/'campaign-v1-dryrun'
-    if artifacts.parent.is_symlink():
-        p.error('symlink artifacts rejected')
-    artifacts.mkdir(mode=0o700, exist_ok=False)
-    report, _ = dry_run(c, artifacts=artifacts)
+    try:
+        if args.real:
+            report = real_run(args.codex, args.run_id,
+                              allow_preliminary_campaign=args.allow_preliminary_campaign)
+        else:
+            artifacts = artifact_directory('campaign-v1-dryrun')
+            report, _ = dry_run(c, artifacts=artifacts)
+    except (ValueError, OSError) as error:
+        p.error(str(error))
     print(json.dumps(report, indent=2))
 
 

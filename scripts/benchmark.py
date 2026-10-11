@@ -139,6 +139,10 @@ def execute(argv, directory, prompt='', timeout=60):
         timed_out = True
         os.killpg(p.pid, signal.SIGKILL)
         out, err = p.communicate()
+    except KeyboardInterrupt:
+        os.killpg(p.pid, signal.SIGKILL)
+        p.communicate()
+        raise
     return {'stdout': out, 'stderr': err, 'exit_status': p.returncode,
             'timeout': timed_out, 'duration': time.monotonic() - started}
 
@@ -263,13 +267,13 @@ def main():
     p.add_argument('--repetitions', type=int, default=1)
     p.add_argument('--seed', type=int, default=14)
     p.add_argument('--real', action='store_true')
-    p.add_argument('--codex')
-    p.add_argument('--model')
     p.add_argument('--timeout', type=int, default=60)
     p.add_argument('--retries', type=int, default=0)
     p.add_argument('--cold-warm', choices=['cold', 'warm', 'unknown'], default='unknown')
     p.add_argument('--artifacts', type=Path, default=ROOT / '.artifacts')
     args = p.parse_args()
+    if args.real:
+        p.error('legacy real execution disabled; use scripts/benchmark_campaign.py (grading isolation required)')
     m = load_manifest()
     if args.retries < 0 or args.timeout < 1:
         p.error('invalid retries/timeout')
@@ -277,21 +281,8 @@ def main():
                      'grader_sha256': hashlib.sha256((ROOT / 'graders.py').read_bytes()).hexdigest(),
                      'harness_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
     refs = {**protocol_refs, 'runner': 'fake-v1'}
-    if args.real:
-        argv = plan('vanilla', args.codex or '', args.model)
-        version = execute([args.codex, '--version'], ROOT)
-        if version['exit_status'] or version['stdout'].strip() != 'codex-cli 0.162.1':
-            p.error('only inspected Codex 0.162.1 supported')
-        refs = {**protocol_refs, 'codex_version': '0.162.1', 'executable_sha256': hashlib.sha256(Path(args.codex).read_bytes()).hexdigest(),
-                'model': args.model, 'settings': 'isolated-exec-v1'}
-        def runner(s, v, d):
-            prompt = s['prompt']
-            if v == 'native':
-                prompt += '\nUse native local tools first. No MCP, external indexing, installation or network.'
-            return execute(argv, d, prompt, args.timeout)
-    else:
-        def runner(s, v, d):
-            return FakeRunner()(s, v, d)
+    def runner(s, v, d):
+        return FakeRunner()(s, v, d)
     # Raw artifacts restricted to ignored repository-local directory.
     if args.artifacts.resolve() != (ROOT / '.artifacts').resolve():
         p.error('artifacts must use benchmarks/.artifacts')
@@ -312,7 +303,7 @@ def main():
             continue
         records.append(run(s, v, args.seed, rep, runner, args.retries, args.cold_warm, refs, args.artifacts))
     (args.artifacts / 'records.json').write_text(json.dumps(records, indent=2) + '\n')
-    print(json.dumps({'execution_kind': 'real' if args.real else 'synthetic-self-validation',
+    print(json.dumps({'execution_kind': 'synthetic-self-validation',
                       'summary': aggregate(records)}, indent=2))
 
 
