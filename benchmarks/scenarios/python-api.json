@@ -1,0 +1,13 @@
+{
+  "files": {
+    "api.py": "def lookup(k): return k\n",
+    "client.py": "from api import lookup\ndef fetch(k): return lookup(k)\n"
+  },
+  "solution": {
+    "api.py": "def lookup(k): return {\"value\": k}\n",
+    "client.py": "from api import lookup\ndef fetch(k): return lookup(k)[\"value\"]\n"
+  },
+  "wrong": {
+    "api.py": "def lookup(k): return {\"value\": k}\n"
+  }
+}

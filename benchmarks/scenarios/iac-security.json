@@ -1,0 +1,11 @@
+{
+  "files": {
+    "deployment.json": "{\"replicas\": 0, \"securityContext\": {\"runAsNonRoot\": false, \"privileged\": true}, \"image\": \"example/app:latest\"}"
+  },
+  "solution": {
+    "deployment.json": "{\"replicas\": 2, \"securityContext\": {\"runAsNonRoot\": true, \"privileged\": false}, \"image\": \"example/app:1.2.3\"}"
+  },
+  "wrong": {
+    "deployment.json": "{\"replicas\": 2, \"securityContext\": {\"runAsNonRoot\": true, \"privileged\": true}, \"image\": \"example/app:1.2.3\"}"
+  }
+}

@@ -22,4 +22,4 @@ Read [docs/benchmarking.md](../../docs/benchmarking.md), [docs/provenance.md](..
 
 ## Follow-ups
 
-No benchmark implementation or cost reduction is claimed yet. Verified legacy evidence is a prerequisite for that comparison variant.
+The first #14 harness slice supplies pinned public fixtures, independent graders and fake-run validation; no measured cost reduction is claimed. Progress stays planned until merge, then partial. The measured campaign and verified legacy evidence remain pending. #15 production telemetry is separate.

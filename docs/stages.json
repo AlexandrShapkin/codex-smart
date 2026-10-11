@@ -175,7 +175,10 @@
         "docs/provenance.md"
       ],
       "sources": [
-        "docs/benchmarking.md"
+        "docs/benchmarking.md",
+        "benchmarks/manifest.json",
+        "scripts/benchmark.py",
+        "scripts/test_benchmark.py"
       ],
       "evidence": []
     },

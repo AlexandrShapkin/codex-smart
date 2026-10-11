@@ -85,7 +85,7 @@
     },
     {
       "path": "docs/benchmarking.md",
-      "title": "Benchmark protocol (planned)",
+      "title": "Development benchmark protocol",
       "owner": "benchmark",
       "role": "current",
       "stages": [

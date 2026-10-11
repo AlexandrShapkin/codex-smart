@@ -1,0 +1,11 @@
+{
+  "files": {
+    "main.go": "package main\nfunc Total(xs []int) int { return 0 }\n"
+  },
+  "solution": {
+    "main.go": "package main\nfunc Total(xs []int) int { n:=0; for _,x:=range xs {n+=x}; return n }\n"
+  },
+  "wrong": {
+    "main.go": "package main\nfunc Total(xs []int) int { return len(xs) }\n"
+  }
+}

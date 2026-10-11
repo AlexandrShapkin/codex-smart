@@ -16,7 +16,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [Security](../SECURITY.md) | security | current | hardening |
 | [Codex Smart — project brief and engineering backlog](../codex-smart-project-brief.md) | provenance | input | baseline |
 | [Architecture](../docs/architecture.md) | architecture | current | baseline, router |
-| [Benchmark protocol (planned)](../docs/benchmarking.md) | benchmark | current | benchmark |
+| [Development benchmark protocol](../docs/benchmarking.md) | benchmark | current | benchmark |
 | [Configuration](../docs/configuration.md) | engineering | current | baseline |
 | [ADR-0001: Rust core and CLI](../docs/decisions/0001-rust-core.md) | architecture | contract | baseline |
 | [ADR-0002: Thin launcher and conservative discovery](../docs/decisions/0002-thin-launcher.md) | architecture | contract | baseline |

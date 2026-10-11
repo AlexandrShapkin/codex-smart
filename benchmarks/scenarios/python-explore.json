@@ -1,0 +1,13 @@
+{
+  "files": {
+    "entry.py": "from service import handle\n",
+    "service.py": "from storage import save\ndef handle(x): return save(x)\n",
+    "storage.py": "def save(x): return x\n"
+  },
+  "solution": {
+    "answer.json": "{\"call_chain\": [\"entry.py\", \"service.handle\", \"storage.save\"]}"
+  },
+  "wrong": {
+    "answer.json": "{\"call_chain\": [\"entry.py\", \"storage.save\"]}"
+  }
+}
