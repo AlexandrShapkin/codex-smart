@@ -30,7 +30,10 @@ native baseline, typed explanations and stubbed sessions; see the
 The #11 pure reasoning policy and fake OS-argv planner are implemented separately
 from production launch; see the
 [reasoning contract](../routing.md#router-v2-reasoning-effort-selection-11).
-Router remains incomplete: #12 fallback execution and #13 Rhai evaluation are pending.
+The #12 pure fallback/evidence plan preserves verification under degraded decisions;
+see the [fallback contract](../routing.md#router-v2-fallback-and-bounded-evidence-plan-12).
+No automatic evidence execution or production Router activation is delivered.
+Router remains partial: #13 is unresolved, and Rhai need is not established.
 No capability activation is delivered.
 
 Current reasoning/config remain preview. Rhai requires a separate ADR and enforced sandbox only if justified.
