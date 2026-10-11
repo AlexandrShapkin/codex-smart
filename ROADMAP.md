@@ -45,9 +45,10 @@ Evidence: [docs/routing.md](docs/routing.md), [docs/decisions/0004-rhai-deferred
 
 ## benchmark — Full development benchmark and aggregate telemetry
 
-Milestone: 0.3 Development Benchmark; recorded progress: **planned**.
+Milestone: 0.3 Development Benchmark; recorded progress: **partial**.
 Dependencies: router.
 [Stage contract](docs/stages/benchmark.md); issues: [#14](https://github.com/AlexandrShapkin/codex-smart/issues/14), [#15](https://github.com/AlexandrShapkin/codex-smart/issues/15).
+Evidence: [docs/benchmarking.md](docs/benchmarking.md).
 
 ## hardening — Packaging, migration and security hardening
 

@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "campaign_id": "initial-development-v1",
+  "status": "frozen-plan-live-preflight-blocked",
+  "codex": {
+    "version": "0.162.1",
+    "reference": "codex-cli 0.162.1; inspected installed artifact",
+    "executable_sha256": "89cc44e820780120ba2c8bc4585c014815bdc7a1fc494c337a585a2c78dc59eb"
+  },
+  "pins": {
+    "manifest_sha256": "02fec44267b796412b5a471822d86a779fe6e9e4e83dfb86b9767fab94b0d47d",
+    "grader_sha256": "9b97e1cb5554007ae0bf3a48a58308569944f613f30c4853013f022ee7c610f2",
+    "harness_sha256": "6d4e28d588a285e76607b60fcf01b20e0f8281fd0766acc51f8b8e129a31dc04",
+    "campaign_runner_sha256": "ba00a0a188bc764f7b98cfc54c23608f3b7955934c33ced45041a6952a2aa957"
+  },
+  "settings": {
+    "model": "gpt-6-sol",
+    "reasoning_effort": "low",
+    "sandbox": "workspace-write",
+    "ignore_user_config": true,
+    "ignore_rules": true,
+    "ephemeral": true,
+    "auth": "existing Codex authentication; unchanged between variants"
+  },
+  "seeds": [
+    14
+  ],
+  "repetitions": 3,
+  "retries": 0,
+  "retry_policy": "no automatic retries; retain every failure",
+  "timeout_seconds": 120,
+  "planned_primary_runs": 42,
+  "cold_warm": {
+    "classification": "unknown",
+    "protocol": "fresh disposable fixture per attempt; inherited host caches not controlled; do not claim cold or warm",
+    "index": "not applicable: no indexing requested",
+    "bootstrap": "unknown"
+  },
+  "variants": [
+    "vanilla",
+    "native"
+  ],
+  "unavailable_variants": {
+    "legacy": "exact archive provenance absent",
+    "router-v2": "verified decision-applying adapter absent"
+  },
+  "scenario_ids": [
+    "rust-clamp",
+    "go-total",
+    "python-tests",
+    "python-refactor",
+    "python-api",
+    "iac-security",
+    "python-explore"
+  ],
+  "native_difference": "append public native-first instruction only; all execution settings and grader identical",
+  "live_contract": {
+    "status": "blocked",
+    "attempts": 1,
+    "scenario": "iac-security",
+    "variant": "vanilla",
+    "repetitions": 1,
+    "retries": 0,
+    "cold_warm": "unknown",
+    "failure": "process-failure: read-only filesystem during in-process app-server initialization",
+    "jsonl_events": 0,
+    "usage": "not observed",
+    "grader": "not executed",
+    "ready_for_measured_campaign": false
+  },
+  "metrics": {
+    "input": "not observed",
+    "cached_input": "not observed",
+    "output": "not observed",
+    "reasoning": "not observed",
+    "fresh_input": "not supported by documented parser contract; null",
+    "total": "not supported by documented parser contract; null",
+    "full_tool_calls": "unknown; null"
+  },
+  "isolation": "live submitted-code grading requires a disposable environment without secrets/network; no installation or permission changes by harness",
+  "toolchains": {
+    "rustc": {
+      "version": "rustc 1.98.0 (88d9e12ae 2026-08-18)",
+      "version_arguments": [
+        "--version"
+      ]
+    },
+    "go": {
+      "version": "go version go1.27.2-X:nodwarf5 linux/amd64",
+      "version_arguments": [
+        "version"
+      ]
+    },
+    "python3": {
+      "version": "Python 3.14.8",
+      "version_arguments": [
+        "--version"
+      ]
+    }
+  }
+}
