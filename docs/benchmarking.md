@@ -79,7 +79,7 @@ defines `codex exec --json` and the sample `turn.completed.usage` fields. Local 
 `exec --help` confirms the flags. `benchmarks/fixtures/official-example.jsonl` is a
 sanitized captured documentation example, not a live model trace or measurement.
 Parser tests validate that example and synthetic event structures from verified live
-evidence. One additional bounded host smoke remains required before measured execution.
+evidence. The corrected bounded host smoke now verifies the live execution contract.
 
 Only input, cached input, output and reasoning-output counters are read. Total and
 fresh input stay unknown; neither is derived or estimated. Observed command/MCP/search
@@ -145,7 +145,7 @@ no auth-field categories or absolute paths. No live raw JSONL or
 sanitized live fixture is committed: the empty stream supplies no useful regression
 fixture. Existing parser tests cover the failed/truncated stream and nonzero exit.
 
-`benchmarks/campaign-v1.json` freezes the **plan**, with live preflight blocked. It pins
+`benchmarks/campaign-v1.json` originally froze the **plan**, with live preflight blocked. It pins
 Codex version/artifact checksum, requested model, low reasoning, sandbox/config/rules
 auth equivalence, scenario/grader/harness/campaign-runner checksums, seed `[14]`, three
 repetitions, zero retries, timeout 120 seconds and unknown cache protocol. Planned work
@@ -165,8 +165,8 @@ cold/warm claim is made and bootstrap/index timing stays unknown/not applicable.
 42 local fake-agent jobs with real independent graders. It never invokes Codex, and
 labels all counters synthetic. Records include pinned references and stay under
 `benchmarks/.artifacts/campaign-v1-dryrun`. Existing evidence is never overwritten.
-The campaign entry point deliberately has no model-execution mode while live preflight
-is blocked. It must not be treated as ready for the measured campaign. A writable,
+At that stage the campaign entry point deliberately had no model-execution mode while live preflight
+was blocked. It must not be treated as ready for the measured campaign. A writable,
 approved benchmark environment with existing authentication must first pass a bounded
 live smoke; do not modify permissions or copy credentials to bypass this environment.
 Review and update preflight evidence before enabling any measured execution.
@@ -207,7 +207,7 @@ conditional retry was not executed. No speculative SQLite/log override, fresh Co
 home, credential copy, chmod, normal-config mutation or filesystem-permission bypass
 was attempted. Frozen model, reasoning, sandbox and artifact settings are unchanged.
 
-The live contract remains blocked, counters remain null and measured execution stays
+At that historical diagnosis the live contract remained blocked, counters remained null and measured execution stayed
 disabled. To proceed, the owner must supply a writable benchmark environment with its
 normal existing authentication intact; an executable change would require separate
 approval and a newly verified contract. This task does not authorize silently changing
@@ -241,14 +241,68 @@ synthetic regression inputs only. No raw live fixture, remote error message,
 request identifiers, private paths or auth material is committed. Earlier startup
 diagnosis above is historical evidence for the read-only host.
 
-The corrected auth-routing command has not yet passed a second bounded host smoke.
-The live contract remains blocked, ready_for_measured_campaign remains false,
-benchmark stage remains partial, and all 42 measured runs remain unexecuted.
-One additional bounded host smoke is required. #14 stays open; #15 remains separate.
-No performance claim exists. This repair task made zero live model invocations.
+At the corrected-command repair checkpoint, the second host smoke was still pending,
+live readiness was blocked and all 42 jobs were unexecuted. That repair made zero
+model invocations and passed 45 Python tests, docs-check, check and nextest (85/85).
+The subsequent successful smoke supplied by the owner supersedes that readiness gate.
 
-Local verification passes 45 Python tests (four added regression methods),
-docs-check, check, nextest (85/85), diff checks and bounded benchmark context.
-Local deny is skipped because the advisory cache is on a read-only mount;
-exact-head green Security CI is required together with check/review success
-from GitHub Actions app 15368 before owner acceptance.
+## Verified corrected live contract and campaign readiness
+
+The second writable-host smoke succeeded using the merged corrected auth routing.
+One bounded smoke verifies execution machinery, independently of harness correctness
+and representative performance evidence. It used iac-security / vanilla, repetition 0,
+seed 14, retries 0, unknown cold/warm, Codex 0.162.1, gpt-6-sol, low reasoning,
+workspace-write, ephemeral true, ignore_user_config true, ignore_rules true,
+keyring through normal CODEX_HOME, and timeout 120 seconds.
+
+Quality passed and the independent grader passed. Process exit status was 0,
+terminal status completed, normalized final_status null, parser_errors []. Observed
+input_tokens **58885**, cached_input_tokens **55040**, output_tokens **427**, and
+reasoning_output_tokens **36** are smoke observations, not comparative benchmark
+results. Observed_tool_calls **3** is only the documented completed command/MCP/search
+lower bound. Fresh_input, total and full_tool_calls remain null/unknown, never derived.
+Earlier read-only startup and writable-host auth failures remain historical evidence.
+No raw trace, stderr, prompt, source, private absolute artifact path, credential
+material, request identifiers or arbitrary event payload is committed.
+
+The frozen state is live_contract verified, real_runner_contract prepared,
+representative_campaign_ready false: representative task coverage has not yet been
+accepted. Benchmark remains partial; #14 stays open and #15 stays separate. The seven
+scenarios and 42 planned jobs remain a preliminary compact campaign. No winner,
+savings or representative end-to-end performance claim follows from this smoke.
+All 42 jobs remain unexecuted.
+
+The campaign runner prints the frozen plan by default. Real execution requires
+`--real --allow-preliminary-campaign --codex /absolute/pinned/executable --run-id ID`.
+Without preliminary acknowledgement it prints the plan and refuses execution.
+Before a model call it requires the verified live contract, exact executable SHA,
+`codex-cli 0.162.1`, and every exact frozen toolchain version. Model/settings,
+seed 14, three repetitions, zero retries and timeout 120 remain frozen. Vanilla/native
+commands are identical; only the native public instruction differs. No network,
+installation or setup is added beyond normal Codex model execution. Normal CODEX_HOME
+and keyring auth remain inherited, with no credential copying or auth-file creation.
+Use the disposable grading environment described above; the runner adds no isolation
+boundary. No product telemetry or Router runtime changes are involved.
+
+Private gitignored run directories reject existing identifiers and symlinks. Each
+completed normalized job is saved immediately; Ctrl-C kills the active process group
+and leaves earlier records intact. Failures stay in denominators, missing counters
+stay null and cost comparison still requires quality-equivalent matched runs.
+The dry-run remains credential-free and synthetic. Real mode was not executed during
+this implementation or its tests; all runner tests use fakes/mocks.
+
+Recommended next #14 task: **B — accept or expand representative task coverage before
+spending on 42 runs**. Five of seven fixtures are Python or JSON-based IaC; Rust and Go
+each cover one small task, CI work and large repository lifecycles are absent, and
+legacy/Router variants remain unavailable. Repeating these compact fixtures improves
+harness evidence but cannot satisfy the full lifecycle scope or establish comparative
+product performance. First agree a bounded language/task coverage matrix and grader
+acceptance criteria, then separately approve execution and its cost. The current 42
+jobs may be approved later as explicitly preliminary harness evidence. Neither option
+is executed here, and no large new suite is introduced.
+
+Implementation validation: 50 Python tests, docs-check, just check, nextest (85/85),
+diff checks and bounded benchmark context pass using fake/mocked runners only.
+Local deny is skipped because the advisory cache is mounted read-only; exact-head
+green Security CI and check/review success from GitHub Actions app 15368 are required
+before owner acceptance. No merge or further live invocation is authorized here.

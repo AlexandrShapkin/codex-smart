@@ -1,9 +1,10 @@
-"""Pinned campaign planning and credential-free self-validation; no model execution."""
+"""Pinned preliminary campaign; real execution requires two explicit opt-ins."""
 import argparse
 import hashlib
 import json
 from pathlib import Path
 import shutil
+import re
 
 import benchmark as b
 
@@ -112,24 +113,85 @@ def dry_run(c, path=CONFIG, artifacts=None):
             (artifacts/'records.json').write_text(json.dumps(records, indent=2)+'\n')
     return {'execution_kind': 'synthetic-self-validation', 'planned_jobs': len(records),
             'attempted_jobs': sum(bool(r['attempts']) for r in records), 'toolchains': status,
-            'live_campaign_ready': c['live_contract']['status'] == 'verified',
+            'live_campaign_ready': c['readiness']['representative_campaign_ready'],
             'summary': b.aggregate(records)}, records
+
+
+def real_preflight(c, executable):
+    if c['live_contract']['status'] != 'verified':
+        raise ValueError('live contract not verified')
+    if not executable or not Path(executable).is_absolute():
+        raise ValueError('explicit absolute Codex executable required')
+    if sha(executable) != c['codex']['executable_sha256']:
+        raise ValueError('Codex checksum mismatch')
+    version = b.execute([executable, '--version'], b.ROOT, timeout=10)
+    if version['timeout'] or version['exit_status'] != 0 or version['stdout'].strip() != 'codex-cli 0.162.1':
+        raise ValueError('Codex version mismatch')
+    if any(value != 'verified' for value in toolchains(c).values()):
+        raise ValueError('toolchain mismatch')
+
+
+def artifact_directory(run_id):
+    if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}', run_id):
+        raise ValueError('invalid run identifier')
+    root = b.ROOT / '.artifacts'
+    if root.is_symlink():
+        raise ValueError('symlink artifacts rejected')
+    root.mkdir(mode=0o700, exist_ok=True)
+    root.chmod(0o700)
+    target = root / run_id
+    if target.exists() or target.is_symlink():
+        raise ValueError('existing run evidence')
+    target.mkdir(mode=0o700)
+    return target
+
+
+def real_run(c, executable, artifacts, path=CONFIG):
+    refs = {**references(c, path), 'runner': 'real-v1', 'execution_kind': 'real-preliminary'}
+    manifest = b.load_manifest()
+    records = []
+    def runner(s, variant, directory):
+        return b.execute(command_plan(c, variant, executable), directory,
+                         prompt(c, s, variant), timeout=c['timeout_seconds'])
+    for sid, variant, rep, seed in jobs(c):
+        s = next(s for s in manifest['scenarios'] if s['id'] == sid)
+        record = b.run(s, variant, seed, rep, runner, retries=0, cold='unknown',
+                       references=refs, artifacts=artifacts)
+        # One immutable normalized record per completed job survives interruption.
+        with (artifacts / f'{sid}-{variant}-{rep}.json').open('x') as output:
+            output.write(json.dumps(record, indent=2) + '\n')
+        records.append(record)
+    return {'execution_kind': 'real-preliminary', 'planned_jobs': len(jobs(c)),
+            'summary': b.aggregate(records)}
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--dry-run', action='store_true', help='execute only local fake agents and graders')
+    p.add_argument('--real', action='store_true')
+    p.add_argument('--allow-preliminary-campaign', action='store_true')
+    p.add_argument('--codex', help='explicit absolute pinned executable')
+    p.add_argument('--run-id', default='campaign-v1-real')
     args = p.parse_args()
     c = load()
-    if not args.dry_run:
+    if args.real and args.dry_run:
+        p.error('--real and --dry-run are mutually exclusive')
+    if not args.dry_run and (not args.real or not args.allow_preliminary_campaign):
         print(json.dumps({'planned_jobs': len(jobs(c)), 'live_contract': c['live_contract'],
                           'model_execution_enabled': False}, indent=2))
+        if args.real:
+            p.error('real execution requires --allow-preliminary-campaign; representative coverage not accepted')
         return
-    artifacts = b.ROOT/'.artifacts'/'campaign-v1-dryrun'
-    if artifacts.parent.is_symlink():
-        p.error('symlink artifacts rejected')
-    artifacts.mkdir(mode=0o700, exist_ok=False)
-    report, _ = dry_run(c, artifacts=artifacts)
+    try:
+        if args.real:
+            real_preflight(c, args.codex)
+            artifacts = artifact_directory(args.run_id)
+            report = real_run(c, args.codex, artifacts)
+        else:
+            artifacts = artifact_directory('campaign-v1-dryrun')
+            report, _ = dry_run(c, artifacts=artifacts)
+    except (ValueError, OSError) as error:
+        p.error(str(error))
     print(json.dumps(report, indent=2))
 
 

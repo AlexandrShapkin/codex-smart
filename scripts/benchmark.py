@@ -139,6 +139,10 @@ def execute(argv, directory, prompt='', timeout=60):
         timed_out = True
         os.killpg(p.pid, signal.SIGKILL)
         out, err = p.communicate()
+    except KeyboardInterrupt:
+        os.killpg(p.pid, signal.SIGKILL)
+        p.communicate()
+        raise
     return {'stdout': out, 'stderr': err, 'exit_status': p.returncode,
             'timeout': timed_out, 'duration': time.monotonic() - started}
 
