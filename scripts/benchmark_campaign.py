@@ -16,6 +16,12 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def require_frozen(actual, expected, label):
+    # JSON comparison preserves scalar types (False != 0, True != 1).
+    if json.dumps(actual, sort_keys=True) != json.dumps(expected, sort_keys=True):
+        raise ValueError(f'unreviewed {label}')
+
+
 def load(path=CONFIG):
     c = json.loads(Path(path).read_text())
     if c['schema_version'] != 1 or c['campaign_id'] != 'initial-development-v1':
@@ -40,6 +46,28 @@ def load(path=CONFIG):
         raise ValueError('auth evidence must use typed booleans')
     if c['cold_warm']['classification'] != 'unknown':
         raise ValueError('cache protocol mismatch')
+    require_frozen(c.get('status'), 'frozen-plan-live-contract-verified', 'campaign status')
+    require_frozen(c.get('live_contract'), {
+        'status': 'verified', 'startup': 'verified', 'auth_routing': 'verified',
+        'scenario': 'iac-security', 'variant': 'vanilla', 'repetition': 0, 'seed': 14,
+        'retries': 0, 'cold_warm': 'unknown', 'terminal_status': 'completed',
+        'exit_status': 0, 'final_status': None, 'parser_errors': [], 'quality_pass': True,
+        'grader': 'passed', 'usage': 'observed', 'observed_tool_calls': 3,
+        'ready_for_measured_campaign': False}, 'live contract')
+    require_frozen(c.get('metrics'), {
+        'input': 58885, 'cached_input': 55040, 'output': 427, 'reasoning': 36,
+        'fresh_input': None, 'total': None, 'full_tool_calls': None}, 'smoke metrics')
+    require_frozen(c.get('readiness'), {
+        'real_runner_contract': 'prepared', 'representative_campaign_ready': False,
+        'reason': 'representative task coverage has not yet been accepted'}, 'readiness')
+    history = c.get('historical_live_attempts')
+    if not isinstance(history, list) or len(history) != 1 or not isinstance(history[0], dict):
+        raise ValueError('retained historical live evidence required')
+    historical_fields = {'terminal_status': 'failed', 'exit_status': 1,
+                         'grader': 'not executed', 'usage': 'not observed',
+                         'ready_for_measured_campaign': False}
+    require_frozen({key: history[0].get(key) for key in historical_fields},
+                   historical_fields, 'historical live evidence')
     m = b.load_manifest()
     if c['scenario_ids'] != [s['id'] for s in m['scenarios']]:
         raise ValueError('scenario set mismatch')
@@ -146,7 +174,16 @@ def artifact_directory(run_id):
     return target
 
 
-def real_run(c, executable, artifacts, path=CONFIG):
+def real_run(executable, run_id, path=CONFIG, *, allow_preliminary_campaign=False):
+    if allow_preliminary_campaign is not True:
+        raise ValueError('explicit preliminary campaign acknowledgement required')
+    c = load(path)
+    real_preflight(c, executable)
+    artifacts = artifact_directory(run_id)
+    return _real_run(c, executable, artifacts, path)
+
+
+def _real_run(c, executable, artifacts, path=CONFIG):
     refs = {**references(c, path), 'runner': 'real-v1', 'execution_kind': 'real-preliminary'}
     manifest = b.load_manifest()
     records = []
@@ -184,9 +221,8 @@ def main():
         return
     try:
         if args.real:
-            real_preflight(c, args.codex)
-            artifacts = artifact_directory(args.run_id)
-            report = real_run(c, args.codex, artifacts)
+            report = real_run(args.codex, args.run_id,
+                              allow_preliminary_campaign=args.allow_preliminary_campaign)
         else:
             artifacts = artifact_directory('campaign-v1-dryrun')
             report, _ = dry_run(c, artifacts=artifacts)

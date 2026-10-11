@@ -11,7 +11,7 @@
     "manifest_sha256": "02fec44267b796412b5a471822d86a779fe6e9e4e83dfb86b9767fab94b0d47d",
     "grader_sha256": "9b97e1cb5554007ae0bf3a48a58308569944f613f30c4853013f022ee7c610f2",
     "harness_sha256": "16767256ed438064dfaf2e23c39559b274834281fe6ae2b365d5680a4fc20ff6",
-    "campaign_runner_sha256": "3f02e5a19f90609048dd76ddbdeca1e198fe87926e49cb35a22becd8b62bf2b8"
+    "campaign_runner_sha256": "062c2088df51588f1dc33fdcab0a13ee0b37a02ae36dfaaeeafc7a34edcdb77b"
   },
   "settings": {
     "model": "gpt-6-sol",

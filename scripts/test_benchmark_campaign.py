@@ -163,6 +163,70 @@ class CampaignTests(unittest.TestCase):
                          '89cc44e820780120ba2c8bc4585c014815bdc7a1fc494c337a585a2c78dc59eb')
         self.assertEqual(len(c.jobs(self.config)),42)
 
+    def test_frozen_state_drift_rejected(self):
+        cases = [
+            (('status',), 'frozen-plan-ready'),
+            (('live_contract', 'status'), 'blocked'),
+            (('live_contract', 'terminal_status'), 'failed'),
+            (('live_contract', 'quality_pass'), False),
+            (('live_contract', 'quality_pass'), 1),
+            (('live_contract', 'observed_tool_calls'), 4),
+            (('live_contract', 'exit_status'), False),
+            (('metrics', 'input'), 58886),
+            (('metrics', 'fresh_input'), 3845),
+            (('metrics', 'total'), 59312),
+            (('metrics', 'full_tool_calls'), 3),
+            (('readiness', 'real_runner_contract'), 'verified'),
+            (('readiness', 'representative_campaign_ready'), True),
+            (('readiness', 'representative_campaign_ready'), 0),
+            (('historical_live_attempts',), []),
+            (('historical_live_attempts',), None),
+        ]
+        history = self.config['historical_live_attempts'][0]
+        for key, value in [('terminal_status', 'completed'), ('exit_status', 0),
+                           ('grader', 'passed'), ('usage', 'observed'),
+                           ('ready_for_measured_campaign', True)]:
+            cases.append((('historical_live_attempts',), [dict(history, **{key:value})]))
+        cases.append((('historical_live_attempts',), [history, history]))
+        for keys, value in cases:
+            with self.subTest(keys=keys, value=value), tempfile.TemporaryDirectory() as tmp:
+                data = copy.deepcopy(self.config)
+                target = data
+                for key in keys[:-1]: target = target[key]
+                target[keys[-1]] = value
+                path = Path(tmp)/'campaign.json'
+                path.write_text(json.dumps(data))
+                with self.assertRaises(ValueError): c.load(path)
+        for section in ['status', 'live_contract', 'metrics', 'readiness', 'historical_live_attempts']:
+            with self.subTest(missing=section), tempfile.TemporaryDirectory() as tmp:
+                data = copy.deepcopy(self.config)
+                del data[section]
+                path = Path(tmp)/'campaign.json'
+                path.write_text(json.dumps(data))
+                with self.assertRaises(ValueError): c.load(path)
+
+    def test_programmatic_entry_requires_contract_and_preflight(self):
+        with patch.object(c, '_real_run') as runner, patch.object(c, 'artifact_directory') as artifacts, \
+             patch.object(b, 'execute') as execute:
+            with self.assertRaises(ValueError): c.real_run('/fake/codex', 'test')
+            with patch.object(c, 'load', side_effect=ValueError('contract drift')):
+                with self.assertRaises(ValueError):
+                    c.real_run('/fake/codex', 'test', allow_preliminary_campaign=True)
+            with patch.object(c, 'real_preflight', side_effect=ValueError('preflight failed')):
+                with self.assertRaises(ValueError):
+                    c.real_run('/fake/codex', 'test', allow_preliminary_campaign=True)
+            runner.assert_not_called()
+            artifacts.assert_not_called()
+            execute.assert_not_called()
+
+    def test_programmatic_entry_preflights_once(self):
+        with patch.object(c, 'real_preflight') as preflight, \
+             patch.object(c, 'artifact_directory', return_value=Path('/fake/artifacts')), \
+             patch.object(c, '_real_run', return_value={}) as runner:
+            self.assertEqual(c.real_run('/fake/codex', 'test', allow_preliminary_campaign=True), {})
+            preflight.assert_called_once_with(self.config, '/fake/codex')
+            runner.assert_called_once_with(self.config, '/fake/codex', Path('/fake/artifacts'), c.CONFIG)
+
     def test_verified_live_contract(self):
         live = self.config['live_contract']
         for key in ['status', 'startup', 'auth_routing']:
@@ -242,7 +306,7 @@ class CampaignTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, patch.object(b, 'run', wrapped), \
              patch.object(b, 'grade', return_value=True), patch.object(b, 'execute') as execute:
             with self.assertRaises(KeyboardInterrupt):
-                c.real_run(self.config, '/fake/codex', Path(tmp))
+                c._real_run(self.config, '/fake/codex', Path(tmp))
             self.assertEqual(len(list(Path(tmp).glob('*.json'))), 1)
             execute.assert_not_called()
 
@@ -253,7 +317,7 @@ class CampaignTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, patch.object(c, 'jobs', return_value=[job]), \
              patch.object(b, 'execute', return_value=observation) as execute, \
              patch.object(b, 'grade', return_value=False):
-            report = c.real_run(self.config, '/fake/codex', Path(tmp))
+            report = c._real_run(self.config, '/fake/codex', Path(tmp))
             call = execute.call_args
             self.assertEqual(call.args[0], c.command_plan(self.config, job[1], '/fake/codex'))
             self.assertEqual(call.kwargs['timeout'], 120)

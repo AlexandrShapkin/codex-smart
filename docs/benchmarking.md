@@ -275,6 +275,10 @@ All 42 jobs remain unexecuted.
 The campaign runner prints the frozen plan by default. Real execution requires
 `--real --allow-preliminary-campaign --codex /absolute/pinned/executable --run-id ID`.
 Without preliminary acknowledgement it prints the plan and refuses execution.
+The public programmatic real entry reloads the frozen configuration and performs
+preflight once before calling its private execution helper. Semantic validation rejects
+drift in campaign status, typed live evidence, exact smoke counters/readiness and the
+retained failed historical evidence until explicitly reviewed and updated.
 Before a model call it requires the verified live contract, exact executable SHA,
 `codex-cli 0.162.1`, and every exact frozen toolchain version. Model/settings,
 seed 14, three repetitions, zero retries and timeout 120 remain frozen. Vanilla/native
@@ -301,7 +305,7 @@ acceptance criteria, then separately approve execution and its cost. The current
 jobs may be approved later as explicitly preliminary harness evidence. Neither option
 is executed here, and no large new suite is introduced.
 
-Implementation validation: 50 Python tests, docs-check, just check, nextest (85/85),
+Implementation validation: 53 Python tests, docs-check, just check, nextest (85/85),
 diff checks and bounded benchmark context pass using fake/mocked runners only.
 Local deny is skipped because the advisory cache is mounted read-only; exact-head
 green Security CI and check/review success from GitHub Actions app 15368 are required
