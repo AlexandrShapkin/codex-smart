@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import benchmark as b
 
@@ -64,11 +65,59 @@ class BenchmarkTests(unittest.TestCase):
     def test_parser_malformed_truncated_duplicate_late(self):
         done = '{"type":"turn.completed","usage":{"input_tokens":5}}\n'
         for raw in ('bad\n'+done, '{"type":', done+done, done+'{"type":"future"}\n',
-                    '{"type":"turn.failed"}\n', '{"type":"turn.completed","usage":{"input_tokens":true}}'):
+                    '', '{"type":"turn.completed","usage":{"input_tokens":true}}'):
             with self.subTest(raw=raw):
                 x = b.parse_trace(raw)
                 self.assertTrue(x['errors'])
                 self.assertIsNone(x['tokens']['input'])
+
+    def test_terminal_contract(self):
+        prefix = [{'type': 'thread.started'}, {'type': 'turn.started'}]
+        failed = [{'type': 'error'}, {'type': 'error'}, {'type': 'item.completed'},
+                  {'type': 'error'}, {'type': 'turn.failed'}]
+        def parse(events):
+            return b.parse_trace('\n'.join(json.dumps(e) for e in events))
+        for events, status in [(prefix + [{'type': 'turn.completed'}], 'completed'),
+                               (prefix + failed, 'failed'),
+                               (prefix + [{'type': 'error'}, {'type': 'turn.completed'}], 'completed')]:
+            result = parse(events)
+            self.assertEqual(result['errors'], [])
+            self.assertEqual(result['terminal_status'], status)
+            self.assertTrue(all(v is None for v in result['tokens'].values()))
+        for first in ['turn.completed', 'turn.failed']:
+            for second in ['turn.completed', 'turn.failed', 'error', 'item.completed']:
+                with self.subTest(first=first, second=second):
+                    result = parse(prefix + [{'type': first}, {'type': second}])
+                    self.assertIn('late-event', result['errors'])
+                    self.assertTrue(all(v is None for v in result['tokens'].values()))
+        self.assertEqual(parse(prefix)['terminal_status'], 'missing')
+        self.assertTrue(parse(prefix)['errors'])
+
+    def test_failed_turn_runner_skips_grader_and_redacts(self):
+        raw = '\n'.join(json.dumps(e) for e in [
+            {'type': 'thread.started'}, {'type': 'turn.started'}, {'type': 'error'},
+            {'type': 'turn.failed', 'error': {'message': 'PRIVATE'}}])
+        for exit_status in [0, 1]:
+            with patch.object(b, 'grade') as grader:
+                result = b.run(self.s, 'vanilla', 14, 0, lambda *args: {
+                    'stdout': raw, 'stderr': '', 'exit_status': exit_status,
+                    'timeout': False, 'duration': 0.01})
+                grader.assert_not_called()
+            attempt = result['attempts'][0]
+            self.assertEqual(result['final_status'], 'agent-failure')
+            self.assertFalse(result['quality_pass'])
+            self.assertEqual(attempt['exit_status'], exit_status)
+            self.assertEqual(attempt['errors'], [])
+            self.assertTrue(all(v is None for v in attempt['tokens'].values()))
+            self.assertNotIn('PRIVATE', json.dumps(result))
+
+    def test_completed_turn_grader_controls_quality(self):
+        for quality in [False, True]:
+            with patch.object(b, 'grade', return_value=quality) as grader:
+                result = b.run(self.s, 'vanilla', 14, 0, b.FakeRunner())
+                grader.assert_called_once()
+            self.assertEqual(result['quality_pass'], quality)
+            self.assertEqual(result['attempts'][0]['tokens']['input'], 10)
 
     def test_duplicate_tool_event(self):
         item = '{"type":"item.completed","item":{"type":"command_execution","id":"a"}}\n'

@@ -10,8 +10,8 @@
   "pins": {
     "manifest_sha256": "02fec44267b796412b5a471822d86a779fe6e9e4e83dfb86b9767fab94b0d47d",
     "grader_sha256": "9b97e1cb5554007ae0bf3a48a58308569944f613f30c4853013f022ee7c610f2",
-    "harness_sha256": "6d4e28d588a285e76607b60fcf01b20e0f8281fd0766acc51f8b8e129a31dc04",
-    "campaign_runner_sha256": "ba00a0a188bc764f7b98cfc54c23608f3b7955934c33ced45041a6952a2aa957"
+    "harness_sha256": "765ae09fc1ff4cc8f13db7f9fcdc4e51e525111dcd583b5e6a222f7c9773b1cd",
+    "campaign_runner_sha256": "5d5527ef1047db24d09b65ca5b6eb43307985e57cf2f5864f44dcebe678d5de4"
   },
   "settings": {
     "model": "gpt-6-sol",
@@ -20,7 +20,12 @@
     "ignore_user_config": true,
     "ignore_rules": true,
     "ephemeral": true,
-    "auth": "existing Codex authentication; unchanged between variants"
+    "auth": {
+      "source": "existing normal CODEX_HOME",
+      "credential_store": "keyring",
+      "credentials_copied": false,
+      "user_config_loaded": false
+    }
   },
   "seeds": [
     14
@@ -56,17 +61,29 @@
   "native_difference": "append public native-first instruction only; all execution settings and grader identical",
   "live_contract": {
     "status": "blocked",
-    "attempts": 1,
+    "attempts": 2,
     "scenario": "iac-security",
     "variant": "vanilla",
     "repetitions": 1,
     "retries": 0,
     "cold_warm": "unknown",
-    "failure": "process-failure: read-only filesystem during in-process app-server initialization",
-    "jsonl_events": 0,
+    "failure": "agent-failure: isolated user config omitted required keyring auth routing",
+    "jsonl_events": "observed",
     "usage": "not observed",
     "grader": "not executed",
-    "ready_for_measured_campaign": false
+    "ready_for_measured_campaign": false,
+    "terminal_status": "failed",
+    "exit_status": 1,
+    "startup": "verified on writable host",
+    "required_next_step": "the corrected auth-routing command has not yet passed a second bounded host smoke",
+    "event_structure": [
+      "thread.started",
+      "turn.started",
+      "error*",
+      "item.completed",
+      "error*",
+      "turn.failed"
+    ]
   },
   "metrics": {
     "input": "not observed",
@@ -100,7 +117,7 @@
   },
   "startup_diagnosis": {
     "schema_version": 1,
-    "status": "blocked-auth-preservation",
+    "status": "historical-read-only-host-diagnosis",
     "codex_source_tag": "rust-v0.162.1",
     "codex_source_commit": "092d3acd6bec3e3a14bdc7e7a2810ab628ab759d",
     "installed_package_reference": "0.162.1+arch.1; executable checksum unchanged",

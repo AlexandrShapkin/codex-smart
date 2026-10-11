@@ -32,6 +32,32 @@ class CampaignTests(unittest.TestCase):
         for variant in ['legacy','router-v2']:
             with self.assertRaises(ValueError): c.command_plan(self.config,variant,'/test/codex')
 
+    def test_auth_contract_and_no_auth_files(self):
+        argv = c.command_plan(self.config, 'vanilla', '/test/codex')
+        self.assertIn('--ignore-user-config', argv)
+        self.assertIn('cli_auth_credentials_store="keyring"', argv)
+        auth = self.config['settings']['auth']
+        self.assertEqual(auth, {'source': 'existing normal CODEX_HOME',
+                                'credential_store': 'keyring', 'credentials_copied': False,
+                                'user_config_loaded': False})
+        self.assertEqual(c.references(self.config, c.CONFIG)['auth'], auth)
+        for key, value in [('credential_store', 'file'), ('source', '/private/auth'),
+                           ('credentials_copied', True), ('user_config_loaded', True),
+                           ('credentials_copied', 0), ('user_config_loaded', 0)]:
+            data = copy.deepcopy(self.config)
+            data['settings']['auth'][key] = value
+            with tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp)/'campaign.json'
+                path.write_text(json.dumps(data))
+                with self.assertRaises(ValueError): c.load(path)
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            with patch.dict('os.environ', {'CODEX_HOME': str(home)}):
+                c.command_plan(self.config, 'native', '/test/codex')
+                b.run(self.scenario, 'vanilla', 14, 0, b.FakeRunner())
+            self.assertEqual(list(home.iterdir()), [])
+            self.assertNotIn(str(home), json.dumps(c.references(self.config, c.CONFIG)))
+
     def test_rejects_drift_and_unreviewed_bounds(self):
         for field in ['pins','repetitions','variants','settings','seeds']:
             data = copy.deepcopy(self.config)
@@ -138,7 +164,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(len(c.jobs(self.config)),42)
 
     def test_blocked_live_contract_never_claims_observable_usage(self):
-        self.assertEqual(self.config['live_contract']['jsonl_events'],0)
+        self.assertEqual(self.config['live_contract']['terminal_status'],'failed')
         self.assertFalse(self.config['live_contract']['ready_for_measured_campaign'])
         self.assertTrue(all(self.config['metrics'][k]=='not observed' for k in ['input','cached_input','output','reasoning']))
         self.assertNotIn('/home/',c.CONFIG.read_text())

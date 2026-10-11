@@ -82,8 +82,8 @@ def ordering(m, repetitions, seed):
 def parse_trace(raw):
     """Single exec turn contract. Ambiguous/invalid streams fail closed."""
     tokens = dict.fromkeys([*METRICS, 'fresh_input', 'total'])
-    errors, completed, calls = [], 0, set()
-    terminal = False
+    errors, terminals, calls = [], 0, set()
+    terminal_status = 'missing'
     for line in raw.splitlines():
         try:
             e = json.loads(line)
@@ -93,14 +93,12 @@ def parse_trace(raw):
             errors.append('malformed-jsonl')
             continue
         typ = e['type']
-        if terminal:
+        if terminals:
             errors.append('late-event')
-        if typ in ('error', 'turn.failed'):
-            errors.append('agent-failure')
-            terminal = True
+        if typ in ('turn.completed', 'turn.failed'):
+            terminals += 1
+            terminal_status = 'completed' if typ == 'turn.completed' else 'failed'
         if typ == 'turn.completed':
-            completed += 1
-            terminal = True
             usage = e.get('usage', {})
             if not isinstance(usage, dict):
                 errors.append('invalid-usage')
@@ -121,12 +119,12 @@ def parse_trace(raw):
                     errors.append('duplicate-or-missing-item-id')
                 else:
                     calls.add(ident)
-    if completed != 1:
+    if terminals != 1:
         errors.append('incomplete-or-duplicate-turn')
     if errors:
         tokens = dict.fromkeys(tokens)
     # No documented total counter; do not derive one. Tool count is a lower bound only.
-    return {'tokens': tokens, 'observed_tool_calls': len(calls) if not errors else None,
+    return {'terminal_status': terminal_status, 'tokens': tokens, 'observed_tool_calls': len(calls) if not errors else None,
             'tool_calls': None, 'errors': sorted(set(errors))}
 
 
@@ -151,7 +149,7 @@ def plan(variant, executable, model):
     if not Path(executable).is_absolute() or not model:
         raise ValueError('explicit executable/model required')
     return [executable, 'exec', '--json', '--ephemeral', '--ignore-user-config', '--ignore-rules',
-            '--skip-git-repo-check', '--sandbox', 'workspace-write', '--model', model, '-']
+            '-c', 'cli_auth_credentials_store="keyring"', '--skip-git-repo-check', '--sandbox', 'workspace-write', '--model', model, '-']
 
 
 def grade(s, directory):
@@ -201,7 +199,8 @@ def run(s, variant, seed, repetition, runner, retries=0, cold='unknown', referen
                 observation = {'stdout': '', 'stderr': '', 'exit_status': None,
                                'timeout': False, 'duration': time.monotonic() - execution_start, 'launch_failure': True}
             parsed = parse_trace(observation['stdout'])
-            reason = ('launch-failure' if observation.get('launch_failure') else 'timeout' if observation['timeout'] else 'process-failure' if observation['exit_status']
+            reason = ('launch-failure' if observation.get('launch_failure') else 'timeout' if observation['timeout'] else 'agent-failure' if not parsed['errors'] and parsed['terminal_status'] == 'failed'
+                      else 'process-failure' if observation['exit_status']
                       else 'trace-invalid' if parsed['errors'] else None)
             quality = grade(s, directory) if reason is None else False
             if reason is None and not quality:

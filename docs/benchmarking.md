@@ -63,14 +63,14 @@ under `benchmarks/.artifacts`. Remove that local directory explicitly before rep
 the same run identifiers (the runner refuses to overwrite evidence). Configure
 `--repetitions`, `--seed`, `--retries`, `--timeout` and `--cold-warm`. Seed plus manifest
 produces stable shuffled scenario/variant/repetition order, including unavailable rows.
-CI uses fake runs and needs no OpenAI credentials. The one live preflight invocation
-failed during local app-server initialization; no live model trace was emitted.
+CI uses fake runs and needs no OpenAI credentials. The initial read-only preflight
+failed at startup; the first writable-host smoke subsequently reached a real turn.
 
 A bounded real campaign invocation requires `--real --codex /absolute/executable
 --model MODEL`. The harness only accepts the inspected `codex-cli 0.162.1`; it records
 executable checksum, requested model and controlled settings reference, plus manifest,
 grader and harness checksums. Existing auth
-is reused, never read/copied by this harness. Model reference is requested, not a claim
+is reused through an explicit keyring credential-store override, never read/copied by this harness. Model reference is requested, not a claim
 of provider-confirmed identity. CLI inspection is explicit benchmark setup, never
 product runtime behavior.
 
@@ -78,15 +78,19 @@ The [official non-interactive documentation](https://learn.chatgpt.com/docs/non-
 defines `codex exec --json` and the sample `turn.completed.usage` fields. Local 0.162.1
 `exec --help` confirms the flags. `benchmarks/fixtures/official-example.jsonl` is a
 sanitized captured documentation example, not a live model trace or measurement.
-Parser tests validate that example. A live trace contract smoke remains required before
-claiming measured results for this pinned binary; the preflight below did not pass.
+Parser tests validate that example and synthetic event structures from verified live
+evidence. One additional bounded host smoke remains required before measured execution.
 
 Only input, cached input, output and reasoning-output counters are read. Total and
 fresh input stay unknown; neither is derived or estimated. Observed command/MCP/search
 completed-item count is a lower bound; full tool-call count stays unknown. Unknown
 event types/fields are ignored without projecting their contents. Malformed JSON,
 invalid counters, duplicate terminal/item events, late events and truncated streams
-fail closed and invalidate parsed counters. Nonzero exit, timeout, agent failure and
+fail closed and invalidate parsed counters. Exactly one terminal turn event is required: `turn.completed` or `turn.failed`.
+`error` is non-terminal and may precede either. A valid failed terminal has no
+structural parser errors, has null usage, skips grading and records agent-failure
+even with a nonzero exit. Arbitrary error messages never enter normalized records.
+Nonzero exit without a valid failed terminal, timeout, agent failure and
 grader failure remain distinct. Every attempt and initial failure are retained.
 
 ## Records, overhead and privacy
@@ -121,7 +125,7 @@ Obtain exact legacy provenance or retain unavailable status. Implement and verif
 separate decision-applying adapter before any Router v2 measurement. #14 stays open
 until those measured acceptance criteria are satisfied; #15 remains separate.
 
-## Initial campaign preflight
+## Historical initial campaign preflight
 
 PR #32 merged the harness at `d6b74d4`. Exactly one vanilla Codex invocation used
 `iac-security`, `gpt-6-sol`, explicit low reasoning, workspace-write, ephemeral mode,
@@ -167,7 +171,7 @@ approved benchmark environment with existing authentication must first pass a bo
 live smoke; do not modify permissions or copy credentials to bypass this environment.
 Review and update preflight evidence before enabling any measured execution.
 
-## Pinned startup diagnosis after PR #33
+## Historical pinned startup diagnosis after PR #33
 
 PR #33 merged at `1f1de4d`. No model call or live retry was made in this diagnosis.
 The installed executable still matches the frozen 0.162.1 checksum. Public upstream
@@ -209,3 +213,42 @@ normal existing authentication intact; an executable change would require separa
 approval and a newly verified contract. This task does not authorize silently changing
 the executable/settings or creating an alternate auth store. The planned campaign
 remains 42 jobs; no native or measured campaign ran. No new live trace was produced.
+
+## First writable-host smoke and corrected contract
+
+The first writable-host smoke used Codex 0.162.1, iac-security, vanilla, one
+repetition, zero retries, gpt-6-sol, low reasoning, workspace-write, ephemeral,
+ignored user config/rules and timeout 120 seconds. Writable startup is verified.
+It reached thread.started and turn.started, followed by repeated error events,
+item.completed and turn.failed; process exit was 1. No successful turn or usage
+counters were observed, and the independent grader did not run.
+
+The failed request lacked authentication because ignore-user-config dropped the
+normal cli_auth_credentials_store = "keyring" setting. Auth still used normal
+CODEX_HOME but defaulted to file storage, where auth.json was absent. Normal login
+status succeeded with existing ChatGPT auth. No credential was invalidated or copied.
+
+The campaign now freezes typed auth evidence: existing normal CODEX_HOME, keyring,
+credentials_copied false and user_config_loaded false. Both command variants pass
+`-c cli_auth_credentials_store="keyring"`, the TOML string override accepted by
+pinned Codex 0.162.1. Normal home and its existing keyring namespace remain unchanged.
+No other user-config field is imported; model, reasoning, sandbox, task prompt,
+user config and user/project rules remain isolated. Changing this pin requires
+explicit review and repinning. No auth file is created and no normal config changes.
+
+Parser semantics now reflect the verified event-type structure, using sanitized
+synthetic regression inputs only. No raw live fixture, remote error message,
+request identifiers, private paths or auth material is committed. Earlier startup
+diagnosis above is historical evidence for the read-only host.
+
+The corrected auth-routing command has not yet passed a second bounded host smoke.
+The live contract remains blocked, ready_for_measured_campaign remains false,
+benchmark stage remains partial, and all 42 measured runs remain unexecuted.
+One additional bounded host smoke is required. #14 stays open; #15 remains separate.
+No performance claim exists. This repair task made zero live model invocations.
+
+Local verification passes 45 Python tests (four added regression methods),
+docs-check, check, nextest (85/85), diff checks and bounded benchmark context.
+Local deny is skipped because the advisory cache is on a read-only mount;
+exact-head green Security CI is required together with check/review success
+from GitHub Actions app 15368 before owner acceptance.
