@@ -125,7 +125,7 @@
       "id": "router",
       "title": "Router v2 composition and controlled integration",
       "milestone": "0.2 Router v2",
-      "progress": "planned",
+      "progress": "partial",
       "depends_on": [
         "doctor"
       ],
@@ -145,9 +145,12 @@
       ],
       "sources": [
         "crates/codex-smart-core/src/routing.rs",
+        "crates/codex-smart-core/src/routing/assessment.rs",
         "crates/codex-smart-core/src/config.rs"
       ],
-      "evidence": []
+      "evidence": [
+        "docs/routing.md"
+      ]
     },
     {
       "id": "benchmark",
