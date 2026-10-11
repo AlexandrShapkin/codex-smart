@@ -658,7 +658,12 @@ uses `cargo check --locked --offline` and `cargo test --locked --offline`, inclu
 fixed independent integration oracle. Already-installed Cargo was inspected as
 **cargo 1.98.0 (797e8a9bc 2026-08-05)** and is frozen with `--version` in the representative
 campaign only. JSON version/argument drift rejects loading; an actual version mismatch
-refuses trusted controls. No toolchain was installed or updated. Offline/private
+refuses trusted controls. Trusted controls use `rustup run` without `--install`: the already-installed
+1.98.0 alias when the CI selector is exactly 1.98.0, otherwise the installed stable
+alias. Unknown selector values are ignored; either alias must produce the exact
+frozen Cargo identity before controls proceed. This corrects CI default selection
+without changing the pin or installing a toolchain. It is a trusted-control launcher,
+not the future staged-runtime launcher. No toolchain was installed or updated. Offline/private
 Cargo cache settings prevent registry setup; trusted host validation remains correctness
 only, with no security-isolation claim.
 

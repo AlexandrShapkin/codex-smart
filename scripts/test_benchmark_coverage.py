@@ -209,6 +209,17 @@ class RepresentativeTests(unittest.TestCase):
                 self.assertEqual([call.args[0] for call in command.call_args_list],
                                  [['cargo','check','--locked','--offline'],['cargo','test','--locked','--offline']])
 
+    def test_cargo_selector_never_installs_or_inherits_unknown_values(self):
+        from types import SimpleNamespace
+        for selection, expected in [('1.98.0','1.98.0'),('stable','stable'),('/synthetic/unknown','stable')]:
+            with tempfile.TemporaryDirectory() as tmp, \
+                 patch.dict(coverage.graders.os.environ,{'RUSTUP_TOOLCHAIN':selection}), \
+                 patch.object(coverage.graders.subprocess,'run',return_value=SimpleNamespace(returncode=0,stdout=coverage.CARGO_VERSION.encode())) as run:
+                self.assertTrue(coverage.graders.command(['cargo','--version'],Path(tmp),expected_stdout=coverage.CARGO_VERSION))
+                self.assertEqual(run.call_args.args[0],['rustup','run',expected,'cargo','--version'])
+                self.assertNotIn('--install',run.call_args.args[0])
+                self.assertNotIn('RUSTUP_TOOLCHAIN',run.call_args.kwargs['env'])
+
     def test_trusted_reference_and_wrong_controls(self):
         with patch.object(b,'execute',side_effect=AssertionError('model/harness process forbidden')):
             rows=coverage.trusted_controls()

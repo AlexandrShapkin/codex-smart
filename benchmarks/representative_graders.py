@@ -15,6 +15,12 @@ def command(argv, cwd, expected_stdout=None):
            'GOCACHE': str(cwd/'go-cache'), 'GOPROXY': 'off', 'GOSUMDB': 'off',
            'GOTOOLCHAIN': 'local', 'PYTHONDONTWRITEBYTECODE': '1',
            'CARGO_HOME': str(cwd/'cargo-home'), 'CARGO_NET_OFFLINE': 'true'}
+    # Trusted controls use an already-installed alias, never rustup's installing
+    # shorthand. Exact Cargo identity is checked before controls; unknown host
+    # selectors are ignored. This wrapper is not the future isolated runtime.
+    if argv[0] == 'cargo':
+        selector = '1.98.0' if os.environ.get('RUSTUP_TOOLCHAIN') == '1.98.0' else 'stable'
+        argv = ['rustup','run',selector,*argv]
     # A timeout/environment allowlist is not a security boundary.
     try:
         result = subprocess.run(argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,

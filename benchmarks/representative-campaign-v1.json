@@ -103,7 +103,7 @@
   "measured_records": [],
   "pins": {
     "manifest_sha256": "90feb15e92815b3b9d6269f33a2f85b76b52350cdad72eb72a3f61916ac1ee7e",
-    "grader_sha256": "5065eac953924ad13614670a12f906e99c5381cdff0fc536b5e6dd8d14a2c372",
+    "grader_sha256": "a6c29565533fcc7fac548f78bfa4c8a45561284a468e0398d923c0308cd4df6d",
     "coverage_validator_sha256": "0b7337512d298fc946267d836808ba50531585719ebb4f2922a21f7335f8cb1b",
     "fixture_sha256": {
       "rust-ledger": "a1264d1c636814b10236bf3274955c8784ba36f6072b087c969494d9075f813c",
