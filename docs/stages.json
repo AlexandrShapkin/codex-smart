@@ -180,7 +180,9 @@
         "scripts/benchmark.py",
         "scripts/test_benchmark.py",
         "benchmarks/campaign-v1.json",
-        "scripts/benchmark_campaign.py"
+        "scripts/benchmark_campaign.py",
+        "scripts/benchmark_isolation.py",
+        "scripts/test_benchmark_isolation.py"
       ],
       "evidence": [
         "docs/benchmarking.md"

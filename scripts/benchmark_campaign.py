@@ -7,6 +7,7 @@ import shutil
 import re
 
 import benchmark as b
+import benchmark_isolation as isolation
 
 CONFIG = b.ROOT / 'campaign-v1.json'
 NATIVE_INSTRUCTION = '\nUse native local tools first. No MCP, external indexing, installation or network.'
@@ -204,13 +205,17 @@ def _real_run(c, executable, artifacts, path=CONFIG):
     for sid, variant, rep, seed in jobs(c):
         s = next(s for s in manifest['scenarios'] if s['id'] == sid)
         record = b.run(s, variant, seed, rep, runner, retries=0, cold='unknown',
-                       references=refs, artifacts=artifacts)
+                       references=refs, artifacts=artifacts, grader=_grade_submission)
         # One immutable normalized record per completed job survives interruption.
         with (artifacts / f'{sid}-{variant}-{rep}.json').open('x') as output:
             output.write(json.dumps(record, indent=2) + '\n')
         records.append(record)
     return {'execution_kind': 'real-preliminary', 'planned_jobs': len(jobs(c)),
             'summary': b.aggregate(records)}
+
+
+def _grade_submission(s, directory):
+    return isolation.grade(s['id'], directory).quality_pass
 
 
 def main():
