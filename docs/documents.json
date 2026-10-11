@@ -80,7 +80,11 @@
       "role": "current",
       "stages": [
         "baseline",
-        "router"
+        "router",
+        "playbooks",
+        "adaptive",
+        "automation",
+        "distribution"
       ]
     },
     {
@@ -396,7 +400,7 @@
       "owner": "engineering",
       "role": "reference",
       "stages": [
-        "hardening"
+        "distribution"
       ]
     },
     {
@@ -405,7 +409,6 @@
       "owner": "engineering",
       "role": "reference",
       "stages": [
-        "hardening",
         "stable"
       ]
     },
@@ -442,6 +445,7 @@
       "owner": "release",
       "role": "current",
       "stages": [
+        "distribution",
         "hardening"
       ]
     },
@@ -483,7 +487,7 @@
     },
     {
       "path": "docs/stages/hardening.md",
-      "title": "Packaging, migration and security hardening",
+      "title": "Production security and reliability hardening",
       "owner": "engineering",
       "role": "contract",
       "stages": [
@@ -562,6 +566,84 @@
       "role": "current",
       "stages": [
         "workflow"
+      ]
+    },
+    {
+      "path": "docs/stages/playbooks.md",
+      "title": "Workflow playbooks and resource planning",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "playbooks"
+      ]
+    },
+    {
+      "path": "docs/stages/adaptive.md",
+      "title": "Adaptive model routing and runtime escalation",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "adaptive"
+      ]
+    },
+    {
+      "path": "docs/stages/automation.md",
+      "title": "Reusable automation and prepared workflows",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "automation"
+      ]
+    },
+    {
+      "path": "docs/stages/distribution.md",
+      "title": "Installer, updater and release lifecycle",
+      "owner": "engineering",
+      "role": "contract",
+      "stages": [
+        "distribution"
+      ]
+    },
+    {
+      "path": "docs/workflow-intelligence.md",
+      "title": "Workflow intelligence target",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "playbooks",
+        "adaptive",
+        "automation",
+        "distribution",
+        "hardening",
+        "stable"
+      ]
+    },
+    {
+      "path": "docs/distribution.md",
+      "title": "Distribution and release lifecycle target",
+      "owner": "release",
+      "role": "contract",
+      "stages": [
+        "playbooks",
+        "adaptive",
+        "automation",
+        "distribution",
+        "hardening",
+        "stable"
+      ]
+    },
+    {
+      "path": "docs/decisions/0008-deterministic-workflows.md",
+      "title": "Deterministic workflow playbooks and bounded adaptive execution",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "playbooks",
+        "adaptive",
+        "automation",
+        "distribution",
+        "hardening",
+        "stable"
       ]
     }
   ]

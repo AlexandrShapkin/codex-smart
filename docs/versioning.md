@@ -1,6 +1,6 @@
 # Versioning
 
-Semantic Versioning: 0.1.x Foundation; 0.2.x Router v2; 0.3.x benchmarks/telemetry; 0.4.x+ hardening; 1.0.0 after independent stability and quality gates. Pre-1.0 breaking changes require changelog and migration guidance. Internal commits do not bump versions.
+The package remains 0.1.0 unreleased. Roadmap milestone numbers (0.1–0.8 and 1.0) are development targets, not automatic SemVer releases. A separately authorized 1.0.0 requires independent stability, quality, security and release-lifecycle gates. Pre-1.0 breaking changes require changelog and migration guidance. Internal commits do not bump versions.
 
 Workspace version is the sole binary version source. Lockfile is committed. Local stable is rustc 1.98.0; CI requests 1.98.0 explicitly. A named 1.98.0 local toolchain is not provisioned, so rust-toolchain.toml is deferred to avoid implicit rustup downloads. No automatic rustup install is performed by runtime diagnostics.
 

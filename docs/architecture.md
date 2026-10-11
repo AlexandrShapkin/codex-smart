@@ -32,3 +32,34 @@ reference execution contract, Compatibility and Readiness. Artifact pins are res
 to explicitly requested Codex launches; see [ADR-0007](decisions/0007-owned-executable-pins.md)
 and [the command/transport matrix](tool-compatibility.md). No handshake or installer is
 part of normal startup. Hash verification narrows execution races without eliminating them.
+
+## Future target: two deterministic planes
+
+The implemented architecture above remains the current behavior. The roadmap target
+adds workflow intelligence without a second general autonomous agent:
+
+```text
+Execution plane
+Task Assessment → Playbook Selector → Resource Planner → Execution Controller
+                                                        ↓
+                                                      Codex
+                                                        ↓
+                                                     Validator
+                                                        ↓
+                                              Escalation / completion
+
+Lifecycle plane
+Installer · Updater · Migration · Rollback · Release metadata
+Compatibility verification · Doctor
+```
+
+Router assessment feeds typed playbook selection. The resource planner prepares
+verified context/capabilities lazily; the adaptive controller selects risk-constrained
+profiles and responds to independent validation evidence with bounded escalation.
+Lifecycle operations never become model-routing decisions. Minimize expected total
+lifecycle cost subject to required quality, safety and verification, rather than
+single-call token count. Planned semantics, preparation invalidation, explainability,
+telemetry boundaries and replaceable profile/model mapping are in
+[workflow intelligence](workflow-intelligence.md),
+[distribution](distribution.md) and [ADR 0008](decisions/0008-deterministic-workflows.md).
+These layers are not implemented by the roadmap PR.

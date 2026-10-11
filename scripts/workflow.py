@@ -62,7 +62,10 @@ class Repository:
             if (set(stage) != fields or not re.fullmatch(r"[a-z][a-z0-9-]{0,31}", stage["id"])
                     or stage["progress"] not in {"planned", "active", "validated", "partial"}
                     or not stage["issues"] or len(stage["reads"]) > 12
-                    or stage["milestone"] not in {"0.1 Foundation", "0.2 Router v2", "0.3 Development Benchmark", "0.4 Hardening", "1.0 Stable"}
+                    or stage["milestone"] not in {"0.1 Foundation", "0.2 Router v2", "0.3 Development Benchmark",
+                                                 "0.4 Workflow Intelligence", "0.5 Adaptive Execution",
+                                                 "0.6 Reusable Automation", "0.7 Distribution",
+                                                 "0.8 Hardening", "1.0 Stable"}
                     or not self.metadata(stage["title"])):
                 raise ValueError("Invalid stage record")
             if (stage["contract"] not in by_path
