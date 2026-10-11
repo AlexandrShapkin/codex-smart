@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "campaign_id": "representative-development-v1",
+  "status": "frozen-plan-isolation-blocked",
+  "coverage_role": "representative",
+  "provenance": {
+    "preliminary_campaign": "initial-development-v1",
+    "preliminary_sha256": "cfc97144156b9321555cc98937d30d85f8e7bd39a5009954ae84d294156502f7"
+  },
+  "scenario_ids": [
+    "rust-ledger",
+    "rust-duration",
+    "go-pagination",
+    "go-reservations",
+    "python-config-tests",
+    "python-billing",
+    "python-result-api",
+    "infra-service-policy",
+    "repo-ci-gates",
+    "explore-notification"
+  ],
+  "variants": [
+    "vanilla",
+    "native"
+  ],
+  "unavailable_variants": {
+    "legacy": "provenance archive absent",
+    "router-v2": "no verified decision-applying adapter"
+  },
+  "repetitions": 2,
+  "seeds": [
+    14
+  ],
+  "retries": 0,
+  "timeout_seconds": 120,
+  "planned_primary_runs": 40,
+  "maximum_model_calls": 40,
+  "settings": {
+    "model": "gpt-6-sol",
+    "reasoning_effort": "low",
+    "sandbox": "workspace-write",
+    "ignore_user_config": true,
+    "ignore_rules": true,
+    "ephemeral": true,
+    "auth": {
+      "source": "existing normal CODEX_HOME",
+      "credential_store": "keyring",
+      "credentials_copied": false,
+      "user_config_loaded": false
+    }
+  },
+  "codex": {
+    "version": "0.162.1",
+    "reference": "codex-cli 0.162.1; inspected installed artifact",
+    "executable_sha256": "89cc44e820780120ba2c8bc4585c014815bdc7a1fc494c337a585a2c78dc59eb"
+  },
+  "toolchains": {
+    "rustc": {
+      "version": "rustc 1.98.0 (88d9e12ae 2026-08-18)",
+      "version_arguments": [
+        "--version"
+      ]
+    },
+    "go": {
+      "version": "go version go1.27.2-X:nodwarf5 linux/amd64",
+      "version_arguments": [
+        "version"
+      ]
+    },
+    "python3": {
+      "version": "Python 3.14.8",
+      "version_arguments": [
+        "--version"
+      ]
+    },
+    "cargo": {
+      "version": "cargo 1.98.0 (797e8a9bc 2026-08-05)",
+      "version_arguments": [
+        "--version"
+      ]
+    }
+  },
+  "cold_warm": {
+    "classification": "unknown",
+    "protocol": "fresh disposable fixture per attempt; inherited host caches not controlled; do not claim cold or warm",
+    "index": "not applicable: no indexing requested",
+    "bootstrap": "unknown"
+  },
+  "live_contract": {
+    "status": "inherited-execution-contract-only",
+    "source_campaign": "initial-development-v1",
+    "scope": "Codex startup/auth/JSONL only; not representative grading compatibility"
+  },
+  "readiness": {
+    "real_runner_contract": "not-adapted",
+    "grading_isolation_contract": "required-not-verified",
+    "representative_campaign_ready": false
+  },
+  "execution_dependencies": {
+    "grading_isolation_contract": "verified",
+    "qualified_host_contract": "verified"
+  },
+  "measured_records": [],
+  "pins": {
+    "manifest_sha256": "90feb15e92815b3b9d6269f33a2f85b76b52350cdad72eb72a3f61916ac1ee7e",
+    "grader_sha256": "a6c29565533fcc7fac548f78bfa4c8a45561284a468e0398d923c0308cd4df6d",
+    "coverage_validator_sha256": "0b7337512d298fc946267d836808ba50531585719ebb4f2922a21f7335f8cb1b",
+    "fixture_sha256": {
+      "rust-ledger": "a1264d1c636814b10236bf3274955c8784ba36f6072b087c969494d9075f813c",
+      "rust-duration": "efc103d011c309c4f7e42f82c399db717b912a7fad833e257ba930c16742713b",
+      "go-pagination": "631b3cdd60ad5258a8d189f830df1435a6aaf23d01b5cfe58ea58b7da6b135b0",
+      "go-reservations": "dd1c9d8762a6f6a5a7a5385e377da35eafa953bd52965c38ecb0e768327cd5c6",
+      "python-config-tests": "33ca7a018e2229867d8824319c126265b245f4b87261bded687e35866b92e829",
+      "python-billing": "e369e8aba2afd01996e2d0568c6bbbc7aa08f0004b2814e562476c829266353e",
+      "python-result-api": "cdf0d0141060338ce390b09a1f71014fc8b9525382349338b397c76576f808f8",
+      "infra-service-policy": "cdfeecb3e48236fbe484e6e506562439dd748067eafcaa6a102a79558765c754",
+      "repo-ci-gates": "8970d13b5b4c52ce49693f61ea80b9e7a46f0729b58b0e927d29d37280617ae0",
+      "explore-notification": "ae0aba81970dad6be00294b09cd2ba2a1770482c9a13d02083c003518569027d"
+    }
+  }
+}

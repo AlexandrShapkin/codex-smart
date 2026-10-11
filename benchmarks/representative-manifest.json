@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "coverage_role": "representative",
+  "scenarios": [
+    {
+      "id": "rust-ledger",
+      "coverage_role": "representative",
+      "language_or_domain": "Rust",
+      "task_class": [
+        "bugfix"
+      ],
+      "complexity_tier": "multi-file",
+      "lifecycle_requirements": [
+        "inspect",
+        "edit",
+        "test",
+        "build/check",
+        "impact-analysis"
+      ],
+      "risk_dimension": "signed-accounting",
+      "prompt": "Repair refund accounting: posted refunds must reduce the account balance while pending entries remain excluded. Keep the public interfaces stable, add regression tests, and validate the complete ledger workflow.",
+      "fixture": "representative/rust-ledger.json",
+      "snapshot": "5edb96ff822323b3675344f0136c5fb9742d708ffe5761098acf96f4330db38c"
+    },
+    {
+      "id": "rust-duration",
+      "coverage_role": "representative",
+      "language_or_domain": "Rust",
+      "task_class": [
+        "refactor",
+        "API"
+      ],
+      "complexity_tier": "cross-cutting",
+      "lifecycle_requirements": [
+        "inspect",
+        "edit",
+        "test",
+        "build/check",
+        "impact-analysis"
+      ],
+      "risk_dimension": "caller-unit-consistency",
+      "prompt": "Replace the ambiguous tuple returned by duration parsing with a named Duration value exposing hours and minutes. Migrate all consumers without changing accepted input, output formatting or total-minute behavior. Remove the tuple API and validate the complete project workflow.",
+      "fixture": "representative/rust-duration.json",
+      "snapshot": "cf216d7a0c21f374697741cbc20915d7a7b645c4f8045faf9baf17c18b959cfd"
+    },
+    {
+      "id": "go-pagination",
+      "coverage_role": "representative",
+      "language_or_domain": "Go",
+      "task_class": [
+        "feature",
+        "API"
+      ],
+      "complexity_tier": "multi-file",
+      "lifecycle_requirements": [
+        "inspect",
+        "edit",
+        "test",
+        "build/check",
+        "impact-analysis"
+      ],
+      "risk_dimension": "pagination-boundaries",
+      "prompt": "Add cursor pagination to Catalog: Page returns items and a next offset, using -1 when exhausted. Invalid offsets or nonpositive limits return an empty exhausted page. Update the HTTP-independent response adapter to preserve item order and expose the cursor. Add tests and validate the package.",
+      "fixture": "representative/go-pagination.json",
+      "snapshot": "2acd1bc249cec519679477c6c6404854b9893175472b7631f2a4afd85ea58403"
+    },
+    {
+      "id": "go-reservations",
+      "coverage_role": "representative",
+      "language_or_domain": "Go",
+      "task_class": [
+        "bugfix",
+        "refactor"
+      ],
+      "complexity_tier": "multi-file",
+      "lifecycle_requirements": [
+        "inspect",
+        "edit",
+        "test",
+        "build/check",
+        "impact-analysis"
+      ],
+      "risk_dimension": "expiry-boundary",
+      "prompt": "Fix availability so expired reservations stop consuming capacity at their exact expiration time. Share the active-reservation rule between availability and the status report; canceled reservations must stay excluded. Preserve interfaces and validate boundary behavior.",
+      "fixture": "representative/go-reservations.json",
+      "snapshot": "755161e27082556959b83d54e988c8406e49787a6e89e841141ff8014b6c16f9"
+    },
+    {
+      "id": "python-config-tests",
+      "coverage_role": "representative",
+      "language_or_domain": "Python",
+      "task_class": [
+        "tests"
+      ],
+      "complexity_tier": "focused",
+      "lifecycle_requirements": [
+        "inspect",
+        "edit",
+        "test"
+      ],
+      "risk_dimension": "test-detection-strength",
+      "prompt": "Add unittest coverage for the strict boolean configuration parser and its consumer. Valid lowercase literals must work; invalid values must be rejected rather than coerced. Preserve production behavior and demonstrate that regressions are caught.",
+      "fixture": "representative/python-config-tests.json",
+      "snapshot": "c543bfb67cc5452f78af8a26bc321d5877b85eb9c8d0c4377864deb348e1b646"
+    },
+    {
+      "id": "python-billing",
+      "coverage_role": "representative",
+      "language_or_domain": "Python",
+      "task_class": [
+        "feature",
+        "bugfix"
+      ],
+      "complexity_tier": "multi-file",
+      "lifecycle_requirements": [
+        "inspect",
+        "edit",
+        "test",
+        "impact-analysis"
+      ],
+      "risk_dimension": "monetary-rounding",
+      "prompt": "Implement percentage discounts in integer cents, rounding each line down after multiplication. Reject percentages outside 0..100. Both checkout totals and receipt lines must use the discounted amounts consistently; preserve line ordering and add regression coverage.",
+      "fixture": "representative/python-billing.json",
+      "snapshot": "62870c9d9425b0902ee4794fcf7db435b17f6c5c757866cd262470d689dbd71c"
+    },
+    {
+      "id": "python-result-api",
+      "coverage_role": "representative",
+      "language_or_domain": "Python",
+      "task_class": [
+        "API",
+        "refactor"
+      ],
+      "complexity_tier": "cross-cutting",
+      "lifecycle_requirements": [
+        "inspect",
+        "edit",
+        "test",
+        "impact-analysis"
+      ],
+      "risk_dimension": "absence-versus-falsy",
+      "prompt": "Migrate lookup from an optional scalar to a LookupResult with found and value fields, so missing keys are distinct from stored falsy values. Update all consumers while preserving their outward interfaces, missing markers and request ordering. Validate public entry points.",
+      "fixture": "representative/python-result-api.json",
+      "snapshot": "8242ba315c561aad35690f48b0e0b485f4c668636f0eed1ab33374de15eaeae6"
+    },
+    {
+      "id": "infra-service-policy",
+      "coverage_role": "representative",
+      "language_or_domain": "infrastructure",
+      "task_class": [
+        "security",
+        "bugfix"
+      ],
+      "complexity_tier": "multi-file",
+      "lifecycle_requirements": [
+        "inspect",
+        "edit",
+        "test",
+        "impact-analysis"
+      ],
+      "risk_dimension": "least-privilege",
+      "prompt": "Harden the API service using the local service policy: run without root or privilege escalation, drop capabilities, use a read-only root filesystem, and restrict ingress to the approved application port and private CIDR. Preserve the pinned image, replica count, and audit service. Validate declaratively without deploying infrastructure.",
+      "fixture": "representative/infra-service-policy.json",
+      "snapshot": "ab9e2e4732bc61c928574950a4b827dc3370467de221e2f3988081eec3b704f4"
+    },
+    {
+      "id": "repo-ci-gates",
+      "coverage_role": "representative",
+      "language_or_domain": "repository/CI",
+      "task_class": [
+        "CI",
+        "security"
+      ],
+      "complexity_tier": "cross-cutting",
+      "lifecycle_requirements": [
+        "inspect",
+        "edit",
+        "test",
+        "impact-analysis"
+      ],
+      "risk_dimension": "validation-before-publish",
+      "prompt": "Repair the local declarative pipeline so lint and unit tests both gate packaging, integration tests gate publication together with packaging, and publication is restricted to trusted main pushes. Keep checks active on pull requests and preserve artifact naming. Use the documented pipeline schema; do not contact a CI service.",
+      "fixture": "representative/repo-ci-gates.json",
+      "snapshot": "a4385da08a39257cad9081c0fe98908ab9d7dd891ba1fb4f129b2a7a9f3205a1"
+    },
+    {
+      "id": "explore-notification",
+      "coverage_role": "representative",
+      "language_or_domain": "exploration",
+      "task_class": [
+        "inspection"
+      ],
+      "complexity_tier": "focused",
+      "lifecycle_requirements": [
+        "inspect",
+        "impact-analysis"
+      ],
+      "risk_dimension": "conditional-call-graph",
+      "prompt": "Investigate notification delivery without changing source. Write answer.json containing delivered_path and suppressed_path arrays of qualified function names in invocation order for notify events with active unmuted and active muted profiles, plus external_effect naming the function that represents the external send boundary. Explain the call flow using fixture behavior.",
+      "fixture": "representative/explore-notification.json",
+      "snapshot": "f0b16b4aeac2d5eafef4a7c970326d23c87884c31b74bfca1e2fbf7e4631be54"
+    }
+  ]
+}

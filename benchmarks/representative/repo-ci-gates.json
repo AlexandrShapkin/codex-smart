@@ -1,0 +1,115 @@
+{
+  "files": {
+    "pipeline.json": "{\"jobs\": {\"lint\": {\"config\": \"checks.json\", \"check\": \"lint\"}, \"unit\": {\"config\": \"checks.json\", \"check\": \"unit\"}, \"integration\": {\"config\": \"checks.json\", \"check\": \"integration\"}, \"package\": {\"config\": \"build.json\"}, \"publish\": {\"config\": \"release.json\"}}}",
+    "checks.json": "{\"lint\": {\"command\": \"python3 -m compileall app\", \"events\": [\"pull_request\", \"push_main\"]}, \"unit\": {\"command\": \"python3 -m unittest discover\", \"events\": [\"push_main\"]}, \"integration\": {\"command\": \"python3 integration.py\", \"needs\": [\"package\"], \"events\": [\"pull_request\", \"push_main\"]}}",
+    "build.json": "{\"name\": \"package\", \"needs\": [\"unit\"], \"events\": [\"pull_request\", \"push_main\"], \"artifact\": \"bundle\"}",
+    "release.json": "{\"name\": \"publish\", \"needs\": [\"package\"], \"events\": [\"pull_request\", \"push_main\"], \"artifact\": \"bundle\", \"policy\": \"policy.json\"}",
+    "policy.json": "{\"trusted_event\": \"push_main\", \"artifact\": \"bundle\", \"network_validation\": false}",
+    "PIPELINE.md": "The pipeline maps jobs to local config files. Checks use named entries; other jobs use one file each. needs are prerequisite job names, independent of ordering. events are pull_request or push_main. Preserve all commands, job names and artifacts. Policy describes trusted publication. Validate the entire dependency graph locally; no CI service or command execution is needed.\n"
+  },
+  "reference": {
+    "checks.json": "{\"lint\": {\"command\": \"python3 -m compileall app\", \"events\": [\"pull_request\", \"push_main\"]}, \"unit\": {\"command\": \"python3 -m unittest discover\", \"events\": [\"pull_request\", \"push_main\"]}, \"integration\": {\"command\": \"python3 integration.py\", \"needs\": [\"package\"], \"events\": [\"pull_request\", \"push_main\"]}}",
+    "build.json": "{\"name\": \"package\", \"needs\": [\"lint\", \"unit\"], \"events\": [\"pull_request\", \"push_main\"], \"artifact\": \"bundle\"}",
+    "release.json": "{\"name\": \"publish\", \"needs\": [\"package\", \"integration\"], \"events\": [\"push_main\"], \"artifact\": \"bundle\", \"policy\": \"policy.json\"}"
+  },
+  "wrong_controls": [
+    {
+      "release.json": "{\"name\": \"publish\", \"needs\": [\"package\", \"integration\"], \"events\": [\"pull_request\", \"push_main\"], \"artifact\": \"bundle\", \"policy\": \"policy.json\"}"
+    },
+    {
+      "build.json": "{\"name\": \"package\", \"needs\": [\"unit\"], \"events\": [\"pull_request\", \"push_main\"], \"artifact\": \"bundle\"}"
+    }
+  ],
+  "oracle": {
+    "checks.json": {
+      "lint": {
+        "command": "python3 -m compileall app",
+        "events": [
+          "pull_request",
+          "push_main"
+        ]
+      },
+      "unit": {
+        "command": "python3 -m unittest discover",
+        "events": [
+          "pull_request",
+          "push_main"
+        ]
+      },
+      "integration": {
+        "command": "python3 integration.py",
+        "needs": [
+          "package"
+        ],
+        "events": [
+          "pull_request",
+          "push_main"
+        ]
+      }
+    },
+    "build.json": {
+      "name": "package",
+      "needs": [
+        "lint",
+        "unit"
+      ],
+      "events": [
+        "pull_request",
+        "push_main"
+      ],
+      "artifact": "bundle"
+    },
+    "release.json": {
+      "name": "publish",
+      "needs": [
+        "package",
+        "integration"
+      ],
+      "events": [
+        "push_main"
+      ],
+      "artifact": "bundle",
+      "policy": "policy.json"
+    }
+  },
+  "structure": {
+    "initial_file_count": 6,
+    "reference_changed_file_count": 3,
+    "support_files": [
+      "pipeline.json",
+      "policy.json"
+    ],
+    "dependency_edges": [
+      {
+        "caller": "pipeline.json",
+        "callee": "release.json",
+        "witness": "\"release.json\"",
+        "symbol": "publish"
+      },
+      {
+        "caller": "release.json",
+        "callee": "build.json",
+        "witness": "\"package\"",
+        "symbol": "package"
+      },
+      {
+        "caller": "build.json",
+        "callee": "checks.json",
+        "witness": "\"unit\"",
+        "symbol": "unit"
+      },
+      {
+        "caller": "pipeline.json",
+        "callee": "checks.json",
+        "witness": "\"checks.json\"",
+        "symbol": "integration"
+      },
+      {
+        "caller": "release.json",
+        "callee": "policy.json",
+        "witness": "\"policy.json\"",
+        "symbol": "trusted_event"
+      }
+    ]
+  }
+}

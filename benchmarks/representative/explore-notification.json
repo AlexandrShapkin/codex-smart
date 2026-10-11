@@ -1,0 +1,114 @@
+{
+  "files": {
+    "entry.py": "from service import notify\nfrom archive import save\ndef dispatch(event, user):\n    if event == \"notify\": return notify(user)\n    if event == \"archive\": return save(user)\n    raise ValueError(\"event\")\n",
+    "service.py": "from profiles import load\nfrom policy import allowed\nfrom routing import destination\nfrom transport import send\ndef notify(user):\n    profile = load(user)\n    if not allowed(profile): return \"suppressed\"\n    return send(destination(profile))\n",
+    "profiles.py": "def load(user):\n    return {\"active\": user[\"active\"], \"muted\": user[\"muted\"], \"address\": user[\"address\"]}\n",
+    "policy.py": "from preferences import enabled\ndef allowed(profile):\n    opted_in = enabled(profile)\n    return profile[\"active\"] and opted_in\n",
+    "preferences.py": "def enabled(profile):\n    return not profile[\"muted\"]\n",
+    "routing.py": "def destination(profile):\n    return profile[\"address\"]\n",
+    "transport.py": "from gateway import deliver\ndef send(address):\n    return deliver(address)\n",
+    "gateway.py": "# Local test double for the external notification boundary.\ndef deliver(address):\n    return \"sent\"\n",
+    "archive.py": "from audit import record\ndef save(user):\n    record(\"archive\", user)\n    return \"saved\"\n",
+    "audit.py": "def record(event, user):\n    return {\"event\":event, \"address\":user[\"address\"]}\n",
+    "README.md": "The dispatcher supports notify and archive events. Analyze notify for an active unmuted profile and an active muted profile. Paths list called functions in invocation order, including eligibility checks. Gateway operations are local doubles for an external boundary. Do not execute network operations or change source.\n"
+  },
+  "reference": {
+    "answer.json": "{\"delivered_path\": [\"entry.dispatch\", \"service.notify\", \"profiles.load\", \"policy.allowed\", \"preferences.enabled\", \"routing.destination\", \"transport.send\", \"gateway.deliver\"], \"suppressed_path\": [\"entry.dispatch\", \"service.notify\", \"profiles.load\", \"policy.allowed\", \"preferences.enabled\"], \"external_effect\": \"gateway.deliver\"}"
+  },
+  "wrong_controls": [
+    {
+      "answer.json": "{\"delivered_path\": [\"entry.dispatch\", \"service.notify\", \"profiles.load\", \"policy.allowed\", \"transport.send\", \"gateway.deliver\"], \"suppressed_path\": [\"entry.dispatch\", \"service.notify\", \"profiles.load\", \"policy.allowed\", \"preferences.enabled\"], \"external_effect\": \"gateway.deliver\"}"
+    },
+    {
+      "answer.json": "{\"delivered_path\": [\"entry.dispatch\", \"service.notify\", \"profiles.load\", \"policy.allowed\", \"preferences.enabled\", \"routing.destination\", \"transport.send\", \"gateway.deliver\"], \"suppressed_path\": [\"entry.dispatch\", \"service.notify\", \"profiles.load\", \"policy.allowed\", \"preferences.enabled\"], \"external_effect\": \"audit.record\"}"
+    }
+  ],
+  "oracle": {
+    "answer.json": {
+      "delivered_path": [
+        "entry.dispatch",
+        "service.notify",
+        "profiles.load",
+        "policy.allowed",
+        "preferences.enabled",
+        "routing.destination",
+        "transport.send",
+        "gateway.deliver"
+      ],
+      "suppressed_path": [
+        "entry.dispatch",
+        "service.notify",
+        "profiles.load",
+        "policy.allowed",
+        "preferences.enabled"
+      ],
+      "external_effect": "gateway.deliver"
+    }
+  },
+  "structure": {
+    "initial_file_count": 11,
+    "reference_changed_file_count": 1,
+    "support_files": [
+      "profiles.py",
+      "routing.py",
+      "archive.py",
+      "audit.py"
+    ],
+    "dependency_edges": [
+      {
+        "caller": "entry.py",
+        "callee": "service.py",
+        "witness": "from service import notify",
+        "symbol": "notify"
+      },
+      {
+        "caller": "service.py",
+        "callee": "policy.py",
+        "witness": "from policy import allowed",
+        "symbol": "allowed"
+      },
+      {
+        "caller": "policy.py",
+        "callee": "preferences.py",
+        "witness": "from preferences import enabled",
+        "symbol": "enabled"
+      },
+      {
+        "caller": "service.py",
+        "callee": "transport.py",
+        "witness": "from transport import send",
+        "symbol": "send"
+      },
+      {
+        "caller": "transport.py",
+        "callee": "gateway.py",
+        "witness": "from gateway import deliver",
+        "symbol": "deliver"
+      },
+      {
+        "caller": "entry.py",
+        "callee": "archive.py",
+        "witness": "from archive import save",
+        "symbol": "save"
+      },
+      {
+        "caller": "archive.py",
+        "callee": "audit.py",
+        "witness": "from audit import record",
+        "symbol": "record"
+      },
+      {
+        "caller": "service.py",
+        "callee": "profiles.py",
+        "witness": "from profiles import load",
+        "symbol": "load"
+      },
+      {
+        "caller": "service.py",
+        "callee": "routing.py",
+        "witness": "from routing import destination",
+        "symbol": "destination"
+      }
+    ]
+  }
+}

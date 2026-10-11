@@ -1,0 +1,82 @@
+{
+  "files": {
+    "pricing.py": "from validation import percentage\ndef discounted(cents, percent):\n    percentage(percent)\n    return cents\n",
+    "checkout.py": "from pricing import discounted\ndef total(lines,percent): return sum(discounted(c,p)*q for c,q in lines for p in [percent])\n",
+    "receipt.py": "def receipt(lines,percent): return [c*q for c,q in lines]\n",
+    "validation.py": "def percentage(value):\n    if not 0 <= value <= 100:\n        raise ValueError(\"percentage\")\n    return value\n",
+    "cart.py": "from checkout import total\nfrom receipt import receipt\ndef quote(lines, percent):\n    if any(quantity < 1 for _, quantity in lines):\n        raise ValueError(\"quantity\")\n    return {\"total\": total(lines, percent), \"lines\": receipt(lines, percent)}\n",
+    "formatting.py": "def money(cents):\n    return f\"{cents // 100}.{cents % 100:02d}\"\n",
+    "summary.py": "from cart import quote\nfrom formatting import money\ndef summary(lines, percent):\n    data = quote(lines, percent)\n    return [money(c) for c in data[\"lines\"]] + [\"total=\" + money(data[\"total\"])]\n",
+    "test_existing.py": "import unittest\nfrom cart import quote\nclass Existing(unittest.TestCase):\n def test_no_discount(self): self.assertEqual(quote([(100,2)],0),{\"total\":200,\"lines\":[200]})\n",
+    "README.md": "Quote and summary are public checkout entry points. Amounts are integer cents; quantities are positive integers. Discount each unit before applying quantity. Preserve input order and decimal formatting. Validate without external payment services.\n"
+  },
+  "reference": {
+    "pricing.py": "from validation import percentage\ndef discounted(cents, percent):\n    return cents * (100 - percentage(percent)) // 100\n",
+    "receipt.py": "from pricing import discounted\ndef receipt(lines,percent): return [discounted(c,percent)*q for c,q in lines]\n",
+    "test_pricing.py": "import unittest\nfrom pricing import discounted\nfrom checkout import total\nfrom receipt import receipt\nclass PricingTests(unittest.TestCase):\n def test_rounding_and_callers(self):\n  self.assertEqual(discounted(7,25),5)\n  self.assertEqual(total([(7,2)],25),10)\n  self.assertEqual(receipt([(7,2)],25),[10])\n def test_invalid(self):\n  with self.assertRaises(ValueError): discounted(7,110)\n"
+  },
+  "wrong_controls": [
+    {
+      "receipt.py": "def receipt(lines,percent): return [c*q for c,q in lines]\n"
+    },
+    {
+      "pricing.py": "def discounted(cents,percent): return round(cents*(100-percent)/100)\n"
+    }
+  ],
+  "oracle": "from pricing import discounted\nfrom checkout import total\nfrom receipt import receipt\nfrom cart import quote\nfrom summary import summary\nfrom formatting import money\nfor lines,p in [([(137,2),(89,3)],17),([],0),([(5,2)],100)]:\n expected=[(c*(100-p)//100)*q for c,q in lines]\n assert receipt(lines,p)==expected and total(lines,p)==sum(expected)\n assert quote(lines,p)=={\"total\":sum(expected),\"lines\":expected}\n assert summary(lines,p)==[money(c) for c in expected]+[\"total=\"+money(sum(expected))]\nfor p in [-1,101]:\n try: discounted(53,p)\n except ValueError: pass\n else: raise AssertionError(\"invalid percent\")\n",
+  "structure": {
+    "initial_file_count": 9,
+    "reference_changed_file_count": 3,
+    "support_files": [
+      "cart.py",
+      "summary.py",
+      "formatting.py",
+      "validation.py",
+      "test_existing.py"
+    ],
+    "dependency_edges": [
+      {
+        "caller": "summary.py",
+        "callee": "cart.py",
+        "witness": "from cart import quote",
+        "symbol": "quote"
+      },
+      {
+        "caller": "cart.py",
+        "callee": "checkout.py",
+        "witness": "from checkout import total",
+        "symbol": "total"
+      },
+      {
+        "caller": "cart.py",
+        "callee": "receipt.py",
+        "witness": "from receipt import receipt",
+        "symbol": "receipt"
+      },
+      {
+        "caller": "checkout.py",
+        "callee": "pricing.py",
+        "witness": "from pricing import discounted",
+        "symbol": "discounted"
+      },
+      {
+        "caller": "pricing.py",
+        "callee": "validation.py",
+        "witness": "from validation import percentage",
+        "symbol": "percentage"
+      },
+      {
+        "caller": "summary.py",
+        "callee": "formatting.py",
+        "witness": "from formatting import money",
+        "symbol": "money"
+      },
+      {
+        "caller": "test_existing.py",
+        "callee": "cart.py",
+        "witness": "from cart import quote",
+        "symbol": "quote"
+      }
+    ]
+  }
+}

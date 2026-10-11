@@ -1,0 +1,68 @@
+{
+  "files": {
+    "go.mod": "module fixture\n\ngo 1.23\n",
+    "catalog.go": "package fixture\ntype Catalog struct { Items []string }\nfunc (c Catalog) All() []string {return c.Items}\n",
+    "response.go": "package fixture\ntype Response struct { Items []string; Next int }\nfunc Respond(c Catalog, offset, limit int) Response {return Response{c.All(),-1}}\n",
+    "query.go": "package fixture\n\ntype Query struct { Offset int; Limit int }\n",
+    "handler.go": "package fixture\n// List is the local request adapter; no HTTP server is started.\nfunc List(c Catalog, q Query) Response {\n    return Response{Items: c.All(), Next: -1}\n}\n",
+    "format.go": "package fixture\nimport (\"fmt\"; \"strings\")\nfunc Render(r Response) string { return fmt.Sprintf(\"%s;next=%d\", strings.Join(r.Items, \",\"), r.Next) }\n",
+    "catalog_existing_test.go": "package fixture\nimport \"testing\"\nfunc TestAllRetained(t *testing.T){c:=Catalog{[]string{\"a\",\"b\"}};if len(c.All())!=2{t.Fatal(\"all\")}}\n",
+    "README.md": "Catalog has domain, response and local request entry points. Paginated listing behavior must agree at every entry point; All remains available for legacy callers. Rendering preserves order. No service/network setup is needed.\n"
+  },
+  "reference": {
+    "catalog.go": "package fixture\ntype Catalog struct { Items []string }\nfunc (c Catalog) All() []string {return c.Items}\nfunc (c Catalog) Page(offset,limit int)([]string,int){if offset<0||offset>=len(c.Items)||limit<=0{return []string{},-1};end:=len(c.Items);if limit<len(c.Items)-offset{end=offset+limit};next:=-1;if end<len(c.Items){next=end};return c.Items[offset:end],next}\n",
+    "response.go": "package fixture\ntype Response struct { Items []string; Next int }\nfunc Respond(c Catalog,offset,limit int) Response {items,next:=c.Page(offset,limit);return Response{items,next}}\n",
+    "catalog_test.go": "package fixture\nimport \"testing\"\nfunc TestFirstPage(t *testing.T){items,next:=(Catalog{[]string{\"a\",\"b\",\"c\"}}).Page(0,2);if len(items)!=2||next!=2{t.Fatal(\"first page\")}}\n",
+    "handler.go": "package fixture\nfunc List(c Catalog, q Query) Response { return Respond(c, q.Offset, q.Limit) }\n"
+  },
+  "wrong_controls": [
+    {
+      "handler.go": "package fixture\n// List is the local request adapter; no HTTP server is started.\nfunc List(c Catalog, q Query) Response {\n    return Response{Items: c.All(), Next: -1}\n}\n"
+    },
+    {
+      "response.go": "package fixture\ntype Response struct { Items []string; Next int }\nfunc Respond(c Catalog,offset,limit int)Response{items,_:=c.Page(offset,limit);return Response{items,-1}}\n"
+    }
+  ],
+  "oracle": "package fixture\nimport(\"testing\";\"reflect\")\nfunc TestContract(t *testing.T){c:=Catalog{[]string{\"oak\",\"elm\",\"ash\",\"fir\"}};for _,x:=range []struct{o,l int;items []string;n int}{{0,2,[]string{\"oak\",\"elm\"},2},{2,7,[]string{\"ash\",\"fir\"},-1},{1,1,[]string{\"elm\"},2},{-1,2,[]string{},-1},{4,1,[]string{},-1},{0,0,[]string{},-1}}{a,n:=c.Page(x.o,x.l);r:=Respond(c,x.o,x.l); via:=List(c,Query{x.o,x.l});if !reflect.DeepEqual(via,r)||Render(via)!=Render(r){t.Fatal(\"request adapter\")};if len(a)!=len(x.items)||(len(a)>0&&!reflect.DeepEqual(a,x.items))||n!=x.n||len(r.Items)!=len(x.items)||(len(r.Items)>0&&!reflect.DeepEqual(r.Items,x.items))||r.Next!=x.n{t.Fatal(\"pagination\")}}}\n",
+  "structure": {
+    "initial_file_count": 8,
+    "reference_changed_file_count": 4,
+    "support_files": [
+      "format.go",
+      "query.go",
+      "catalog_existing_test.go"
+    ],
+    "dependency_edges": [
+      {
+        "caller": "handler.go",
+        "callee": "catalog.go",
+        "witness": "c.All()",
+        "symbol": "All"
+      },
+      {
+        "caller": "response.go",
+        "callee": "catalog.go",
+        "witness": "c.All()",
+        "symbol": "All"
+      },
+      {
+        "caller": "format.go",
+        "callee": "response.go",
+        "witness": "Response",
+        "symbol": "Response"
+      },
+      {
+        "caller": "handler.go",
+        "callee": "query.go",
+        "witness": "Query",
+        "symbol": "Query"
+      },
+      {
+        "caller": "catalog_existing_test.go",
+        "callee": "catalog.go",
+        "witness": "c.All()",
+        "symbol": "All"
+      }
+    ]
+  }
+}
