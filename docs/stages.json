@@ -146,6 +146,7 @@
       "sources": [
         "crates/codex-smart-core/src/routing.rs",
         "crates/codex-smart-core/src/routing/assessment.rs",
+        "crates/codex-smart-core/src/routing/engine.rs",
         "crates/codex-smart-core/src/config.rs"
       ],
       "evidence": [

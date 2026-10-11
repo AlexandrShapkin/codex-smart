@@ -24,7 +24,10 @@ Read [docs/routing.md](../../docs/routing.md), [docs/architecture.md](../../docs
 
 The #9 pure task/risk foundation is implemented separately from the existing preview;
 see the [routing contract](../routing.md#router-v2-taskrisk-foundation-9).
-Router remains incomplete: #10 decision engine, #11 reasoning selection, #12 fallback
-execution and #13 Rhai evaluation are pending. No capability activation is delivered.
+The #10 pure capability decision engine is implemented with normalized readiness,
+native baseline, typed explanations and stubbed sessions; see the
+[routing contract](../routing.md#router-v2-capability-decision-engine-10).
+Router remains incomplete: #11 reasoning selection, #12 fallback execution and
+#13 Rhai evaluation are pending. No capability activation is delivered.
 
 Current reasoning/config remain preview. Rhai requires a separate ADR and enforced sandbox only if justified.
