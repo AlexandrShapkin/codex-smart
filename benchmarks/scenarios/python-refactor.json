@@ -1,0 +1,13 @@
+{
+  "files": {
+    "names.py": "def normalize(s): return s.lower()\n",
+    "service.py": "from names import normalize\ndef key(s): return normalize(s)\n"
+  },
+  "solution": {
+    "names.py": "def canonical(s): return s.lower()\n",
+    "service.py": "from names import canonical\ndef key(s): return canonical(s)\n"
+  },
+  "wrong": {
+    "names.py": "def canonical(s): return s.lower()\n"
+  }
+}

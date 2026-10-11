@@ -1,0 +1,12 @@
+{
+  "files": {
+    "calc.py": "def divide(a,b):\n    return a/b\n",
+    "test_calc.py": "import unittest\n"
+  },
+  "solution": {
+    "test_calc.py": "import unittest\nfrom calc import divide\nclass Tests(unittest.TestCase):\n def test_normal(self): self.assertEqual(divide(6,2),3)\n def test_zero(self):\n  with self.assertRaises(ZeroDivisionError): divide(1,0)\n"
+  },
+  "wrong": {
+    "test_calc.py": "import unittest\nclass Tests(unittest.TestCase):\n def test_normal(self): self.assertTrue(True)\n"
+  }
+}

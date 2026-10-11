@@ -1,0 +1,11 @@
+{
+  "files": {
+    "lib.rs": "pub fn clamp(x:i32)->i32 { x.min(10) }\n"
+  },
+  "solution": {
+    "lib.rs": "pub fn clamp(x:i32)->i32 { x.clamp(0,10) }\n"
+  },
+  "wrong": {
+    "lib.rs": "pub fn clamp(x:i32)->i32 { if x == -1 {0} else {x.min(10)} }\n"
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "variants": {
+    "vanilla": {
+      "available": true
+    },
+    "native": {
+      "available": true
+    },
+    "legacy": {
+      "available": false,
+      "reason": "provenance archive absent"
+    },
+    "router-v2": {
+      "available": false,
+      "reason": "no verified decision-applying adapter"
+    }
+  },
+  "scenarios": [
+    {
+      "id": "rust-clamp",
+      "domain": "Rust",
+      "task_class": "bugfix",
+      "source": "purpose-built-public-fixture-v1",
+      "snapshot": "18d58e6f754c69a689c09167fb4ffc516c32009858bd6b31c10da45f482537d5",
+      "fixture": "scenarios/rust-clamp.json",
+      "setup": "fresh-empty-directory; materialize files; verify sha256 tree; no install/network",
+      "prompt": "Clamp integers to inclusive 0..10, including negative and extreme values.",
+      "grader": "rust-clamp",
+      "allowed_variants": [
+        "vanilla",
+        "native",
+        "legacy",
+        "router-v2"
+      ],
+      "required_capabilities": [
+        "rustc"
+      ],
+      "quality_gates": [
+        "requirements",
+        "regressions",
+        "security"
+      ]
+    },
+    {
+      "id": "go-total",
+      "domain": "Go",
+      "task_class": "feature",
+      "source": "purpose-built-public-fixture-v1",
+      "snapshot": "a3a1be0b9a2719f8f2d96f3362bf29ca980e3db3b89688580a133f7e01036e9f",
+      "fixture": "scenarios/go-total.json",
+      "setup": "fresh-empty-directory; materialize files; verify sha256 tree; no install/network",
+      "prompt": "Implement Total as the sum of every integer; empty input returns zero.",
+      "grader": "go-total",
+      "allowed_variants": [
+        "vanilla",
+        "native",
+        "legacy",
+        "router-v2"
+      ],
+      "required_capabilities": [
+        "go"
+      ],
+      "quality_gates": [
+        "requirements",
+        "regressions",
+        "security"
+      ]
+    },
+    {
+      "id": "python-tests",
+      "domain": "Python",
+      "task_class": "tests",
+      "source": "purpose-built-public-fixture-v1",
+      "snapshot": "6c61ef859a34f2c1d9824ad2b5842f602637326d77c11c275300538cd8c08235",
+      "fixture": "scenarios/python-tests.json",
+      "setup": "fresh-empty-directory; materialize files; verify sha256 tree; no install/network",
+      "prompt": "Add unittest tests for divide: normal division and zero denominator. Tests must catch returning zero and swallowing ZeroDivisionError.",
+      "grader": "python-tests",
+      "allowed_variants": [
+        "vanilla",
+        "native",
+        "legacy",
+        "router-v2"
+      ],
+      "required_capabilities": [
+        "python3"
+      ],
+      "quality_gates": [
+        "requirements",
+        "regressions",
+        "security"
+      ]
+    },
+    {
+      "id": "python-refactor",
+      "domain": "Python",
+      "task_class": "multi-file refactor",
+      "source": "purpose-built-public-fixture-v1",
+      "snapshot": "1a248225fe1af93f182fae91c7ec71929150d3b07b044edd22b8012d71d20d4b",
+      "fixture": "scenarios/python-refactor.json",
+      "setup": "fresh-empty-directory; materialize files; verify sha256 tree; no install/network",
+      "prompt": "Rename normalize to canonical in both modules; preserve lowercase behavior and remove old API.",
+      "grader": "python-refactor",
+      "allowed_variants": [
+        "vanilla",
+        "native",
+        "legacy",
+        "router-v2"
+      ],
+      "required_capabilities": [
+        "python3"
+      ],
+      "quality_gates": [
+        "requirements",
+        "regressions",
+        "security"
+      ]
+    },
+    {
+      "id": "python-api",
+      "domain": "Python",
+      "task_class": "API/dependency change",
+      "source": "purpose-built-public-fixture-v1",
+      "snapshot": "18a0f921af57c0cd5fa3a7080a4c565a473de55b5942afb2bf99467e11d9b4d4",
+      "fixture": "scenarios/python-api.json",
+      "setup": "fresh-empty-directory; materialize files; verify sha256 tree; no install/network",
+      "prompt": "Change lookup to return {\"value\": k}; update fetch to continue returning the scalar value.",
+      "grader": "python-api",
+      "allowed_variants": [
+        "vanilla",
+        "native",
+        "legacy",
+        "router-v2"
+      ],
+      "required_capabilities": [
+        "python3"
+      ],
+      "quality_gates": [
+        "requirements",
+        "regressions",
+        "security"
+      ]
+    },
+    {
+      "id": "iac-security",
+      "domain": "IaC",
+      "task_class": "CI/config repair",
+      "source": "purpose-built-public-fixture-v1",
+      "snapshot": "4da4c343672f9b3864a7dbd020e7c2744e001cf074669d81a46c9f903c630af3",
+      "fixture": "scenarios/iac-security.json",
+      "setup": "fresh-empty-directory; materialize files; verify sha256 tree; no install/network",
+      "prompt": "Repair deployment.json: replicas 2, non-root true, privileged false, pin image example/app:1.2.3. Preserve all fields.",
+      "grader": "iac-security",
+      "allowed_variants": [
+        "vanilla",
+        "native",
+        "legacy",
+        "router-v2"
+      ],
+      "required_capabilities": [
+        "python3"
+      ],
+      "quality_gates": [
+        "requirements",
+        "regressions",
+        "security"
+      ]
+    },
+    {
+      "id": "python-explore",
+      "domain": "Python",
+      "task_class": "repository exploration",
+      "source": "purpose-built-public-fixture-v1",
+      "snapshot": "54fe6a0c7c9a82324b453795c6ab55959bdec48b6bdce2a9075b94e76dd6a22c",
+      "fixture": "scenarios/python-explore.json",
+      "setup": "fresh-empty-directory; materialize files; verify sha256 tree; no install/network",
+      "prompt": "Write answer.json with call_chain listing entry.py, service.handle, storage.save in order. Preserve source files.",
+      "grader": "python-explore",
+      "allowed_variants": [
+        "vanilla",
+        "native",
+        "legacy",
+        "router-v2"
+      ],
+      "required_capabilities": [
+        "python3"
+      ],
+      "quality_gates": [
+        "requirements",
+        "regressions",
+        "security"
+      ]
+    }
+  ]
+}
