@@ -114,6 +114,29 @@ class CampaignTests(unittest.TestCase):
         self.assertTrue(all(v is None for v in r['attempts'][0]['tokens'].values()))
         self.assertNotIn('app-server',json.dumps(r))
 
+    def test_blocked_cli_has_no_real_or_state_override_execution(self):
+        import contextlib
+        import io
+        import sys
+        for arguments in [['--real'], ['--codex-home', '/test/state'], ['--sqlite-home', '/test/state']]:
+            with patch.object(sys,'argv',['benchmark_campaign.py',*arguments]), \
+                 patch.object(b,'execute') as execute, contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as raised:
+                    c.main()
+                self.assertEqual(raised.exception.code,2)
+                execute.assert_not_called()
+
+    def test_startup_evidence_preserves_blocked_contract_and_pins(self):
+        diagnosis = self.config['startup_diagnosis']
+        self.assertEqual(diagnosis['no_content_open_errno'],'EROFS (30)')
+        self.assertIsNone(diagnosis['safe_writable_state_solution'])
+        self.assertEqual(diagnosis['live_retry_attempts'],0)
+        self.assertFalse(diagnosis['ephemeral_exemption'])
+        self.assertFalse(self.config['live_contract']['ready_for_measured_campaign'])
+        self.assertEqual(self.config['codex']['executable_sha256'],
+                         '89cc44e820780120ba2c8bc4585c014815bdc7a1fc494c337a585a2c78dc59eb')
+        self.assertEqual(len(c.jobs(self.config)),42)
+
     def test_blocked_live_contract_never_claims_observable_usage(self):
         self.assertEqual(self.config['live_contract']['jsonl_events'],0)
         self.assertFalse(self.config['live_contract']['ready_for_measured_campaign'])

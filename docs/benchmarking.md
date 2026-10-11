@@ -166,3 +166,46 @@ is blocked. It must not be treated as ready for the measured campaign. A writabl
 approved benchmark environment with existing authentication must first pass a bounded
 live smoke; do not modify permissions or copy credentials to bypass this environment.
 Review and update preflight evidence before enabling any measured execution.
+
+## Pinned startup diagnosis after PR #33
+
+PR #33 merged at `1f1de4d`. No model call or live retry was made in this diagnosis.
+The installed executable still matches the frozen 0.162.1 checksum. Public upstream
+source was inspected at release tag `rust-v0.162.1`, commit
+`092d3acd6bec3e3a14bdc7e7a2810ab628ab759d`; relevant source checksums are recorded in
+`campaign-v1.json`. The installed package identifies `0.162.1+arch.1`; binary strings
+match the bootstrap error/function/source-path contract. This identifies the inspected
+upstream contract without claiming an independently reproduced package build.
+
+The [in-process bootstrap](https://github.com/openai/codex/blob/092d3acd6bec3e3a14bdc7e7a2810ab628ab759d/codex-rs/app-server/src/in_process.rs#L445)
+unconditionally calls `resolve_installation_id` before returning the initialized
+client. [Installation identity resolution](https://github.com/openai/codex/blob/092d3acd6bec3e3a14bdc7e7a2810ab628ab759d/codex-rs/core/src/installation_id.rs#L19)
+opens `$CODEX_HOME/installation_id` read/write/create and locks it, even if a valid
+ID already exists. It can chmod that file to 0644 or rewrite an absent/invalid UUID.
+The [exec entry point](https://github.com/openai/codex/blob/092d3acd6bec3e3a14bdc7e7a2810ab628ab759d/codex-rs/exec/src/lib.rs#L1022)
+starts this client before starting the ephemeral thread. Ephemeral mode does not
+exempt installation identity from these startup writes.
+
+Metadata checks found the normal Codex home and installation-ID file present but
+read-only. Opening the existing installation-ID file read/write returned **EROFS (30)**;
+no contents were read or written. The retained smoke stderr reports the matching
+read-only in-process initialization error. SQLite/log redirects cannot affect this
+installation-ID open. The pinned implementation accepts only the Codex-home root for
+this path, with no separate installation-ID environment/config control.
+
+Changing `CODEX_HOME` is not an auth-preserving state-only redirect:
+[file auth](https://github.com/openai/codex/blob/092d3acd6bec3e3a14bdc7e7a2810ab628ab759d/codex-rs/login/src/auth/storage.rs#L162)
+uses that root, and [keyring identity](https://github.com/openai/codex/blob/092d3acd6bec3e3a14bdc7e7a2810ab628ab759d/codex-rs/login/src/auth/storage.rs#L246)
+hashes its canonical path. No existing supported environment credential was available
+to preserve auth independently (presence checks only; no credential-store contents
+read). Consequently **no safe writable-state solution was established**, and the
+conditional retry was not executed. No speculative SQLite/log override, fresh Codex
+home, credential copy, chmod, normal-config mutation or filesystem-permission bypass
+was attempted. Frozen model, reasoning, sandbox and artifact settings are unchanged.
+
+The live contract remains blocked, counters remain null and measured execution stays
+disabled. To proceed, the owner must supply a writable benchmark environment with its
+normal existing authentication intact; an executable change would require separate
+approval and a newly verified contract. This task does not authorize silently changing
+the executable/settings or creating an alternate auth store. The planned campaign
+remains 42 jobs; no native or measured campaign ran. No new live trace was produced.
