@@ -645,6 +645,15 @@
         "hardening",
         "stable"
       ]
+    },
+    {
+      "path": "docs/benchmark-host.md",
+      "title": "Benchmark qualified-host and representative runner contract",
+      "owner": "benchmark",
+      "role": "contract",
+      "stages": [
+        "benchmark"
+      ]
     }
   ]
 }

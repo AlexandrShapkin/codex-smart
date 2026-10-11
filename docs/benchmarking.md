@@ -540,9 +540,10 @@ Run `python3 -B scripts/benchmark_coverage.py` for a credential-free, read-only 
 validation; it executes no tools/models and creates no artifacts. The explicit
 `--trusted-controls` option executes **only repository-authored** references/wrong
 controls locally. That host subprocess path verifies grader correctness, not grader
-security isolation; it must never be used for model submissions. There is no real
-mode or new public model entry. The existing public campaign entry accepts only the
-historical frozen campaign and remains blocked.
+security isolation; it must never be used for model submissions. The coverage validator
+has no real mode. The prepared representative entry is
+described in [the host/runner contract](benchmark-host.md); it remains blocked.
+The historical entry accepts only its immutably blocked preliminary contract.
 
 ### Call budget and provenance
 
@@ -556,7 +557,9 @@ there is no winner logic or derived fresh-input counter.
 
 Vanilla/native use equivalent frozen executable/model/reasoning/auth settings, with
 only the native instruction differing. Legacy lacks provenance; Router-v2 lacks an
-adapter. Neither is fabricated. The new plan is not yet adapted to real execution.
+adapter. Neither is fabricated. The representative adapter is now prepared and pinned,
+with no accepted host or
+isolation backend; it is not enabled for real execution.
 It records a checksum/provenance link to the historical plan and inherits only applicable
 Codex startup/auth/JSONL evidence. It contains no smoke counters or comparative records.
 Any future representative smoke must have a separately approved budget; it is not
@@ -585,9 +588,9 @@ No distribution is prescribed. The eventual frozen execution contract must revie
 specific backend/version and evidence. No campaign flag can override isolation. The
 new plan explicitly depends on verified grading isolation and a verified qualified
 host; current readiness remains false and isolation required-not-verified. Coverage
-can be reviewed independently of host qualification. Next: accept this bounded matrix,
-then qualify a separate host and adapt/verify the guarded representative runner before
-any separately authorized model spending. Benchmark stays partial, #14 open, #15 separate.
+can be reviewed independently of host qualification. The matrix is accepted and the
+runner adapter prepared. Next: qualify a separate host and verify the runtime grading
+boundary before any separately authorized model spending. Benchmark stays partial, #14 open, #15 separate.
 
 ### Structural workload realism amendment
 
@@ -679,3 +682,28 @@ remains required-not-verified; representative_campaign_ready remains false; both
 campaigns are unexecuted. The historical seven-component manifest/preliminary 42-job
 plan and smoke evidence remain byte-identical. The current host blocker is unchanged,
 #14 open, #15 separate and benchmark partial.
+
+### Representative runner contract preparation
+
+#56 merged as `707c5f080af279cd99f54bfab564c3fe92798709`; active stage stays benchmark.
+The matrix is accepted, representative runner contract prepared (fake-tested adapter,
+not runtime verification), qualified host unavailable/not verified, grading isolation
+not verified, representative campaign not ready and measured comparative evidence none.
+See [the typed qualification and execution contract](benchmark-host.md). The current
+development host is not a candidate for further qualification work unless its
+capabilities materially change. No further current-host probes were performed.
+
+`python3 -B scripts/benchmark_representative.py` prints an offline credential-free
+40-job plan with zero model calls and no artifacts or tool execution. One guarded
+public real entry consumes reviewed qualification evidence and frozen security gates;
+operator authorization cannot bypass them. Submission grading has only an isolation
+interface, with no direct-host fallback. Read-only exploration requires immutable task
+files and permits its answer artifact only. Normalized evidence contains safe counters,
+fixed failure categories and opaque host/isolation references; unsupported counters
+remain null. Synthetic attempts never claim real model calls or comparative results.
+
+Historical preliminary campaign bytes, 42-job budget, smoke and failed evidence remain
+unchanged. The representative budget remains 40, two repetitions, vanilla/native,
+seed 14, retries zero, timeout 120 seconds. Host/isolation readiness remains
+required-not-verified, representative readiness false; neither campaign was executed.
+#14 remains open and partial; #15 remains separate.

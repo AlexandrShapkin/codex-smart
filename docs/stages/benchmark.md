@@ -38,6 +38,11 @@ user resource manager/delegation unavailable and aggregate memory/tasks unverifi
 Qualify a separate host with enforced aggregate limits, descendant cleanup, immutable
 runtime inventory and complete filesystem/network/environment isolation. Submitted
 code must not run on the authenticated host. Grading isolation remains required-not-verified,
-representative_campaign_ready false, public real execution disabled. Next qualify that
-host and verify the representative runner before any separately authorized spending.
+representative_campaign_ready false, public real execution disabled. The matrix is
+accepted and representative runner adapter prepared with fake-only
+tests and pins. The typed host contract accepts no qualification receipts; both host
+and grading isolation remain required-not-verified. Next qualify a separate host and
+verify its isolated runtime/grader boundary before any separately authorized spending.
+The current development host is not a candidate for further qualification work unless
+its capabilities materially change. See [host/runner contract](../benchmark-host.md).
 Benchmark stays partial, #14 open and #15 separate. See docs/benchmarking.md.
