@@ -373,7 +373,94 @@ resource containment plus a minimal immutable toolchain inventory, run the full 
 suite and all positive/wrong graders inside that boundary, then finalize coverage.
 This requires a separate approved host capability/contract, not a permission bypass.
 
-Implementation validation: 60 Python tests, docs-check, just check, nextest (85/85),
+## User-scoped resource contract after #37
+
+Owner-accepted #37 merged at `12f25ad25da61a1860a7512b655909f73355c067`.
+Read-only investigation explicitly checks the user systemd manager rather than inferring
+its capabilities from direct cgroup writability. `systemd --version` was not on PATH;
+the installed systemd binary and systemd-run report **262 (262-1-arch)**. systemd-run
+supports user units, properties, wait and collection in its help. User-manager status,
+show and user-slice queries fail with no usable local transport. An explicit normal
+local user-bus address also fails, although the user's bus/socket metadata is present.
+The system manager can show user-slice properties: MemoryMax/MemoryHigh exist but are
+unlimited, TasksMax exists, and Delegate is no. None proves a constrained grading unit.
+
+Cgroup v2 has memory and pids controllers, including subtree availability; the current
+process belongs to a user session scope. The mount is read-only and the current scope
+is not writable. No usable rootless delegation was established. Existing prlimit limits
+individual processes/shared UIDs, not an accepted per-job aggregate memory/task boundary;
+CGroups helper tools are absent. Privileged Docker is not a fallback. No systemd unit,
+persistent service, allocation stress test or process-count probe was started, and no
+host configuration, permissions or packages changed.
+
+**Result: grading isolation blocked: host lacks verified unprivileged aggregate resource
+containment.** This is a failure to demonstrate an available controller path, not proof
+that systemd or the kernel never supports such limits. Memory enforcement, process-count
+enforcement, descendant coverage and resource-scope cleanup are all not-verified. The
+previous Bubblewrap timeout/namespace probes remain partial evidence, not resource proof.
+`python3 -B scripts/benchmark_isolation.py --resources` emits bounded typed resource and
+isolation states and exits nonzero. It issues only fixed local version/show queries with
+an allowlisted environment; it exports no bus addresses, cgroup paths, unit IDs, raw
+command output or secrets. Missing properties/controllers are reported unsupported;
+property/controller presence alone cannot report enforcement verified.
+
+### Intended composition and acceptance
+
+If an approved user manager/delegation becomes available, the intended order is a
+transient user resource service containing Bubblewrap, then the trusted immutable grader
+controller and all submitted descendants. No such composition runs in this slice.
+
+| Layer | Responsibility |
+| --- | --- |
+| User cgroup-v2 service | Aggregate MemoryMax, no swap escape, TasksMax/pids; bounded service lifetime; entire cgroup killed/reaped on timeout/interruption/OOM |
+| Bubblewrap | Filesystem/PID/network namespaces, environment allowlist, capability drop, no nested user namespaces; namespace reaper cannot escape the outer resource service |
+| Trusted grader | Fixed immutable oracles and normalized verdict; no resource accounting delegated to submitted code |
+| Operator/controller | Observe rejection/events and service inactivity plus empty descendant cgroup before accepting cleanup; remove only the transient probe unit |
+
+Future synthetic acceptance should use small bounds (e.g. eight tasks and 32 MiB memory,
+with a capped 40 MiB allocation attempt) and finite lifetime. Observe fork rejection and
+pids-limit events, plus memory-limit/OOM termination and memory events, in descendants
+inside the exact service cgroup. Unit command success is insufficient. Timeout and
+interruption require no remaining descendants; failed/unsupported/unknown evidence must
+remain distinguishable. The pure complete-contract predicate requires every component,
+including descendant scope and cleanup, verified; it is not a launch authorization.
+
+### Minimal runtime candidate, not an accepted inventory
+
+Known fixed host tool versions still match the campaign. Static ELF metadata was read
+only from trusted executables/libraries; no submitted program was run. Candidate staging
+roles mount read-only at `/runtime/python`, `/runtime/rust`, `/runtime/go`,
+`/runtime/libraries`, `/runtime/linker`, and `/trusted`. The staging root must be a dedicated
+disposable runtime directory, with no direct normal-home/sysroot mount. Plan drift,
+symlinked roots, a Rust root outside staging, broad home/root/system mounts and missing
+roles are rejected. Structural validation returns not-verified: bytes and recursive
+library/data closure have not been accepted or staged.
+
+| Class | Minimum identified executable/data requirements |
+| --- | --- |
+| Python | Python 3.14.8 executable (`python3.14`), libpython3.14.so.1.0, standard library/encodings/unittest/json and needed lib-dynload modules; exclude site-packages, user customization and caches |
+| Rust | Pinned 1.98.0 sysroot discovered from rustc, staged separately: bin/rustc, librustc_driver-28a98848f7a7c026.so, libLLVM.so.22.1-rust-1.98.0-stable, x86_64 target rustlib including libtest/std; explicit staged sysroot, linker/CRT/libgcc closure |
+| Go | Static pinned go executable (no ELF NEEDED entries); staged bin/go, src, pkg/tool/linux_amd64 and pkg/include; work-only build cache, local toolchain, no module download or package-manager cache |
+| IaC / JSON | Trusted Python/JSON runtime and immutable grader, with submitted deployment.json treated only as data; no submitted program execution |
+
+The inspected Python/Rust ELF closure names include ld-linux-x86-64.so.2, libc.so.6,
+libdl.so.2, librt.so.1, libpthread.so.0, libm.so.6, libgcc_s.so.1 and libz.so.1,
+plus the libpython/driver/LLVM files above. Python extension-module dependencies and
+compiler/linker data still need a reviewed complete file digest inventory; this list
+is not accepted runtime closure. No normal HOME/CODEX_HOME, checkout, artifacts,
+credentials or unrelated home contents are copied or mounted. Broad `/usr` binding
+remains synthetic namespace investigation only, never the final runtime plan.
+
+Since both prerequisites are unverified, Python/Rust/Go/IaC compatibility and the full
+escape suite inside the final composed boundary are **not run/not-verified**. Existing
+trusted control tests retain their scope; the JSON-only IaC smoke remains intact.
+The campaign gate remains disabled, grading_isolation_contract required-not-verified,
+representative_campaign_ready false and all 42 jobs unexecuted. Next obtain an approved
+usable unprivileged resource path, prove tiny descendant limits/cleanup, accept the
+immutable runtime byte inventory, then run composed grader/escape acceptance. #14 stays
+open and partial; #15 is separate. Zero live model calls.
+
+Implementation validation: 69 Python tests, docs-check, just check, nextest (85/85),
 diff checks and bounded benchmark context pass with synthetic namespace probes
 and fake/mocked benchmark runners.
 Local deny is skipped because the advisory cache is mounted read-only; exact-head

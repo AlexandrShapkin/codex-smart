@@ -16,6 +16,8 @@ import tempfile
 import time
 from typing import Literal
 
+import benchmark_resource_contract as resource_contract
+
 BWRAP = Path('/usr/bin/bwrap')
 VERSION = 'bubblewrap 0.13.0'
 
@@ -182,11 +184,41 @@ else: time.sleep(10)
             'grader_compatibility': 'not-verified'}
 
 
+@dataclass(frozen=True)
+class IsolationEvidence:
+    backend: str = 'bubblewrap-candidate'
+    backend_version: str | None = None
+    resource_backend: str = 'systemd-user-cgroup-v2'
+    resource_status: resource_contract.State = 'not-verified'
+    memory_limit_status: resource_contract.State = 'not-verified'
+    process_limit_status: resource_contract.State = 'not-verified'
+    runtime_inventory_status: resource_contract.State = 'not-verified'
+    filesystem_status: resource_contract.State = 'not-verified'
+    network_status: resource_contract.State = 'not-verified'
+    environment_status: resource_contract.State = 'not-verified'
+    process_cleanup_status: resource_contract.State = 'not-verified'
+    grader_compatibility_status: resource_contract.State = 'not-verified'
+
+
+def inspect_contract():
+    resource = resource_contract.inspect_resources()
+    backend = availability()
+    evidence = IsolationEvidence(backend_version=backend.version,
+                                 resource_status=resource.resource_status,
+                                 memory_limit_status=resource.memory_limit_status,
+                                 process_limit_status=resource.process_limit_status)
+    return {'isolation': asdict(evidence), 'resource': asdict(resource),
+            'reason': 'grading isolation blocked: host lacks verified unprivileged aggregate resource containment'}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--probe', action='store_true', help='run fixed synthetic namespace probes only')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--resources', action='store_true', help='read-only local user-resource inspection')
+    group.add_argument('--probe', action='store_true', help='run fixed synthetic namespace probes only')
     args = parser.parse_args()
-    result = probe() if args.probe else {'availability': asdict(availability())}
+    result = (inspect_contract() if args.resources else probe() if args.probe
+              else {'availability': asdict(availability())})
     print(json.dumps(result, indent=2))
     # Successful component probes never represent acceptance of the backend.
     return 1
