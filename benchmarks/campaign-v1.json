@@ -97,5 +97,34 @@
         "--version"
       ]
     }
+  },
+  "startup_diagnosis": {
+    "schema_version": 1,
+    "status": "blocked-auth-preservation",
+    "codex_source_tag": "rust-v0.162.1",
+    "codex_source_commit": "092d3acd6bec3e3a14bdc7e7a2810ab628ab759d",
+    "installed_package_reference": "0.162.1+arch.1; executable checksum unchanged",
+    "component": "in-process app-server installation identity bootstrap",
+    "required_path": "CODEX_HOME/installation_id (default: user Codex home; no private absolute path recorded)",
+    "required_operation": "read/write/create open, exclusive lock, optional chmod(0644), UUID write if absent/invalid",
+    "ephemeral_exemption": false,
+    "supported_control": "CODEX_HOME; no separate installation-id path override in pinned source",
+    "auth_coupling": "file auth path and keyring namespace depend on codex_home; changing it does not preserve normal auth lookup",
+    "sqlite_or_log_redirect_fixes_failure": false,
+    "installation_id_present": true,
+    "no_content_open_errno": "EROFS (30)",
+    "safe_writable_state_solution": null,
+    "live_retry_attempts": 0,
+    "model_invocations": 0,
+    "credentials_read_or_copied": false,
+    "permissions_changed": false,
+    "required_next_step": "owner-provided writable normal authenticated Codex environment, or separately approved executable contract with independent state/auth paths; do not silently repin",
+    "source_sha256": {
+      "installation_id.rs": "c279cdce8837195f66c362aa87c8a068c75ac022305e72bb129e98581b6930b5",
+      "in_process.rs": "f676d9a932866a6aee763013648a163356468a2ab052b773f2b208c37bc7f651",
+      "exec.rs": "51b62cef4893c6d07b51753fc2716fc05985cdc9de6673f2fa2d974779454d4b",
+      "config.rs": "32babb117ff4bf0dc08050c4a755f5996f57f51fcebb82595c81648420394259",
+      "auth-storage.rs": "7a975b9db5d6d92a3997285bccb3d357acea709d63a71c3a8b8169eb2539d77b"
+    }
   }
 }

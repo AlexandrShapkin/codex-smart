@@ -22,4 +22,4 @@ Read [docs/benchmarking.md](../../docs/benchmarking.md), [docs/provenance.md](..
 
 ## Follow-ups
 
-The first #14 harness slice supplies pinned public fixtures, independent graders and fake-run validation; no measured cost reduction is claimed. Harness merged; progress is partial. One live preflight invocation failed before JSONL on the read-only host; the 42-run plan is pinned but measured execution remains blocked. The measured campaign and verified legacy evidence remain pending. #15 production telemetry is separate.
+The first #14 harness slice supplies pinned public fixtures, independent graders and fake-run validation; no measured cost reduction is claimed. Harness merged; progress is partial. One live preflight invocation failed before JSONL on the read-only host; the 42-run plan is pinned but measured execution remains blocked. Pinned-source diagnosis identifies the unconditional Codex-home installation-ID write; no auth-preserving independent redirect exists in the inspected contract, so no live retry was attempted. The measured campaign and verified legacy evidence remain pending. #15 production telemetry is separate.
