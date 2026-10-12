@@ -59,6 +59,16 @@ class IsolationTests(unittest.TestCase):
             # counted as successful escapes or accepted grading compatibility.
             self.assertNotEqual(report['availability']['status'], 'verified')
 
+    def test_probe_uses_arch_specific_lib64_symlink(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(isolation.subprocess, 'Popen') as spawn:
+            spawn.return_value.wait.return_value = 0
+            self.assertTrue(isolation._probe('pass', Path(tmp)))
+            argv = spawn.call_args.args[0]
+            triples = list(zip(argv, argv[1:], argv[2:]))
+            self.assertIn(('--symlink', 'usr/lib', '/lib'), triples)
+            self.assertIn(('--symlink', 'usr/lib64', '/lib64'), triples)
+
     def test_probe_interruption_kills_controller_group_and_reaps(self):
         with tempfile.TemporaryDirectory() as tmp, \
              patch.object(isolation.subprocess, 'Popen') as spawn, \
