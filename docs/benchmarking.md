@@ -476,6 +476,14 @@ is not the quality unit. The present vanilla/native comparison tests an instruct
 policy only; it cannot establish the benefit of a decision-applying Router adapter.
 That variant remains unavailable until a genuine adapter exists.
 
+Representative execution also has its own Codex artifact identity. Historical
+`initial-development-v1` evidence remains pinned to the inspected Arch Linux
+`openai-codex 0.162.1-1` executable (`89cc44e8...`). The representative plan pins
+the official OpenAI `rust-v0.162.1` x86_64 musl release archive (`86f268d8...`) and
+its extracted executable (`628e3548...`) instead. Both report `codex-cli 0.162.1`;
+the differing checksums are expected because they are different packaging channels.
+No historical campaign byte or smoke result is rewritten by this representative pin.
+
 Six kinds of evidence must remain separate:
 
 1. **Harness validation:** the original seven scenarios are harness/component coverage.

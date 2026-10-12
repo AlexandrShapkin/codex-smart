@@ -30,7 +30,12 @@
   "backend": "bubblewrap-equivalent-reviewed-unprivileged",
   "candidate_backend_version": "bubblewrap 0.13.0",
   "codex_version": "0.162.1",
-  "codex_executable_sha256": "89cc44e820780120ba2c8bc4585c014815bdc7a1fc494c337a585a2c78dc59eb",
+  "codex_distribution": "upstream-release",
+  "codex_release_tag": "rust-v0.162.1",
+  "codex_release_commit": "092d3acd6bec3e3a14bdc7e7a2810ab628ab759d",
+  "codex_release_asset": "codex-x86_64-unknown-linux-musl.tar.gz",
+  "codex_release_asset_sha256": "86f268d81b898f3e144c5ecff2ad2fda2c5802e042d6195b72538fe0fa125057",
+  "codex_executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
   "toolchain_versions": {
     "rustc": "rustc 1.98.0 (88d9e12ae 2026-08-18)",
     "go": "go version go1.27.2-X:nodwarf5 linux/amd64",

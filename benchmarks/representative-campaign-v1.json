@@ -51,8 +51,13 @@
   },
   "codex": {
     "version": "0.162.1",
-    "reference": "codex-cli 0.162.1; inspected installed artifact",
-    "executable_sha256": "89cc44e820780120ba2c8bc4585c014815bdc7a1fc494c337a585a2c78dc59eb"
+    "reference": "official OpenAI release rust-v0.162.1; x86_64-unknown-linux-musl",
+    "distribution": "upstream-release",
+    "release_tag": "rust-v0.162.1",
+    "release_commit": "092d3acd6bec3e3a14bdc7e7a2810ab628ab759d",
+    "release_asset": "codex-x86_64-unknown-linux-musl.tar.gz",
+    "release_asset_sha256": "86f268d81b898f3e144c5ecff2ad2fda2c5802e042d6195b72538fe0fa125057",
+    "executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1"
   },
   "toolchains": {
     "rustc": {
@@ -104,8 +109,8 @@
   "measured_records": [],
   "runner_pins": {
     "runner_sha256": "e8d2aae2ad818ba171b4b88831ea36b03fe08d60f59564768abdbfbba390ed8b",
-    "host_validator_sha256": "4141d39d7a4cd148c2fc4e395c3560278fdf67a701c24b7fdecde016b5992829",
-    "host_contract_sha256": "40b8bdfd3cf7be3d528951b8d0c58ade134cf241bc0bf3ba1264cd02f75799b0",
+    "host_validator_sha256": "2fbf7ca68f433ca7902cabaf09aaf5eb554ab9b6b7efcd6e0055dd8570350723",
+    "host_contract_sha256": "fcb92ec464c4e53e3cf7067d5ff527e26bc10dd0ed353e5722534b5f26eb71ac",
     "isolation_sha256": "23fd80123c66480c05649b641f543814e74b6610332b0b16d07b8ed7cb6a9aa7",
     "resource_contract_sha256": "36bc96d8323fd12812c6280f7067ca286a716fc9e5fce682b33f57d8e105f1bc",
     "harness_sha256": "0cc84b32d1418ddaed4ed620c122098adbb10bfe0f9061a694e8c2a9cd3af7b7"
@@ -113,7 +118,7 @@
   "pins": {
     "manifest_sha256": "90feb15e92815b3b9d6269f33a2f85b76b52350cdad72eb72a3f61916ac1ee7e",
     "grader_sha256": "a6c29565533fcc7fac548f78bfa4c8a45561284a468e0398d923c0308cd4df6d",
-    "coverage_validator_sha256": "d96a05269b15b3b1847792f57a6a46ade72db00f0ee8a9d88fc99413b99070a4",
+    "coverage_validator_sha256": "0fb9a715ddd85f498a8f8732e4d5a0cb0a0e0469adc6156877aad9b639b76043",
     "fixture_sha256": {
       "rust-ledger": "a1264d1c636814b10236bf3274955c8784ba36f6072b087c969494d9075f813c",
       "rust-duration": "efc103d011c309c4f7e42f82c399db717b912a7fad833e257ba930c16742713b",
