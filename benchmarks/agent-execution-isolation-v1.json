@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "contract_id": "benchmark-agent-execution-isolation-v1",
+  "codex_version": "0.162.1",
+  "codex_executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+  "source_review_sha256": "1723618d40fd11df4e0c1963f2f33476ad0f1e805f4e51527141c61c2d73a9ca",
+  "credential_store": "keyring",
+  "file_fallback_allowed": false,
+  "auth_file_must_be_absent": true,
+  "parent_openai_api_key_must_be_absent": true,
+  "child_environment": {
+    "inherit": "core",
+    "ignore_default_excludes": false
+  },
+  "disabled_features": [
+    "multi_agent",
+    "multi_agent_v2",
+    "multi_agent_mode",
+    "apps",
+    "plugins",
+    "remote_plugin",
+    "tool_suggest",
+    "recommended_plugins",
+    "enable_mcp_apps",
+    "standalone_web_search",
+    "web_search_request",
+    "web_search_cached",
+    "search_tool",
+    "browser_use",
+    "browser_use_external",
+    "computer_use",
+    "image_generation",
+    "in_app_browser",
+    "in_app_local_automation",
+    "skill_mcp_dependency_install",
+    "skill_search",
+    "code_mode"
+  ],
+  "user_bus": {
+    "socket_may_be_visible": true,
+    "connectivity_required": "blocked"
+  },
+  "required_evidence": [
+    "exact-codex-identity",
+    "keyring-mode-no-file-fallback-reviewed",
+    "auth-file-absent-at-preflight",
+    "synthetic-api-key-not-in-child-environment",
+    "child-user-bus-connect-blocked",
+    "external-account-backed-tool-surface-disabled",
+    "model-reachable-command-paths-reviewed"
+  ],
+  "accepted_evidence_sha256": [],
+  "authorization_overrides_security": false
+}

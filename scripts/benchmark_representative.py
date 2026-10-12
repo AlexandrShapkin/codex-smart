@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import benchmark as b
+import benchmark_agent_isolation as agent_isolation
 import benchmark_campaign as primitives
 import benchmark_coverage as coverage
 import benchmark_host as host
@@ -39,7 +40,7 @@ def plan(path=CONFIG):
     except (ValueError, OSError):
         raise PreflightRefusal('frozen representative contract rejected') from None
     return {'campaign_id': c['campaign_id'], 'planned_primary_runs': len(jobs(c)),
-            'maximum_model_calls': c['maximum_model_calls'], 'retries': c['retries'],
+            'maximum_codex_executions': c['maximum_codex_executions'], 'retries': c['retries'],
             'variants': c['variants'], 'repetitions': c['repetitions'],
             'qualified_host': host.current_host().status, 'model_calls': 0,
             'readiness': c['readiness'], 'model_execution_enabled': False}
@@ -65,13 +66,15 @@ def _grade_submission(s, workspace, qualification):
     return result.quality_pass
 
 
-def _normalized(c, record, refs, qualification_reference, isolation_reference, execution_kind):
+def _normalized(c, record, refs, qualification_reference, agent_isolation_reference,
+                isolation_reference, execution_kind):
     attempt = record['attempts'][0]
     # Explicit whitelist; raw events, paths, prompt/source and stderr never flow here.
     return {'schema_version': 1, 'campaign_id': c['campaign_id'],
             'scenario_id': record['scenario_id'], 'variant': record['variant'],
             'repetition': record['repetition'], 'seed': record['order_seed'],
             'frozen_references': refs, 'host_qualification_reference': qualification_reference,
+            'agent_execution_isolation_reference': agent_isolation_reference,
             'grading_isolation_reference': isolation_reference,
             'terminal_status': attempt['terminal_status'], 'process_exit_status': attempt['exit_status'],
             'parser_valid': not attempt['errors'], 'parser_errors': attempt['errors'],
@@ -80,11 +83,11 @@ def _normalized(c, record, refs, qualification_reference, isolation_reference, e
             'observed_tool_calls_lower_bound': attempt['observed_tool_calls'],
             'full_tool_calls': None, 'retry_count': 0, 'attempt_count': 1,
             'execution_kind': execution_kind,
-            'model_calls': int(execution_kind == 'real-representative'
-                               and attempt['failure_reason'] != 'launch-failure')}
+            'model_calls': None}
 
 
-def _run_jobs(c, path, runner, grader, *, qualification_reference, isolation_reference,
+def _run_jobs(c, path, runner, grader, *, qualification_reference,
+              agent_isolation_reference, isolation_reference,
               artifacts=None, execution_kind='synthetic-self-validation'):
     """Injection-only adapter for fake tests or the guarded entry; no process launch here."""
     refs = references(c, path)
@@ -105,7 +108,8 @@ def _run_jobs(c, path, runner, grader, *, qualification_reference, isolation_ref
         if grading_failure:
             record['attempts'][0]['failure_reason'] = 'grading-refusal'
             record['final_status'] = 'grading-refusal'
-        safe = _normalized(c, record, refs, qualification_reference, isolation_reference, execution_kind)
+        safe = _normalized(c, record, refs, qualification_reference, agent_isolation_reference,
+                           isolation_reference, execution_kind)
         if artifacts is not None:
             # Completed normalized jobs survive interruption. Never overwrite evidence.
             with (artifacts / f'{sid}-{variant}-{rep}.json').open('x') as output:
@@ -113,8 +117,14 @@ def _run_jobs(c, path, runner, grader, *, qualification_reference, isolation_ref
         records.append(record)
         normalized.append(safe)
     return {'campaign_id': c['campaign_id'], 'planned_jobs': 40,
-            'model_calls': sum(r['model_calls'] for r in normalized), 'attempted_jobs': len(records),
+            'model_calls': None, 'attempted_jobs': len(records),
             'summary': b.aggregate(records), 'records': normalized}
+
+
+def command_plan(c, variant, executable):
+    argv = primitives.command_plan(c, variant, executable)
+    argv[-1:-1] = agent_isolation.command_overrides()
+    return argv
 
 
 def _identity_preflight(c, executable):
@@ -133,6 +143,10 @@ def real_run(executable, run_id, qualification, *, authorized=False, path=CONFIG
         raise PreflightRefusal('qualified host contract is not verified')
     if c['readiness']['qualified_host_contract'] != 'verified':
         raise PreflightRefusal('qualified host contract is not verified')
+    if c['readiness']['agent_execution_isolation_contract'] != 'verified':
+        raise PreflightRefusal('agent execution isolation contract is not verified')
+    if not agent_isolation.representative_contract_verified(qualification):
+        raise PreflightRefusal('agent execution isolation evidence is not verified')
     if c['readiness']['grading_isolation_contract'] != 'verified':
         raise PreflightRefusal('grading isolation contract is not verified')
     if not isolation.representative_contract_verified(qualification):
@@ -141,6 +155,10 @@ def real_run(executable, run_id, qualification, *, authorized=False, path=CONFIG
         _identity_preflight(c, executable)
     except (ValueError, OSError):
         raise PreflightRefusal('executable or toolchain identity rejected') from None
+    try:
+        agent_isolation.runtime_preflight()
+    except (ValueError, OSError):
+        raise PreflightRefusal('agent execution isolation runtime rejected') from None
     if authorized is not True:
         raise PreflightRefusal('explicit representative execution authorization required')
     try:
@@ -148,10 +166,15 @@ def real_run(executable, run_id, qualification, *, authorized=False, path=CONFIG
     except (ValueError, OSError):
         raise PreflightRefusal('private artifact target rejected') from None
     def runner(s, variant, workspace):
-        return b.execute(primitives.command_plan(c, variant, executable), workspace,
+        return b.execute(command_plan(c, variant, executable), workspace,
                          primitives.prompt(c, s, variant), timeout=c['timeout_seconds'])
+    agent_reference = next(
+        row.evidence_sha256 for row in qualification.evidence.components
+        if row.component == agent_isolation.COMPONENT
+    )
     return _run_jobs(c, path, runner, lambda s, w: _grade_submission(s, w, qualification),
                      qualification_reference=qualification.reference,
+                     agent_isolation_reference=agent_reference,
                      isolation_reference=c['runner_pins']['isolation_sha256'], artifacts=artifacts,
                      execution_kind='real-representative')
 

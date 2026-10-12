@@ -8,6 +8,7 @@ import sys
 import tempfile
 
 import benchmark as b
+import benchmark_agent_isolation as agent_isolation
 import benchmark_campaign as historical_campaign
 
 sys.path.insert(0, str(b.ROOT))
@@ -182,6 +183,10 @@ def load_manifest(path=MANIFEST):
 
 def expected_campaign(m):
     historical = historical_campaign.load()
+    settings = json.loads(json.dumps(historical['settings']))
+    agent_contract = agent_isolation.load_contract()
+    settings['shell_environment_policy'] = agent_contract['child_environment']
+    settings['disabled_features'] = agent_contract['disabled_features']
     return {'schema_version':1, 'campaign_id':'representative-development-v1',
             'status':'frozen-plan-isolation-blocked', 'coverage_role':'representative',
             'provenance':{'preliminary_campaign':'initial-development-v1',
@@ -189,20 +194,30 @@ def expected_campaign(m):
             'scenario_ids':[s['id'] for s in m['scenarios']], 'variants':['vanilla','native'],
             'unavailable_variants':{'legacy':'provenance archive absent','router-v2':'no verified decision-applying adapter'},
             'repetitions':2, 'seeds':[14], 'retries':0, 'timeout_seconds':120,
-            'planned_primary_runs':len(m['scenarios'])*2*2, 'maximum_model_calls':len(m['scenarios'])*2*2,
-            'settings':historical['settings'], 'codex':REPRESENTATIVE_CODEX, 'toolchains':historical['toolchains'] | {'cargo':{'version':CARGO_VERSION,'version_arguments':['--version']}},
+            'planned_primary_runs':len(m['scenarios'])*2*2,
+            'maximum_codex_executions':len(m['scenarios'])*2*2,
+            'settings':settings, 'codex':REPRESENTATIVE_CODEX, 'toolchains':historical['toolchains'] | {'cargo':{'version':CARGO_VERSION,'version_arguments':['--version']}},
             'cold_warm':historical['cold_warm'],
             'live_contract':{'status':'inherited-execution-contract-only','source_campaign':'initial-development-v1',
                              'scope':'Codex startup/auth/JSONL only; not representative grading compatibility'},
-            'readiness':{'real_runner_contract':'prepared', 'grading_isolation_contract':'required-not-verified',
+            'readiness':{'real_runner_contract':'prepared',
+                         'agent_execution_isolation_contract':'required-not-verified',
+                         'grading_isolation_contract':'required-not-verified',
                          'qualified_host_contract':'required-not-verified',
                          'representative_campaign_ready':False},
-            'execution_dependencies':{'grading_isolation_contract':'verified','qualified_host_contract':'verified'},
+            'execution_dependencies':{'agent_execution_isolation_contract':'verified',
+                                      'grading_isolation_contract':'verified',
+                                      'qualified_host_contract':'verified'},
             'measured_records':[],
             'runner_pins': {key: hashlib.sha256(path.read_bytes()).hexdigest() for key, path in {
                 'runner_sha256': Path(__file__).with_name('benchmark_representative.py'),
                 'host_validator_sha256': Path(__file__).with_name('benchmark_host.py'),
                 'host_contract_sha256': b.ROOT/'host-contract-v1.json',
+                'agent_isolation_sha256': Path(__file__).with_name('benchmark_agent_isolation.py'),
+                'agent_isolation_contract_sha256': b.ROOT/'agent-execution-isolation-v1.json',
+                'agent_source_review_sha256': b.ROOT/'agent-execution-source-review-v1.json',
+                'agent_probe_sha256': Path(__file__).with_name('benchmark_agent_isolation_probe.py'),
+                'agent_candidate_evidence_sha256': b.ROOT/'agent-execution-isolation-candidate-v1.json',
                 'isolation_sha256': Path(__file__).with_name('benchmark_isolation.py'),
                 'resource_contract_sha256': Path(__file__).with_name('benchmark_resource_contract.py'),
                 'harness_sha256': Path(b.__file__)}.items()},

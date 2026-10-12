@@ -1,7 +1,8 @@
 # Benchmark qualified-host and representative runner contract
 
-Status: prepared adapter and reviewed qualification semantics; no qualified host or
-accepted grading backend. Active work remains #14. The representative matrix was
+Status: prepared adapter and reviewed qualification semantics; no qualified host,
+accepted agent-execution isolation evidence or accepted grading backend. Active work
+remains #14. The representative matrix was
 accepted in #39; #56 planned future stages separately. No 0.4+ runtime feature,
 benchmark model execution, campaign execution or telemetry is added here.
 
@@ -38,6 +39,7 @@ component evidence only; it is not a self-referential file checksum.
 | Network | TCP/UDP escape attempts blocked in the final boundary |
 | Filesystem | External reads/writes and symlink escapes blocked; no HOME/CODEX_HOME, artifacts or checkout exposure |
 | Environment | Allowlisted environment; synthetic secret absent; no inherited auth/proxy secrets |
+| Agent execution isolation | Keyring-only auth, no readable auth file, core-only child environment, blocked child access to credential IPC, reviewed model-reachable command paths |
 | Privilege | No sudo, privileged containers, capability escalation or unsafe host devices |
 | Trusted grader immutability | Independent grader/oracles/configuration outside submitted writable files |
 | Runtime inventory | Accepted immutable executable, sysroot, Cargo, library/linker/data closure with reviewed byte identities |
@@ -50,6 +52,27 @@ qualified-host contract instead pins OpenAI's official `rust-v0.162.1`
 `codex-x86_64-unknown-linux-musl.tar.gz` asset (`86f268d8...`) and the extracted
 static-pie executable (`628e3548...`). This separates historical provenance from a
 portable upstream artifact suitable for the disposable Ubuntu qualification host.
+
+Pinned `0.162.1` source and synthetic VM probes also separate credential ownership
+from model-reachable child execution. The pinned keyring backend has no file fallback
+and removes `auth.json` after a successful keyring save. The default shell environment
+policy is unsafe for this benchmark: a synthetic `OPENAI_API_KEY` reached `codex sandbox`
+and a synthetic `auth.json` was readable. Under the exact representative override
+`shell_environment_policy.inherit=core`, the synthetic API key was absent while PATH
+and HOME remained available. `/run/user/1001/bus` was visible to the child but a Unix
+socket connect returned `EPERM`. Exact-source review at commit `092d3acd...` is pinned
+by `agent-execution-source-review-v1.json` (`1723618d...`): `codex exec` hard-defaults
+approvals to `Never`, approval requests are unsupported in exec mode, shell/unified-exec
+and apply-patch route through sandbox orchestration, spawned agents inherit live runtime
+policy, and Code Mode exposes controlled V8 globals/tools rather than ambient process
+APIs. The representative campaign additionally disables multi-agent, Code Mode and
+account/network-backed app/plugin/browser/computer/image/skill-search features. These
+are bounded observations and source evidence, not qualification:
+`agent-execution-isolation-v1.json` still accepts no evidence hash. The normalized
+credential-free candidate is frozen separately as
+`agent-execution-isolation-candidate-v1.json`, reference `43813f41...`; it is explicitly
+not in the accepted list and therefore cannot enable execution. No real credential or
+model call was used for these probes.
 
 Future receipts must refer to the same composed boundary and inventory. Review its
 actual resource limits, descendant scope and cleanup owner together. Version output,
@@ -79,14 +102,17 @@ Gate order:
 1. Frozen representative campaign, manifest, fixtures, graders, runner/harness,
    qualification/isolation/resource code and host-contract pins.
 2. Fully verified, reviewed qualified-host result and frozen host-readiness state.
-3. Verified grading-isolation state and an accepted backend contract.
-4. Explicit absolute Codex executable, exact SHA/version and all exact toolchains.
-5. Explicit operator execution authorization.
-6. Fresh private artifact target; existing identifiers and symlinks rejected.
-7. Only then model execution and isolated grading.
+3. Verified agent-execution isolation state and accepted credential/child-execution evidence.
+4. Verified grading-isolation state and an accepted backend contract.
+5. Explicit absolute Codex executable, exact SHA/version and all exact toolchains.
+6. Runtime auth preflight: keyring-only contract, no parent `OPENAI_API_KEY`, no `auth.json`.
+7. Explicit operator execution authorization.
+8. Fresh private artifact target; existing identifiers and symlinks rejected.
+9. Only then model execution and isolated grading.
 
-Current frozen host/isolation fields are `required-not-verified` and the isolation
-abstraction accepts no runtime backend. Consequently public execution is unreachable,
+Current frozen host, agent-execution-isolation and grading-isolation fields are
+`required-not-verified`; neither isolation contract accepts runtime evidence that can
+enable execution. Consequently public execution is unreachable,
 even with synthetic all-verified claims or authorization. Future acceptance needs
 separately reviewed evidence, backend implementation and explicit frozen-contract
 updates. The historical campaign remains immutably blocked by its own frozen loader;
@@ -119,10 +145,12 @@ trusted-control path to verify correctness; those results do not qualify model g
 ## Normalized evidence and failure accounting
 
 Per completed attempt, schema version 1 records campaign/scenario/variant/repetition/
-seed, frozen references, host qualification and grading isolation references, terminal
+seed, frozen references, host qualification, agent-execution isolation and grading-isolation references, terminal
 status, process exit, parser validity and bounded error categories, independent quality,
 failure category, duration, observed tokens and completed-tool lower bound. Include
-execution kind, attempt count, model-call count and zero retry count.
+execution kind, attempt count and zero retry count. Internal model-request count is not
+reliably exposed by the current trace contract and remains null for executed jobs;
+preflight refusal/plan can report zero because no model execution occurred.
 
 Observed token keys are input, cached input, output and reasoning. Fresh input, total
 and full tool-call count remain null; never subtract or derive them. Parser-invalid
@@ -142,9 +170,10 @@ report 40 synthetic attempts and zero model calls, not comparative measurements.
 ## Readiness and next action
 
 Matrix accepted; representative runner contract **prepared** means pinned adapter
-implementation tested with fakes, not host/runtime verification. Qualified host and
-grading isolation remain required-not-verified, representative readiness false,
-comparative evidence absent. Historical 42 jobs and representative 40 calls remain
+implementation tested with fakes, not host/runtime verification. Qualified host,
+agent execution isolation and grading isolation remain required-not-verified,
+representative readiness false,
+comparative evidence absent. Historical 42 jobs and representative 40 primary executions remain
 unexecuted; successful IaC smoke and historical failed evidence remain unchanged.
 Next qualify a separate host, verify the backend/runtime/grader boundary and review
 receipt/contract acceptance before any separately authorized spending. #14 stays

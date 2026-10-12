@@ -15,6 +15,7 @@
     "network",
     "filesystem",
     "environment",
+    "agent_execution_isolation",
     "privilege",
     "trusted_grader_immutability",
     "runtime_inventory",

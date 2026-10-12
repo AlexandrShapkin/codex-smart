@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "review_id": "benchmark-agent-execution-source-review-v1",
+  "upstream_repository": "openai/codex",
+  "release_tag": "rust-v0.162.1",
+  "release_commit": "092d3acd6bec3e3a14bdc7e7a2810ab628ab759d",
+  "files": {
+    "codex-rs/login/src/auth/storage.rs": "4dccbc9138e83c5989ff130c8748941236f70401",
+    "codex-rs/config/src/shell_environment_policy.rs": "7e7c056ba6fb54824ef5df5c866ec2e20128df18",
+    "codex-rs/protocol/src/shell_environment.rs": "427fe4969f967f5d7fa97a9cba7934a69fb94fd5",
+    "codex-rs/exec/src/lib.rs": "8bf926248099e6c7a6eb7903bb4fc88b27104919",
+    "codex-rs/core/src/tools/sandboxing.rs": "bf1fd2d79e6adae7bcb7cc1aa7cd36df1221bced",
+    "codex-rs/core/src/tools/spec_plan.rs": "7e2213456dcb0e5b2784f848c0fca061e7c2e677",
+    "codex-rs/core/src/agent/child_config.rs": "713c4418a912f98571ff95e8aec84df81524167e",
+    "codex-rs/code-mode-runtime/src/runtime/globals.rs": "4ce226f68c742ca3c980c531d0234663d5de5520",
+    "codex-rs/code-mode-runtime/src/runtime/module_loader.rs": "a3af147365b554c54cbeeeba48aa1121430fd0f7",
+    "codex-rs/features/src/lib.rs": "c68bc3bb748982281b62ce82b664c646e6bb4c7b"
+  },
+  "findings": {
+    "keyring_mode": "keyring-only; no file fallback; successful keyring save removes auth.json",
+    "keyring_identity": "credential entry is scoped by canonical CODEX_HOME",
+    "default_child_environment": "inherits all parent variables unless overridden",
+    "representative_child_environment": "inherit=core excludes OPENAI_API_KEY while retaining PATH/HOME",
+    "exec_approval_policy": "codex exec hard-defaults AskForApproval::Never in headless mode",
+    "exec_approval_requests": "exec mode does not support command/file/patch/permissions approval requests",
+    "sandbox_orchestration": "shell/unified-exec and apply_patch route through shared sandbox policy/orchestrator",
+    "subagents": "spawned agents clone effective parent config and live approval/sandbox policy",
+    "code_mode": "V8 runtime exposes only controlled globals/tools and rejects unsupported module imports; representative campaign disables code_mode",
+    "external_surface": "representative campaign disables multi-agent and account/network-backed app/plugin/browser/computer/image/skill-search features"
+  },
+  "limitations": [
+    "source review does not prove runtime host isolation",
+    "source review does not authenticate a qualification receipt",
+    "future executable or source drift requires a new review"
+  ]
+}

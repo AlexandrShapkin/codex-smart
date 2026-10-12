@@ -26,7 +26,7 @@ Harness/component coverage retains seven fixtures and the historical 42-job plan
 unchanged and unexecuted. The successful JSON-only IaC smoke verifies the Codex
 execution contract; it is not comparative evidence. Ten distinct development tasks
 now form a separate representative-development-v1 design with independent trusted
-controls and a 40-call maximum (vanilla/native, two repetitions, zero retries).
+controls and a 40-primary-execution maximum (vanilla/native, two repetitions, zero retries).
 Structural realism is strengthened with functional supporting context, hidden
 dependency evidence, tier thresholds and pinned Cargo check/test controls. This is
 purpose-built representative synthetic coverage, not large real-world repository
