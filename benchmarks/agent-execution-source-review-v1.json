@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "review_id": "benchmark-agent-execution-source-review-v1",
+  "upstream_repository": "openai/codex",
+  "release_tag": "rust-v0.162.1",
+  "release_commit": "092d3acd6bec3e3a14bdc7e7a2810ab628ab759d",
+  "files": {
+    "codex-rs/login/src/auth/storage.rs": "4dccbc9138e83c5989ff130c8748941236f70401",
+    "codex-rs/config/src/shell_environment_policy.rs": "7e7c056ba6fb54824ef5df5c866ec2e20128df18",
+    "codex-rs/protocol/src/shell_environment.rs": "427fe4969f967f5d7fa97a9cba7934a69fb94fd5",
+    "codex-rs/exec/src/lib.rs": "8bf926248099e6c7a6eb7903bb4fc88b27104919",
+    "codex-rs/core/src/tools/sandboxing.rs": "bf1fd2d79e6adae7bcb7cc1aa7cd36df1221bced",
+    "codex-rs/core/src/tools/spec_plan.rs": "7e2213456dcb0e5b2784f848c0fca061e7c2e677",
+    "codex-rs/core/src/agent/child_config.rs": "713c4418a912f98571ff95e8aec84df81524167e",
+    "codex-rs/code-mode-runtime/src/runtime/globals.rs": "4ce226f68c742ca3c980c531d0234663d5de5520",
+    "codex-rs/code-mode-runtime/src/runtime/module_loader.rs": "a3af147365b554c54cbeeeba48aa1121430fd0f7",
+    "codex-rs/features/src/lib.rs": "c68bc3bb748982281b62ce82b664c646e6bb4c7b",
+    "codex-rs/linux-sandbox/src/bwrap.rs": "f4a428b20b1bfc3efbd14cedc3de08915e873d8a",
+    "codex-rs/config/src/permissions_toml.rs": "8853f73db2d8091c2caa5570d736437e6001434e"
+  },
+  "findings": {
+    "keyring_mode": "keyring-only; no file fallback; successful keyring save removes auth.json",
+    "keyring_identity": "credential entry is scoped by canonical CODEX_HOME",
+    "default_child_environment": "inherits all parent variables unless overridden",
+    "representative_child_environment": "inherit=core excludes OPENAI_API_KEY while retaining PATH/HOME",
+    "exec_approval_policy": "codex exec hard-defaults AskForApproval::Never in headless mode",
+    "exec_approval_requests": "exec mode does not support command/file/patch/permissions approval requests",
+    "sandbox_orchestration": "shell/unified-exec and apply_patch route through shared sandbox policy/orchestrator",
+    "subagents": "spawned agents clone effective parent config and live approval/sandbox policy",
+    "code_mode": "V8 runtime exposes only controlled globals/tools and rejects unsupported module imports; representative campaign disables code_mode",
+    "external_surface": "representative campaign disables multi-agent and account/network-backed app/plugin/browser/computer/image/skill-search features",
+    "linux_keyring_runtime": "Codex enables keyring 3.6.3 linux-native-async-persistent; its default Entry::new builder is keyutils_persistent, but that builder constructs SsCredential directly, so the Codex direct-keyring path depends on Secret Service IPC rather than a kernel-keyutils-only credential path.",
+    "credential_backing_store_mask": "Linux bubblewrap expands deny-read filesystem entries into unreadable masks; permissions TOML supports deny access entries including home-relative paths"
+  },
+  "limitations": [
+    "source review does not prove runtime host isolation",
+    "source review does not authenticate a qualification receipt",
+    "future executable or source drift requires a new review",
+    "keyring 3.6.3 dependency behavior is pinned by crates.io package/file hashes and must be re-reviewed on dependency drift"
+  ],
+  "dependency_sources": {
+    "keyring-3.6.3": {
+      "crate_sha256": "eebcc3aff044e5944a8fbaf69eb277d11986064cba30c468730e8b9909fb551c",
+      "enabled_features": [
+        "crypto-rust",
+        "linux-native-async-persistent"
+      ],
+      "files": {
+        "Cargo.toml.orig": "435cc9ea9a2c68ff007da37f6072c3b1321fbefbef0ead36e4476d39eebb43b6",
+        "src/lib.rs": "dfa7fa25141b5cfa6d6000fa753bcdd956679dabc7c55293d0b9ebd5f9eaa8fc",
+        "src/keyutils_persistent.rs": "e0e23b80f8547a278ff9786892b3b61d92c671ea4af8643f344e3d92a80636c4",
+        "src/secret_service.rs": "1f3e0dab29e3805e2e2c17a17e3504997128444f50cd15b29e921bb3562b0d19"
+      }
+    }
+  }
+}

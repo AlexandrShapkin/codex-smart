@@ -34,7 +34,7 @@
   "retries": 0,
   "timeout_seconds": 120,
   "planned_primary_runs": 40,
-  "maximum_model_calls": 40,
+  "maximum_codex_executions": 40,
   "settings": {
     "model": "gpt-6-sol",
     "reasoning_effort": "low",
@@ -47,6 +47,46 @@
       "credential_store": "keyring",
       "credentials_copied": false,
       "user_config_loaded": false
+    },
+    "shell_environment_policy": {
+      "inherit": "core",
+      "ignore_default_excludes": false
+    },
+    "disabled_features": [
+      "multi_agent",
+      "multi_agent_v2",
+      "multi_agent_mode",
+      "apps",
+      "plugins",
+      "remote_plugin",
+      "tool_suggest",
+      "recommended_plugins",
+      "enable_mcp_apps",
+      "standalone_web_search",
+      "web_search_request",
+      "web_search_cached",
+      "search_tool",
+      "browser_use",
+      "browser_use_external",
+      "computer_use",
+      "image_generation",
+      "in_app_browser",
+      "in_app_local_automation",
+      "skill_mcp_dependency_install",
+      "skill_search",
+      "code_mode"
+    ],
+    "permission_profile": {
+      "id": "benchmark",
+      "extends": ":workspace",
+      "filesystem": {
+        "~/.local/share/keyrings": "deny"
+      }
+    },
+    "credential_backing_store": {
+      "child_unreadable_paths": [
+        "~/.local/share/keyrings"
+      ]
     }
   },
   "codex": {
@@ -98,19 +138,26 @@
   },
   "readiness": {
     "real_runner_contract": "prepared",
+    "agent_execution_isolation_contract": "required-not-verified",
     "grading_isolation_contract": "required-not-verified",
     "qualified_host_contract": "required-not-verified",
     "representative_campaign_ready": false
   },
   "execution_dependencies": {
+    "agent_execution_isolation_contract": "verified",
     "grading_isolation_contract": "verified",
     "qualified_host_contract": "verified"
   },
   "measured_records": [],
   "runner_pins": {
-    "runner_sha256": "e8d2aae2ad818ba171b4b88831ea36b03fe08d60f59564768abdbfbba390ed8b",
-    "host_validator_sha256": "2fbf7ca68f433ca7902cabaf09aaf5eb554ab9b6b7efcd6e0055dd8570350723",
-    "host_contract_sha256": "fcb92ec464c4e53e3cf7067d5ff527e26bc10dd0ed353e5722534b5f26eb71ac",
+    "runner_sha256": "3848d4a293cad7a8e228f5e72a8246d7bde5dad494b6644f5e9b023d859e751c",
+    "host_validator_sha256": "66f96641345a423cf4de768c8b09bc03ded557e652f775537228dd45a1f02f2b",
+    "host_contract_sha256": "03d9007f2964d1fa67d4bc60269ee0df254bd8927de2813f0f4dde2e91e6d3de",
+    "agent_isolation_sha256": "7c2498478c83425acd7fa534b8a712490dc929c5d8e1ab7fa6b509b060448513",
+    "agent_isolation_contract_sha256": "50ee695c15f866c5d47e40009f3381ef64264c91de0da5fc59df836308f88394",
+    "agent_source_review_sha256": "bca3f3d35779f809d46e37da6a808fba4cef59ecaeb499cc05efa5c765e4c6d6",
+    "agent_probe_sha256": "dd180124f2aed76d09c0d0c6108aa3000904140385f33a6ff64c1661854a8370",
+    "agent_candidate_evidence_sha256": "a61f16faaf3010c3e5ea9a0112962dfb65b4d2c9e08c873fbe083fd615a63fd2",
     "isolation_sha256": "23fd80123c66480c05649b641f543814e74b6610332b0b16d07b8ed7cb6a9aa7",
     "resource_contract_sha256": "36bc96d8323fd12812c6280f7067ca286a716fc9e5fce682b33f57d8e105f1bc",
     "harness_sha256": "0cc84b32d1418ddaed4ed620c122098adbb10bfe0f9061a694e8c2a9cd3af7b7"
@@ -118,7 +165,7 @@
   "pins": {
     "manifest_sha256": "90feb15e92815b3b9d6269f33a2f85b76b52350cdad72eb72a3f61916ac1ee7e",
     "grader_sha256": "a6c29565533fcc7fac548f78bfa4c8a45561284a468e0398d923c0308cd4df6d",
-    "coverage_validator_sha256": "0fb9a715ddd85f498a8f8732e4d5a0cb0a0e0469adc6156877aad9b639b76043",
+    "coverage_validator_sha256": "f3f292aa6a960b69bd607214c9faa7a063c33245efbcd6b49c2ef88ee36e1f31",
     "fixture_sha256": {
       "rust-ledger": "a1264d1c636814b10236bf3274955c8784ba36f6072b087c969494d9075f813c",
       "rust-duration": "efc103d011c309c4f7e42f82c399db717b912a7fad833e257ba930c16742713b",

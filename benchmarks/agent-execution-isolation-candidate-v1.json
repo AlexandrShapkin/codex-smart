@@ -1,0 +1,29 @@
+{
+  "baseline_default": {
+    "api_key_in_child_environment": true,
+    "auth_file_readable": true,
+    "credential_backing_store_readable": true,
+    "user_bus_connectable": false,
+    "user_bus_socket_visible": true
+  },
+  "candidate": {
+    "api_key_in_child_environment": false,
+    "auth_file_absent": true,
+    "codex_executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "command_paths_reviewed": true,
+    "credential_backing_store_readable": false,
+    "external_tool_surface_disabled": true,
+    "private_bus_address_in_child_environment": false,
+    "private_bus_connectable": false,
+    "user_bus_connectable": false
+  },
+  "codex_executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+  "codex_version": "codex-cli 0.162.1",
+  "contract_id": "benchmark-agent-execution-isolation-v1",
+  "evidence_reference": "ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb",
+  "model_calls": 0,
+  "probe_kind": "credential-free-synthetic",
+  "real_credentials_used": false,
+  "schema_version": 1,
+  "source_review_sha256": "bca3f3d35779f809d46e37da6a808fba4cef59ecaeb499cc05efa5c765e4c6d6"
+}

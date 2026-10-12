@@ -21,9 +21,11 @@ class RepresentativeTests(unittest.TestCase):
         c = coverage.load_campaign()
         self.assertEqual(len(self.m['scenarios']),10)
         self.assertEqual(c['planned_primary_runs'],10*2*2)
-        self.assertEqual(c['maximum_model_calls'],40)
+        self.assertEqual(c['maximum_codex_executions'],40)
+        self.assertNotIn('maximum_model_calls',c)
         self.assertEqual(c['variants'],['vanilla','native'])
         self.assertEqual(c['retries'],0)
+        self.assertEqual(c['readiness']['agent_execution_isolation_contract'],'required-not-verified')
         self.assertEqual(c['readiness']['grading_isolation_contract'],'required-not-verified')
         self.assertIs(c['readiness']['representative_campaign_ready'],False)
         self.assertEqual(c['execution_dependencies']['grading_isolation_contract'],'verified')
@@ -82,20 +84,22 @@ class RepresentativeTests(unittest.TestCase):
     def test_campaign_bounds_and_isolation_drift_rejected(self):
         c=coverage.load_campaign()
         cases=[('variants',['vanilla','native','router-v2']),('retries',1),('repetitions',3),
-               ('maximum_model_calls',42),('planned_primary_runs',42),('status','ready')]
+               ('maximum_codex_executions',42),('planned_primary_runs',42),('status','ready')]
         with tempfile.TemporaryDirectory() as tmp:
             path=Path(tmp)/'campaign.json'
             for key,value in cases:
                 modified=copy.deepcopy(c);modified[key]=value
                 path.write_text(json.dumps(modified))
                 with self.subTest(key=key),self.assertRaises(ValueError): coverage.load_campaign(path)
-            for key,value in [('grading_isolation_contract','verified'),('representative_campaign_ready',True)]:
+            for key,value in [('agent_execution_isolation_contract','verified'),
+                              ('grading_isolation_contract','verified'),('representative_campaign_ready',True)]:
                 modified=copy.deepcopy(c);modified['readiness'][key]=value
                 path.write_text(json.dumps(modified))
                 with self.assertRaises(ValueError): coverage.load_campaign(path)
-            modified=copy.deepcopy(c);modified['execution_dependencies']['grading_isolation_contract']='optional'
-            path.write_text(json.dumps(modified))
-            with self.assertRaises(ValueError): coverage.load_campaign(path)
+            for dependency in ['agent_execution_isolation_contract','grading_isolation_contract']:
+                modified=copy.deepcopy(c);modified['execution_dependencies'][dependency]='optional'
+                path.write_text(json.dumps(modified))
+                with self.assertRaises(ValueError): coverage.load_campaign(path)
 
     def test_historical_evidence_unchanged(self):
         for name,sha in [('campaign-v1.json','cfc97144156b9321555cc98937d30d85f8e7bd39a5009954ae84d294156502f7'),

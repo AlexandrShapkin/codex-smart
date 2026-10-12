@@ -484,7 +484,26 @@ its extracted executable (`628e3548...`) instead. Both report `codex-cli 0.162.1
 the differing checksums are expected because they are different packaging channels.
 No historical campaign byte or smoke result is rewritten by this representative pin.
 
-Six kinds of evidence must remain separate:
+Whole-agent credential isolation is now an explicit independent gate. Exact pinned
+`0.162.1` source shows keyring mode has no file fallback and removes `auth.json` after
+successful keyring storage, while the default child shell environment inherits all
+parent variables. Synthetic probes on the disposable Ubuntu VM confirmed the risk:
+default `codex sandbox` could read a synthetic auth file and inherited a synthetic
+`OPENAI_API_KEY`. With `shell_environment_policy.inherit=core`, the API key was absent
+while PATH/HOME remained available. The user D-Bus socket was visible but a child
+connect returned `EPERM`. A synthetic keyring-backing file was also readable by default; the representative permission profile now extends `:workspace` and denies read access to `~/.local/share/keyrings`, which made that backing file unreadable in the pinned Linux sandbox. Exact-source review is frozen separately in
+`agent-execution-source-review-v1.json` (`bca3f3d3...`): headless exec uses approval
+policy `Never`, model-visible execution routes through sandbox orchestration, subagents
+inherit the effective runtime policy, and Code Mode lacks ambient process/env/fs globals.
+The representative campaign also disables multi-agent and account/network-backed
+app/plugin/browser/computer/image/skill-search surfaces for both variants. No real
+credential or model call was used. These observations motivate the pinned
+`agent-execution-isolation-v1` contract; they do not verify or accept runtime evidence.
+The reproducible credential-free probe produced candidate reference `ae2840a9...`,
+frozen in `agent-execution-isolation-candidate-v1.json`; the accepted-evidence list
+remains empty, so this candidate cannot enable execution.
+
+Seven kinds of evidence must remain separate:
 
 1. **Harness validation:** the original seven scenarios are harness/component coverage.
 2. **Codex live-contract smoke:** one successful bounded JSON-only IaC smoke verifies
@@ -493,8 +512,9 @@ Six kinds of evidence must remain separate:
    seven scenarios × two variants × three repetitions = 42 unexecuted calls.
 4. **Representative design:** `representative-development-v1` proposes ten tasks with
    independent graders and trusted controls; this PR seeks acceptance of that matrix.
-5. **Grading isolation:** required-not-verified; correctness checks do not establish it.
-6. **Measured evidence:** none. No comparative result, savings or winner exists.
+5. **Agent execution isolation:** required-not-verified; credentials must remain parent-only and all model-reachable command paths require review.
+6. **Grading isolation:** required-not-verified; correctness checks do not establish it.
+7. **Measured evidence:** none. No comparative result, savings or winner exists.
 
 The separate [representative manifest](../benchmarks/representative-manifest.json)
 uses measurement-only metadata. It is never Router input; qualitative tiers describe
@@ -556,23 +576,27 @@ The historical entry accepts only its immutably blocked preliminary contract.
 ### Call budget and provenance
 
 The [new campaign](../benchmarks/representative-campaign-v1.json) has ten scenarios ×
-vanilla/native × **two repetitions** = **40 maximum model calls**, seed 14, zero retries,
+vanilla/native × **two repetitions** = **40 maximum primary Codex executions**, seed 14, zero retries,
 120-second timeout. Two repetitions are the minimum initial paired design to expose
 run variability; they do not justify significance or broad claims. More repetitions
 require a new reviewed budget. Failures remain evidence and in denominators; only
 quality-equivalent matched runs enter cost comparisons. Unknown counters remain null;
 there is no winner logic or derived fresh-input counter.
 
-Vanilla/native use equivalent frozen executable/model/reasoning/auth settings, with
-only the native instruction differing. Legacy lacks provenance; Router-v2 lacks an
+Vanilla/native use equivalent frozen executable/model/reasoning/auth settings and the
+same core-only child environment policy; only the native instruction differs. Legacy
+lacks provenance; Router-v2 lacks an
 adapter. Neither is fabricated. The representative adapter is now prepared and pinned,
-with no accepted host or
-isolation backend; it is not enabled for real execution.
+with no accepted host, agent-execution isolation evidence or grading backend; it is
+not enabled for real execution.
 It records a checksum/provenance link to the historical plan and inherits only applicable
 Codex startup/auth/JSONL evidence. It contains no smoke counters or comparative records.
 Any future representative smoke must have a separately approved budget; it is not
-included in these 40 calls. No smoke, preliminary campaign, or representative campaign
-calls were made in this design task.
+included in these 40 primary executions. One `codex exec` can make multiple internal
+model requests while completing an agent turn, so the campaign does not claim a
+40-request model-call ceiling. Internal model-request count is unsupported by the
+current normalized trace and remains null for executed jobs. No smoke, preliminary
+campaign, or representative campaign execution was made in this design task.
 
 ### Qualified host dependency and stopping current-host investigation
 
@@ -590,20 +614,23 @@ A separately qualified host must demonstrate all of:
 - descendant containment and whole-tree cleanup on timeout/interruption;
 - accepted immutable runtime/toolchain/grader inventory with exact pins;
 - Bubblewrap-equivalent filesystem, network, environment and privilege isolation;
+- verified agent-execution credential boundary: keyring-only auth, absent auth file, core-only child environment, blocked child credential IPC and reviewed model-reachable command paths;
 - complete escape probes and positive/wrong grader compatibility inside that same boundary.
 
 No distribution is prescribed. The eventual frozen execution contract must review its
 specific backend/version and evidence. No campaign flag can override isolation. The
-new plan explicitly depends on verified grading isolation and a verified qualified
-host; current readiness remains false and isolation required-not-verified. Coverage
+new plan explicitly depends on verified agent-execution isolation, verified grading
+isolation and a verified qualified host; current readiness remains false and both
+isolation contracts are required-not-verified. Coverage
 can be reviewed independently of host qualification. The matrix is accepted and the
-runner adapter prepared. Next: qualify a separate host and verify the runtime grading
-boundary before any separately authorized model spending. Benchmark stays partial, #14 open, #15 separate.
+runner adapter prepared. Next: qualify a separate host and verify both the whole-agent
+credential/child-execution boundary and runtime grading boundary before any separately
+authorized model spending. Benchmark stays partial, #14 open, #15 separate.
 
 ### Structural workload realism amendment
 
 Language/task diversity is an accepted candidate. This amendment strengthens workload
-realism without changing any of the ten identities, variant bounds or 40-call budget.
+realism without changing any of the ten identities, variant bounds or 40-execution budget.
 The suite is **purpose-built representative synthetic coverage**; it does not claim
 large real-world repository coverage. Structural counts are acceptance metadata,
 never production Router signals or proxies for token savings.

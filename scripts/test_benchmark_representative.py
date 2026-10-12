@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch, Mock
 
 import benchmark as b
+import benchmark_agent_isolation as agent_isolation
 import benchmark_campaign as historical
 import benchmark_coverage as coverage
 import benchmark_host as host
@@ -83,8 +84,11 @@ class RepresentativeRunnerTests(unittest.TestCase):
         self.assertEqual(c['variants'], ['vanilla','native'])
         self.assertEqual((c['repetitions'], c['seeds'], c['retries'], c['timeout_seconds']), (2,[14],0,120))
         self.assertEqual(p['model_calls'], 0)
+        self.assertEqual(p['maximum_codex_executions'], 40)
+        self.assertNotIn('maximum_model_calls', p)
         self.assertFalse(p['model_execution_enabled'])
         self.assertEqual(c['readiness'], {'real_runner_contract':'prepared',
+            'agent_execution_isolation_contract':'required-not-verified',
             'qualified_host_contract':'required-not-verified','grading_isolation_contract':'required-not-verified',
             'representative_campaign_ready':False})
         self.assertEqual(hashlib.sha256(historical.CONFIG.read_bytes()).hexdigest(),
@@ -104,6 +108,7 @@ class RepresentativeRunnerTests(unittest.TestCase):
     def test_pin_and_bounds_drift_before_any_execution(self):
         original = runner.load()
         changes = [('codex', 'executable_sha256', '0'*64), ('codex','version','1.0.0'),
+                   ('readiness','agent_execution_isolation_contract','verified'),
                    ('readiness','grading_isolation_contract','verified'),
                    ('readiness','qualified_host_contract','verified'),
                    ('readiness','representative_campaign_ready',True)]
@@ -116,7 +121,7 @@ class RepresentativeRunnerTests(unittest.TestCase):
                 for key,value in [('version','wrong'),('version_arguments',['--unsafe'])]:
                     c=copy.deepcopy(original);c['toolchains'][tool][key]=value;path.write_text(json.dumps(c))
                     with self.subTest(tool=tool,key=key),self.assertRaises(ValueError):runner.load(path)
-            for key,value in [('variants',['vanilla','legacy']),('retries',1),('maximum_model_calls',41)]:
+            for key,value in [('variants',['vanilla','legacy']),('retries',1),('maximum_codex_executions',41)]:
                 c=copy.deepcopy(original);c[key]=value;path.write_text(json.dumps(c))
                 with self.assertRaises(ValueError):runner.load(path)
             c=copy.deepcopy(original);c['runner_pins']['runner_sha256']='0'*64;path.write_text(json.dumps(c))
@@ -132,12 +137,23 @@ class RepresentativeRunnerTests(unittest.TestCase):
                         runner.real_run('/fake/codex','fake',q,authorized=authorized)
                     self.assertEqual(caught.exception.model_calls,0)
                     self.assertEqual(caught.exception.attempt_count,0)
-            # Synthetic future campaign: qualification cannot override isolation.
+            # Synthetic future campaign: qualification cannot override either isolation gate.
             c=runner.load();c['readiness']['qualified_host_contract']='verified'
-            with patch.object(runner,'load',return_value=c),self.assertRaisesRegex(runner.PreflightRefusal,'grading isolation contract'):
+            with patch.object(runner,'load',return_value=c),self.assertRaisesRegex(runner.PreflightRefusal,'agent execution isolation contract'):
+                runner.real_run('/fake/codex','fake',verified_host(),authorized=True)
+            c['readiness']['agent_execution_isolation_contract']='verified'
+            with patch.object(runner,'load',return_value=c), \
+                 patch.object(agent_isolation,'representative_contract_verified',return_value=False), \
+                 self.assertRaisesRegex(runner.PreflightRefusal,'agent execution isolation evidence'):
+                runner.real_run('/fake/codex','fake',verified_host(),authorized=True)
+            with patch.object(runner,'load',return_value=c), \
+                 patch.object(agent_isolation,'representative_contract_verified',return_value=True), \
+                 self.assertRaisesRegex(runner.PreflightRefusal,'grading isolation contract'):
                 runner.real_run('/fake/codex','fake',verified_host(),authorized=True)
             c['readiness']['grading_isolation_contract']='verified'
-            with patch.object(runner,'load',return_value=c),self.assertRaisesRegex(runner.PreflightRefusal,'backend'):
+            with patch.object(runner,'load',return_value=c), \
+                 patch.object(agent_isolation,'representative_contract_verified',return_value=True), \
+                 self.assertRaisesRegex(runner.PreflightRefusal,'backend'):
                 runner.real_run('/fake/codex','fake',verified_host(),authorized=True)
 
     def test_cli_no_bypass_no_default_execution(self):
@@ -174,13 +190,14 @@ class RepresentativeRunnerTests(unittest.TestCase):
         with patch.object(b,'execute',side_effect=AssertionError('process')), \
              patch.object(coverage.graders,'check',side_effect=AssertionError('host grader')):
             return runner._run_jobs(runner.load(),runner.CONFIG,fake,grade,
-                                   qualification_reference='1'*64,isolation_reference='2'*64,artifacts=artifacts)
+                                   qualification_reference='1'*64,agent_isolation_reference='3'*64,
+                                   isolation_reference='2'*64,artifacts=artifacts)
 
     def test_fake_full_plan_normalized_privacy_and_failures(self):
         for mode,reason in [('success',None),('process','process-failure'),('trace','trace-invalid'),
                             ('grading','grading-refusal'),('quality','quality-failure')]:
             report=self.fake_run(mode)
-            self.assertEqual((report['planned_jobs'],report['attempted_jobs'],report['model_calls']),(40,40,0))
+            self.assertEqual((report['planned_jobs'],report['attempted_jobs'],report['model_calls']),(40,40,None))
             self.assertNotIn('PRIVATE_SENTINEL',json.dumps(report))
             self.assertNotIn('/tmp/',json.dumps(report))
             for r in report['records']:
@@ -205,15 +222,67 @@ class RepresentativeRunnerTests(unittest.TestCase):
             target=Path(tmp)
             with self.assertRaises(KeyboardInterrupt):
                 runner._run_jobs(runner.load(),runner.CONFIG,fake,lambda s,w:True,
-                    qualification_reference='1'*64,isolation_reference='2'*64,artifacts=target)
+                    qualification_reference='1'*64,agent_isolation_reference='3'*64,
+                    isolation_reference='2'*64,artifacts=target)
             records=list(target.glob('*.json'));self.assertEqual(len(records),1)
             self.assertEqual(json.loads(records[0].read_text())['attempt_count'],1)
 
     def test_settings_equivalence(self):
         c=runner.load()
-        self.assertEqual(historical.command_plan(c,'vanilla','/fake/codex'),historical.command_plan(c,'native','/fake/codex'))
+        historical_vanilla = historical.command_plan(c,'vanilla','/fake/codex')
+        historical_native = historical.command_plan(c,'native','/fake/codex')
+        self.assertEqual(historical_vanilla,historical_native)
+        representative_vanilla = runner.command_plan(c,'vanilla','/fake/codex')
+        representative_native = runner.command_plan(c,'native','/fake/codex')
+        self.assertEqual(representative_vanilla,representative_native)
+        self.assertEqual(c['settings']['shell_environment_policy'],
+                         {'inherit':'core','ignore_default_excludes':False})
+        self.assertEqual(c['settings']['disabled_features'], list(agent_isolation.DISABLED_FEATURES))
+        self.assertEqual(c['settings']['permission_profile'], {'id':'benchmark','extends':':workspace',
+                         'filesystem':{'~/.local/share/keyrings':'deny'}})
+        self.assertEqual(c['settings']['credential_backing_store'],
+                         {'child_unreadable_paths':['~/.local/share/keyrings']})
+        self.assertIn('default_permissions="benchmark"', representative_vanilla)
+        self.assertIn('permissions.benchmark.extends=":workspace"', representative_vanilla)
+        self.assertIn('permissions.benchmark.filesystem={"~/.local/share/keyrings"="deny"}', representative_vanilla)
+        self.assertIn('shell_environment_policy.inherit=core', representative_vanilla)
+        self.assertIn('shell_environment_policy.ignore_default_excludes=false', representative_vanilla)
+        for feature in agent_isolation.DISABLED_FEATURES:
+            self.assertIn(f'features.{feature}=false', representative_vanilla)
+        self.assertNotEqual(representative_vanilla,historical_vanilla)
         s=coverage.load_manifest()['scenarios'][0]
         self.assertEqual(historical.prompt(c,s,'native'),historical.prompt(c,s,'vanilla')+historical.NATIVE_INSTRUCTION)
+
+    def test_agent_execution_isolation_contract_fail_closed(self):
+        contract = agent_isolation.load_contract()
+        self.assertEqual(contract['accepted_evidence_sha256'], [])
+        self.assertFalse(agent_isolation.representative_contract_verified(verified_host()))
+        payload = {'codex_executable_sha256':contract['codex_executable_sha256'],
+                   'auth_file_absent':True,'api_key_in_child_environment':False,
+                   'user_bus_connectable':False,
+                   'private_bus_address_in_child_environment':False,
+                   'private_bus_connectable':False,'credential_backing_store_readable':False,
+                   'external_tool_surface_disabled':True,
+                   'command_paths_reviewed':True}
+        self.assertRegex(agent_isolation.evidence_reference(payload), r'^[0-9a-f]{64}$')
+        candidate = agent_isolation.load_candidate_evidence()
+        self.assertEqual(candidate['evidence_reference'], agent_isolation.evidence_reference(candidate['candidate']))
+        self.assertNotIn(candidate['evidence_reference'], contract['accepted_evidence_sha256'])
+        self.assertFalse(candidate['real_credentials_used'])
+        self.assertEqual(candidate['model_calls'], 0)
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)/'.codex'; home.mkdir()
+            self.assertEqual(agent_isolation.runtime_preflight({'CODEX_HOME':str(home)}), home)
+            with self.assertRaisesRegex(ValueError,'API-key'):
+                agent_isolation.runtime_preflight({'CODEX_HOME':str(home),'OPENAI_API_KEY':'synthetic'})
+            (home/'auth.json').write_text('{"synthetic":true}')
+            with self.assertRaisesRegex(ValueError,'file auth'):
+                agent_isolation.runtime_preflight({'CODEX_HOME':str(home)})
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'agent.json'
+            changed=agent_isolation.expected_contract();changed['authorization_overrides_security']=True
+            path.write_text(json.dumps(changed))
+            with self.assertRaises(ValueError):agent_isolation.load_contract(path)
 
     def test_imported_receipt_cannot_enable_execution(self):
         q = verified_host().evidence
@@ -244,15 +313,19 @@ class RepresentativeRunnerTests(unittest.TestCase):
                 self.assertEqual(execute.call_args.args[0],['/fake/codex','--version'])
 
     def test_gate_order_authorization_and_artifact_rejection(self):
-        c=runner.load();c['readiness']['qualified_host_contract']='verified';c['readiness']['grading_isolation_contract']='verified'
+        c=runner.load();c['readiness']['qualified_host_contract']='verified'
+        c['readiness']['agent_execution_isolation_contract']='verified'
+        c['readiness']['grading_isolation_contract']='verified'
         with patch.object(runner,'load',return_value=c), \
+             patch.object(agent_isolation,'representative_contract_verified',return_value=True), \
+             patch.object(agent_isolation,'runtime_preflight') as runtime, \
              patch.object(isolation,'representative_contract_verified',return_value=True), \
              patch.object(runner,'_identity_preflight') as identity, \
              patch.object(historical,'artifact_directory') as artifact, \
              patch.object(runner,'_run_jobs') as execute:
             with self.assertRaisesRegex(runner.PreflightRefusal,'authorization'):
                 runner.real_run('/fake/codex','fake',verified_host())
-            identity.assert_called_once();artifact.assert_not_called();execute.assert_not_called()
+            identity.assert_called_once();runtime.assert_called_once();artifact.assert_not_called();execute.assert_not_called()
             artifact.side_effect=ValueError('existing run evidence')
             with self.assertRaisesRegex(runner.PreflightRefusal,'artifact'):
                 runner.real_run('/fake/codex','fake',verified_host(),authorized=True)
@@ -267,7 +340,8 @@ class RepresentativeRunnerTests(unittest.TestCase):
                     'timeout':False,'duration':0.001}
         with patch.object(b,'execute',side_effect=AssertionError('process')):
             r=runner._run_jobs(runner.load(),runner.CONFIG,fake,lambda s,w:True,
-                qualification_reference='1'*64,isolation_reference='2'*64)
+                qualification_reference='1'*64,agent_isolation_reference='3'*64,
+                isolation_reference='2'*64)
         self.assertEqual(sum(not x['quality_pass'] for x in r['records']),1)
         self.assertEqual([s['cost_samples'] for s in r['summary'].values()],[19,19])
 

@@ -9,8 +9,8 @@ STATES = frozenset({'verified', 'blocked', 'unavailable', 'not-verified'})
 COMPONENTS = (
     'platform', 'codex_identity', 'toolchains', 'cargo_identity', 'isolation_backend',
     'aggregate_memory', 'aggregate_tasks', 'descendants', 'cleanup', 'network',
-    'filesystem', 'environment', 'privilege', 'trusted_grader_immutability',
-    'runtime_inventory', 'grader_compatibility',
+    'filesystem', 'environment', 'agent_execution_isolation', 'privilege',
+    'trusted_grader_immutability', 'runtime_inventory', 'grader_compatibility',
 )
 CONTRACT = Path(__file__).resolve().parent.parent / 'benchmarks/host-contract-v1.json'
 
