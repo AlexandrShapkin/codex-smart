@@ -97,7 +97,7 @@ def _probe(script, workspace, timeout=5):
                 '--assert-userns-disabled', '--uid', '1000', '--gid', '1000',
                 '--cap-drop', 'ALL', '--die-with-parent', '--new-session', '--clearenv',
                 '--ro-bind', '/usr', '/usr', '--symlink', 'usr/lib', '/lib',
-                '--symlink', 'usr/lib', '/lib64', '--proc', '/proc', '--dev', '/dev',
+                '--symlink', 'usr/lib64', '/lib64', '--proc', '/proc', '--dev', '/dev',
                 '--size', '16777216', '--tmpfs', '/tmp', '--dir', '/empty-home',
                 '--setenv', 'HOME', '/empty-home', '--setenv', 'CODEX_HOME', '/empty-home',
                 '--setenv', 'PATH', '/usr/bin', '--ro-bind', str(source), '/probe.py',

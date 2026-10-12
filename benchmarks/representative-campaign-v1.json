@@ -185,7 +185,7 @@
     "agent_source_review_sha256": "bca3f3d35779f809d46e37da6a808fba4cef59ecaeb499cc05efa5c765e4c6d6",
     "agent_probe_sha256": "dd180124f2aed76d09c0d0c6108aa3000904140385f33a6ff64c1661854a8370",
     "agent_candidate_evidence_sha256": "a61f16faaf3010c3e5ea9a0112962dfb65b4d2c9e08c873fbe083fd615a63fd2",
-    "isolation_sha256": "23fd80123c66480c05649b641f543814e74b6610332b0b16d07b8ed7cb6a9aa7",
+    "isolation_sha256": "7ff360906d04f1f2c5c7a4ee3e45cd4c12c42f99712537f7bf9b85960caedac1",
     "resource_contract_sha256": "63e2a13d36481e07194e781fc2c48f7bd73ff229d2751c3be88361c85a678b66",
     "harness_sha256": "0cc84b32d1418ddaed4ed620c122098adbb10bfe0f9061a694e8c2a9cd3af7b7"
   },
