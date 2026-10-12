@@ -53,6 +53,15 @@ qualified-host contract instead pins OpenAI's official `rust-v0.162.1`
 static-pie executable (`628e3548...`). This separates historical provenance from a
 portable upstream artifact suitable for the disposable Ubuntu qualification host.
 
+Representative toolchains follow the same rule instead of inheriting the historical
+Arch host identity. Rust/Cargo 1.98.0 are pinned to the official minimal x86_64 GNU component
+archives: rustc (`0e37cb33...`), Cargo (`2f512d17...`) and rust-std (`f5022e6c...`), Go to the official `go1.27.2.linux-amd64.tar.gz`
+archive (`ecbadb99...`) whose version is `go1.27.2 linux/amd64`, and Python 3.14.8
+to the official source archive (`c2215904...`) for a staged source build. The historical
+Go `go1.27.2-X:nodwarf5` pin remains historical evidence only and is not a qualified-host
+requirement. Runtime executable/library bytes still require a separate reviewed immutable
+inventory; source/archive provenance alone does not qualify them.
+
 Pinned `0.162.1` source and synthetic VM probes also separate credential ownership
 from model-reachable child execution. The pinned keyring backend has no file fallback
 and removes `auth.json` after a successful keyring save. The default shell environment

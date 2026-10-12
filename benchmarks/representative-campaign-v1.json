@@ -106,8 +106,14 @@
         "--version"
       ]
     },
+    "cargo": {
+      "version": "cargo 1.98.0 (797e8a9bc 2026-08-05)",
+      "version_arguments": [
+        "--version"
+      ]
+    },
     "go": {
-      "version": "go version go1.27.2-X:nodwarf5 linux/amd64",
+      "version": "go version go1.27.2 linux/amd64",
       "version_arguments": [
         "version"
       ]
@@ -117,12 +123,33 @@
       "version_arguments": [
         "--version"
       ]
+    }
+  },
+  "toolchain_artifacts": {
+    "rustc": {
+      "distribution": "upstream-release",
+      "artifact": "rustc-1.98.0-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "0e37cb339f447fc44d6d781073bacacebfdc5612f2600e4c7e84c266f5f3aced"
     },
     "cargo": {
-      "version": "cargo 1.98.0 (797e8a9bc 2026-08-05)",
-      "version_arguments": [
-        "--version"
-      ]
+      "distribution": "upstream-release",
+      "artifact": "cargo-1.98.0-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "2f512d170d3dd23e16ababcda32ee2e6d5172d861a7af1f504e0b1e270cafab9"
+    },
+    "rust-std": {
+      "distribution": "upstream-release",
+      "artifact": "rust-std-1.98.0-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "f5022e6c95a5ad23cca2513dc8281200f585fa188de6370aa37b128a43f876a3"
+    },
+    "go": {
+      "distribution": "upstream-release",
+      "artifact": "go1.27.2.linux-amd64.tar.gz",
+      "sha256": "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5"
+    },
+    "python": {
+      "distribution": "upstream-source-build",
+      "artifact": "Python-3.14.8.tar.xz",
+      "sha256": "c2215904f02b175596dc49351585104f4bc20341e1c47378b26a2c274360ce73"
     }
   },
   "cold_warm": {
@@ -151,21 +178,21 @@
   "measured_records": [],
   "runner_pins": {
     "runner_sha256": "3848d4a293cad7a8e228f5e72a8246d7bde5dad494b6644f5e9b023d859e751c",
-    "host_validator_sha256": "66f96641345a423cf4de768c8b09bc03ded557e652f775537228dd45a1f02f2b",
-    "host_contract_sha256": "03d9007f2964d1fa67d4bc60269ee0df254bd8927de2813f0f4dde2e91e6d3de",
+    "host_validator_sha256": "1ed3dd5ec21a6f68f5e17ae64f6c99a93f4e62c61acdae7158d73be816af30f7",
+    "host_contract_sha256": "a792c21d49fcb995c2390ff49eff317f10a65c962cf462566ecda84660de9207",
     "agent_isolation_sha256": "7c2498478c83425acd7fa534b8a712490dc929c5d8e1ab7fa6b509b060448513",
     "agent_isolation_contract_sha256": "50ee695c15f866c5d47e40009f3381ef64264c91de0da5fc59df836308f88394",
     "agent_source_review_sha256": "bca3f3d35779f809d46e37da6a808fba4cef59ecaeb499cc05efa5c765e4c6d6",
     "agent_probe_sha256": "dd180124f2aed76d09c0d0c6108aa3000904140385f33a6ff64c1661854a8370",
     "agent_candidate_evidence_sha256": "a61f16faaf3010c3e5ea9a0112962dfb65b4d2c9e08c873fbe083fd615a63fd2",
     "isolation_sha256": "23fd80123c66480c05649b641f543814e74b6610332b0b16d07b8ed7cb6a9aa7",
-    "resource_contract_sha256": "36bc96d8323fd12812c6280f7067ca286a716fc9e5fce682b33f57d8e105f1bc",
+    "resource_contract_sha256": "63e2a13d36481e07194e781fc2c48f7bd73ff229d2751c3be88361c85a678b66",
     "harness_sha256": "0cc84b32d1418ddaed4ed620c122098adbb10bfe0f9061a694e8c2a9cd3af7b7"
   },
   "pins": {
     "manifest_sha256": "90feb15e92815b3b9d6269f33a2f85b76b52350cdad72eb72a3f61916ac1ee7e",
     "grader_sha256": "a6c29565533fcc7fac548f78bfa4c8a45561284a468e0398d923c0308cd4df6d",
-    "coverage_validator_sha256": "f3f292aa6a960b69bd607214c9faa7a063c33245efbcd6b49c2ef88ee36e1f31",
+    "coverage_validator_sha256": "c3dd5594ce5890b0a648f8018d6513b825cbdef23f7916f9c5f4299e35bc725e",
     "fixture_sha256": {
       "rust-ledger": "a1264d1c636814b10236bf3274955c8784ba36f6072b087c969494d9075f813c",
       "rust-duration": "efc103d011c309c4f7e42f82c399db717b912a7fad833e257ba930c16742713b",

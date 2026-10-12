@@ -90,6 +90,9 @@ class ResourceContractTests(unittest.TestCase):
             plan = copy.deepcopy(resource.RUNTIME_PLAN)
             plan['versions']['rust'] = 'rustc other'
             with self.assertRaises(ValueError): resource.validate_runtime_plan(plan, tmp, sources)
+            plan = copy.deepcopy(resource.RUNTIME_PLAN)
+            plan['artifacts']['go']['sha256'] = '0'*64
+            with self.assertRaises(ValueError): resource.validate_runtime_plan(plan, tmp, sources)
 
     def test_outside_rust_home_and_broad_mounts_rejected(self):
         with tempfile.TemporaryDirectory(prefix='benchmark-runtime-') as tmp:
