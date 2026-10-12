@@ -1,7 +1,8 @@
 """Explicit Linux namespace probes, never a submitted-code grading fallback.
 
-Bubblewrap is a candidate, not an accepted backend. This host cannot provide
-verified aggregate resource controls; production grading therefore fails closed.
+The constrained Ubuntu Bubblewrap candidate is accepted only by its dedicated backend
+contract. No qualified host receipt or production grading implementation exists yet,
+so representative submission grading still fails closed.
 """
 import argparse
 from dataclasses import asdict, dataclass
@@ -16,17 +17,19 @@ import tempfile
 import time
 from typing import Literal
 
+import benchmark_grading_backend as grading_backend
 import benchmark_resource_contract as resource_contract
 
 BWRAP = Path('/usr/bin/bwrap')
-VERSION = 'bubblewrap 0.13.0'
+BACKEND_ID = grading_backend.expected_contract()['backend_id']
+VERSION = grading_backend.expected_contract()['version']
 
 
 @dataclass(frozen=True)
 class IsolationAvailability:
     status: Literal['verified', 'unavailable', 'blocked']
     reason: str
-    backend: str = 'bubblewrap-candidate'
+    backend: str = BACKEND_ID
     version: str | None = None
 
 
@@ -43,12 +46,9 @@ def availability():
     if BWRAP.stat().st_mode & (stat.S_ISUID | stat.S_ISGID):
         return IsolationAvailability('blocked', 'privileged-backend-rejected')
     try:
-        result = subprocess.run([str(BWRAP), '--version'], env={'PATH': '/usr/bin'},
-                                capture_output=True, text=True, timeout=5)
-    except (OSError, subprocess.TimeoutExpired):
-        return IsolationAvailability('blocked', 'backend-version-unavailable')
-    if result.returncode or result.stdout.strip() != VERSION:
-        return IsolationAvailability('blocked', 'backend-version-unreviewed')
+        grading_backend.runtime_preflight(BWRAP)
+    except (OSError, ValueError):
+        return IsolationAvailability('blocked', 'backend-identity-unreviewed')
     # No writable cgroup delegation is provisioned by this implementation. Even
     # on another host, presence/writability must not promote it to verified.
     return IsolationAvailability('blocked', 'aggregate-resource-controls-not-verified', version=VERSION)
@@ -67,9 +67,7 @@ class SubmissionPolicy:
 
 
 def representative_contract_verified(qualification):
-    # No accepted implementation/runtime receipt exists. A host evidence object
-    # cannot turn candidate namespace probes into a verified grading backend.
-    return False
+    return grading_backend.representative_contract_verified(qualification)
 
 
 def grade_representative(scenario, workspace, qualification, *, policy=SubmissionPolicy()):
@@ -93,15 +91,13 @@ def _probe(script, workspace, timeout=5):
     with tempfile.TemporaryDirectory(prefix='isolation-probe-') as tmp:
         source = Path(tmp) / 'probe.py'
         source.write_text(script)
+        mounts = grading_backend.probe_mount_plan(source, workspace)
         argv = [str(BWRAP), '--unshare-user', '--unshare-all', '--disable-userns',
                 '--assert-userns-disabled', '--uid', '1000', '--gid', '1000',
                 '--cap-drop', 'ALL', '--die-with-parent', '--new-session', '--clearenv',
-                '--ro-bind', '/usr', '/usr', '--symlink', 'usr/lib', '/lib',
-                '--symlink', 'usr/lib64', '/lib64', '--proc', '/proc', '--dev', '/dev',
-                '--size', '16777216', '--tmpfs', '/tmp', '--dir', '/empty-home',
+                *grading_backend.render_mount_plan(mounts),
                 '--setenv', 'HOME', '/empty-home', '--setenv', 'CODEX_HOME', '/empty-home',
-                '--setenv', 'PATH', '/usr/bin', '--ro-bind', str(source), '/probe.py',
-                '--bind', str(workspace), '/work', '--chdir', '/work',
+                '--setenv', 'PATH', '/usr/bin', '--chdir', '/work',
                 '--', '/usr/bin/python3', '-B', '/probe.py']
         try:
             child = subprocess.Popen(argv, env={'PATH': '/usr/bin'}, stdin=subprocess.DEVNULL,
@@ -214,7 +210,7 @@ else: time.sleep(10)
 
 @dataclass(frozen=True)
 class IsolationEvidence:
-    backend: str = 'bubblewrap-candidate'
+    backend: str = BACKEND_ID
     backend_version: str | None = None
     resource_backend: str = 'systemd-user-cgroup-v2'
     resource_status: resource_contract.State = 'not-verified'
