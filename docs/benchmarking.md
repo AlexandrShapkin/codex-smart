@@ -508,9 +508,12 @@ The representative campaign also disables multi-agent and account/network-backed
 app/plugin/browser/computer/image/skill-search surfaces for both variants. No real
 credential or model call was used. These observations motivate the pinned
 `agent-execution-isolation-v1` contract; they do not verify or accept runtime evidence.
-The reproducible credential-free probe produced candidate reference `ae2840a9...`,
-frozen in `agent-execution-isolation-candidate-v1.json`; the accepted-evidence list
-remains empty, so this candidate cannot enable execution.
+The reproducible credential-free probe produced reference `ae2840a9...`,
+frozen in `agent-execution-isolation-candidate-v1.json`. That exact reference is now
+accepted by `agent-execution-isolation-v1.json`; the loader additionally requires the
+reviewed security outcomes (no auth file/API key/bus/keyring exposure, external tool
+surfaces disabled, reviewed command paths). This verifies the dedicated agent-isolation
+contract only; host qualification and grading isolation remain independent gates.
 
 Seven kinds of evidence must remain separate:
 
@@ -521,7 +524,7 @@ Seven kinds of evidence must remain separate:
    seven scenarios × two variants × three repetitions = 42 unexecuted calls.
 4. **Representative design:** `representative-development-v1` proposes ten tasks with
    independent graders and trusted controls; this PR seeks acceptance of that matrix.
-5. **Agent execution isolation:** required-not-verified; credentials must remain parent-only and all model-reachable command paths require review.
+5. **Agent execution isolation:** verified for the exact pinned candidate `ae2840a9...`; host qualification still must carry that same accepted component evidence.
 6. **Grading isolation:** required-not-verified; correctness checks do not establish it.
 7. **Measured evidence:** none. No comparative result, savings or winner exists.
 

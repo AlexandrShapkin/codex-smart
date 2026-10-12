@@ -165,7 +165,7 @@
   },
   "readiness": {
     "real_runner_contract": "prepared",
-    "agent_execution_isolation_contract": "required-not-verified",
+    "agent_execution_isolation_contract": "verified",
     "grading_isolation_contract": "required-not-verified",
     "qualified_host_contract": "required-not-verified",
     "representative_campaign_ready": false
@@ -184,8 +184,8 @@
     "grading_backend_contract_sha256": "2d998155b44bace387a52d3368fab6c1e08410bce24cab1ef51562e0df1a0970",
     "grading_backend_probe_sha256": "767f77fc640d93d976ce12081b105d40f6a276f8e065367fbaeeb53f4f4a3f1f",
     "grading_backend_candidate_evidence_sha256": "269bef23c21e419216028a44611c36c4c32d2c33b1a32ba02d71dc5259c5e638",
-    "agent_isolation_sha256": "7c2498478c83425acd7fa534b8a712490dc929c5d8e1ab7fa6b509b060448513",
-    "agent_isolation_contract_sha256": "50ee695c15f866c5d47e40009f3381ef64264c91de0da5fc59df836308f88394",
+    "agent_isolation_sha256": "1f2c42cd1d75343433f95942c88ee4fa84e9e00d53a0715ef362eb6b17320d06",
+    "agent_isolation_contract_sha256": "3164be92650f597013ad68c92fb7b869d39f52047a682bc390192bc15089909f",
     "agent_source_review_sha256": "bca3f3d35779f809d46e37da6a808fba4cef59ecaeb499cc05efa5c765e4c6d6",
     "agent_probe_sha256": "dd180124f2aed76d09c0d0c6108aa3000904140385f33a6ff64c1661854a8370",
     "agent_candidate_evidence_sha256": "a61f16faaf3010c3e5ea9a0112962dfb65b4d2c9e08c873fbe083fd615a63fd2",
@@ -196,7 +196,7 @@
   "pins": {
     "manifest_sha256": "90feb15e92815b3b9d6269f33a2f85b76b52350cdad72eb72a3f61916ac1ee7e",
     "grader_sha256": "a6c29565533fcc7fac548f78bfa4c8a45561284a468e0398d923c0308cd4df6d",
-    "coverage_validator_sha256": "18d03c4587dfdfce638b15087ced5c4e1383cd6d5936d18db185ad69d21be902",
+    "coverage_validator_sha256": "a4bbf279ee9fa50c4eaa55219c29842fb43b927c9f2fcce802be86f2756bc225",
     "fixture_sha256": {
       "rust-ledger": "a1264d1c636814b10236bf3274955c8784ba36f6072b087c969494d9075f813c",
       "rust-duration": "efc103d011c309c4f7e42f82c399db717b912a7fad833e257ba930c16742713b",

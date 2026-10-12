@@ -61,6 +61,8 @@
     "external-account-backed-tool-surface-disabled",
     "model-reachable-command-paths-reviewed"
   ],
-  "accepted_evidence_sha256": [],
+  "accepted_evidence_sha256": [
+    "ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb"
+  ],
   "authorization_overrides_security": false
 }

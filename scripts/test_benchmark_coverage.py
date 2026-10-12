@@ -25,7 +25,7 @@ class RepresentativeTests(unittest.TestCase):
         self.assertNotIn('maximum_model_calls',c)
         self.assertEqual(c['variants'],['vanilla','native'])
         self.assertEqual(c['retries'],0)
-        self.assertEqual(c['readiness']['agent_execution_isolation_contract'],'required-not-verified')
+        self.assertEqual(c['readiness']['agent_execution_isolation_contract'],'verified')
         self.assertEqual(c['readiness']['grading_isolation_contract'],'required-not-verified')
         self.assertIs(c['readiness']['representative_campaign_ready'],False)
         self.assertEqual(c['execution_dependencies']['grading_isolation_contract'],'verified')
@@ -91,7 +91,7 @@ class RepresentativeTests(unittest.TestCase):
                 modified=copy.deepcopy(c);modified[key]=value
                 path.write_text(json.dumps(modified))
                 with self.subTest(key=key),self.assertRaises(ValueError): coverage.load_campaign(path)
-            for key,value in [('agent_execution_isolation_contract','verified'),
+            for key,value in [('agent_execution_isolation_contract','required-not-verified'),
                               ('grading_isolation_contract','verified'),('representative_campaign_ready',True)]:
                 modified=copy.deepcopy(c);modified['readiness'][key]=value
                 path.write_text(json.dumps(modified))

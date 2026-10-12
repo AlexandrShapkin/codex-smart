@@ -88,7 +88,7 @@ class RepresentativeRunnerTests(unittest.TestCase):
         self.assertNotIn('maximum_model_calls', p)
         self.assertFalse(p['model_execution_enabled'])
         self.assertEqual(c['readiness'], {'real_runner_contract':'prepared',
-            'agent_execution_isolation_contract':'required-not-verified',
+            'agent_execution_isolation_contract':'verified',
             'qualified_host_contract':'required-not-verified','grading_isolation_contract':'required-not-verified',
             'representative_campaign_ready':False})
         self.assertEqual(hashlib.sha256(historical.CONFIG.read_bytes()).hexdigest(),
@@ -108,7 +108,7 @@ class RepresentativeRunnerTests(unittest.TestCase):
     def test_pin_and_bounds_drift_before_any_execution(self):
         original = runner.load()
         changes = [('codex', 'executable_sha256', '0'*64), ('codex','version','1.0.0'),
-                   ('readiness','agent_execution_isolation_contract','verified'),
+                   ('readiness','agent_execution_isolation_contract','required-not-verified'),
                    ('readiness','grading_isolation_contract','verified'),
                    ('readiness','qualified_host_contract','verified'),
                    ('readiness','representative_campaign_ready',True)]
@@ -139,6 +139,7 @@ class RepresentativeRunnerTests(unittest.TestCase):
                     self.assertEqual(caught.exception.attempt_count,0)
             # Synthetic future campaign: qualification cannot override either isolation gate.
             c=runner.load();c['readiness']['qualified_host_contract']='verified'
+            c['readiness']['agent_execution_isolation_contract']='required-not-verified'
             with patch.object(runner,'load',return_value=c),self.assertRaisesRegex(runner.PreflightRefusal,'agent execution isolation contract'):
                 runner.real_run('/fake/codex','fake',verified_host(),authorized=True)
             c['readiness']['agent_execution_isolation_contract']='verified'
@@ -253,23 +254,51 @@ class RepresentativeRunnerTests(unittest.TestCase):
         s=coverage.load_manifest()['scenarios'][0]
         self.assertEqual(historical.prompt(c,s,'native'),historical.prompt(c,s,'vanilla')+historical.NATIVE_INSTRUCTION)
 
-    def test_agent_execution_isolation_contract_fail_closed(self):
+    def test_agent_execution_isolation_contract_accepts_only_reviewed_candidate(self):
         contract = agent_isolation.load_contract()
-        self.assertEqual(contract['accepted_evidence_sha256'], [])
-        self.assertFalse(agent_isolation.representative_contract_verified(verified_host()))
-        payload = {'codex_executable_sha256':contract['codex_executable_sha256'],
-                   'auth_file_absent':True,'api_key_in_child_environment':False,
-                   'user_bus_connectable':False,
-                   'private_bus_address_in_child_environment':False,
-                   'private_bus_connectable':False,'credential_backing_store_readable':False,
-                   'external_tool_surface_disabled':True,
-                   'command_paths_reviewed':True}
-        self.assertRegex(agent_isolation.evidence_reference(payload), r'^[0-9a-f]{64}$')
         candidate = agent_isolation.load_candidate_evidence()
-        self.assertEqual(candidate['evidence_reference'], agent_isolation.evidence_reference(candidate['candidate']))
-        self.assertNotIn(candidate['evidence_reference'], contract['accepted_evidence_sha256'])
+        reference = 'ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb'
+        self.assertEqual(contract['accepted_evidence_sha256'], [reference])
+        self.assertEqual(candidate['evidence_reference'], reference)
+        self.assertEqual(candidate['evidence_reference'],
+                         agent_isolation.evidence_reference(candidate['candidate']))
         self.assertFalse(candidate['real_credentials_used'])
         self.assertEqual(candidate['model_calls'], 0)
+        self.assertTrue(candidate['candidate']['auth_file_absent'])
+        self.assertFalse(candidate['candidate']['api_key_in_child_environment'])
+        self.assertFalse(candidate['candidate']['user_bus_connectable'])
+        self.assertFalse(candidate['candidate']['private_bus_address_in_child_environment'])
+        self.assertFalse(candidate['candidate']['private_bus_connectable'])
+        self.assertFalse(candidate['candidate']['credential_backing_store_readable'])
+        self.assertTrue(candidate['candidate']['external_tool_surface_disabled'])
+        self.assertTrue(candidate['candidate']['command_paths_reviewed'])
+
+        components = tuple(
+            host.ComponentEvidence(
+                n, 'verified',
+                reference if n == agent_isolation.COMPONENT else '1' * 64,
+            )
+            for n in host.COMPONENTS
+        )
+        qualified = host.qualify(host.HostQualificationEvidence(
+            'benchmark-qualified-host-v1', components))
+        self.assertTrue(agent_isolation.representative_contract_verified(qualified))
+        wrong = tuple(
+            host.ComponentEvidence(n, 'verified', '1' * 64)
+            for n in host.COMPONENTS
+        )
+        self.assertFalse(agent_isolation.representative_contract_verified(
+            host.qualify(host.HostQualificationEvidence('benchmark-qualified-host-v1', wrong))))
+
+        broken = json.loads(agent_isolation.CANDIDATE_EVIDENCE.read_text())
+        broken['candidate']['api_key_in_child_environment'] = True
+        broken['evidence_reference'] = agent_isolation.evidence_reference(broken['candidate'])
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'candidate.json'
+            path.write_text(json.dumps(broken))
+            with self.assertRaisesRegex(ValueError, 'required security evidence'):
+                agent_isolation.load_candidate_evidence(path)
+
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp)/'.codex'; home.mkdir()
             self.assertEqual(agent_isolation.runtime_preflight({'CODEX_HOME':str(home)}), home)

@@ -226,7 +226,7 @@ def expected_campaign(m):
             'live_contract':{'status':'inherited-execution-contract-only','source_campaign':'initial-development-v1',
                              'scope':'Codex startup/auth/JSONL only; not representative grading compatibility'},
             'readiness':{'real_runner_contract':'prepared',
-                         'agent_execution_isolation_contract':'required-not-verified',
+                         'agent_execution_isolation_contract':'verified',
                          'grading_isolation_contract':'required-not-verified',
                          'qualified_host_contract':'required-not-verified',
                          'representative_campaign_ready':False},

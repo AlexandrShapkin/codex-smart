@@ -1,8 +1,9 @@
 # Benchmark qualified-host and representative runner contract
 
-Status: prepared adapter and reviewed qualification semantics; no qualified host or
-accepted agent-execution isolation evidence. A constrained grading-backend candidate is
-accepted by its own frozen backend contract, but no host receipt is accepted. Active work
+Status: prepared adapter and reviewed qualification semantics; no qualified host.
+The exact agent-execution isolation candidate `ae2840a9...` and the constrained
+grading-backend candidate are accepted by their dedicated frozen contracts, but no host
+receipt is accepted. Active work
 remains #14. The representative matrix was
 accepted in #39; #56 planned future stages separately. No 0.4+ runtime feature,
 benchmark model execution, campaign execution or telemetry is added here.
@@ -101,12 +102,13 @@ and apply-patch route through sandbox orchestration, spawned agents inherit live
 policy, and Code Mode exposes controlled V8 globals/tools rather than ambient process
 APIs. The representative campaign additionally disables multi-agent, Code Mode and
 account/network-backed app/plugin/browser/computer/image/skill-search features. These
-are bounded observations and source evidence, not qualification:
-`agent-execution-isolation-v1.json` still accepts no evidence hash. The normalized
-credential-free candidate is frozen separately as
-`agent-execution-isolation-candidate-v1.json`, reference `ae2840a9...`; it is explicitly
-not in the accepted list and therefore cannot enable execution. No real credential or
-model call was used for these probes.
+are bounded observations and source evidence. The normalized credential-free candidate
+is frozen separately as `agent-execution-isolation-candidate-v1.json`, reference
+`ae2840a9...`, and that exact reference is accepted by
+`agent-execution-isolation-v1.json`. Its loader requires the reviewed boolean security
+outcomes in addition to the reference hash. This verifies the dedicated agent-isolation
+contract, but cannot qualify a host by itself. No real credential or model call was used
+for these probes.
 
 Future receipts must refer to the same composed boundary and inventory. Review its
 actual resource limits, descendant scope and cleanup owner together. Version output,
@@ -204,8 +206,8 @@ report 40 synthetic attempts and zero model calls, not comparative measurements.
 ## Readiness and next action
 
 Matrix accepted; representative runner contract **prepared** means pinned adapter
-implementation tested with fakes, not host/runtime verification. Qualified host,
-agent execution isolation and grading isolation remain required-not-verified,
+implementation tested with fakes, not host/runtime verification. Agent execution isolation is verified for the accepted exact candidate; qualified host and
+grading isolation remain required-not-verified,
 representative readiness false,
 comparative evidence absent. Historical 42 jobs and representative 40 primary executions remain
 unexecuted; successful IaC smoke and historical failed evidence remain unchanged.

@@ -63,7 +63,7 @@ def expected_contract():
             'external-account-backed-tool-surface-disabled',
             'model-reachable-command-paths-reviewed',
         ],
-        'accepted_evidence_sha256': [],
+        'accepted_evidence_sha256': ['ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb'],
         'authorization_overrides_security': False,
     }
 
@@ -158,8 +158,21 @@ def load_candidate_evidence(path=CANDIDATE_EVIDENCE):
         or record['real_credentials_used'] is not False
     ):
         raise ValueError('agent isolation candidate evidence identity mismatch')
-    if evidence_reference(record['candidate']) != record['evidence_reference']:
+    candidate = record['candidate']
+    if evidence_reference(candidate) != record['evidence_reference']:
         raise ValueError('agent isolation candidate evidence reference mismatch')
+    required_values = {
+        'auth_file_absent': True,
+        'api_key_in_child_environment': False,
+        'user_bus_connectable': False,
+        'private_bus_address_in_child_environment': False,
+        'private_bus_connectable': False,
+        'credential_backing_store_readable': False,
+        'external_tool_surface_disabled': True,
+        'command_paths_reviewed': True,
+    }
+    if any(candidate[key] is not value for key, value in required_values.items()):
+        raise ValueError('agent isolation candidate failed required security evidence')
     return record
 
 def representative_contract_verified(qualification):
@@ -167,6 +180,7 @@ def representative_contract_verified(qualification):
     import benchmark_host as host
 
     contract = load_contract()
+    candidate = load_candidate_evidence()
     if type(qualification) is not host.QualifiedHostContract or qualification.status != 'verified':
         return False
     component = next(
@@ -176,5 +190,6 @@ def representative_contract_verified(qualification):
     return (
         component is not None
         and component.state == 'verified'
+        and component.evidence_sha256 == candidate['evidence_reference']
         and component.evidence_sha256 in contract['accepted_evidence_sha256']
     )
