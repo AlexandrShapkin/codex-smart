@@ -17,7 +17,6 @@ import representative_graders as graders
 MANIFEST = b.ROOT/'representative-manifest.json'
 CAMPAIGN = b.ROOT/'representative-campaign-v1.json'
 DOMAINS = {'Rust', 'Go', 'Python', 'infrastructure', 'repository/CI', 'exploration'}
-CARGO_VERSION = 'cargo 1.98.0 (797e8a9bc 2026-08-05)'
 REPRESENTATIVE_CODEX = {
     'version': '0.162.1',
     'reference': 'official OpenAI release rust-v0.162.1; x86_64-unknown-linux-musl',
@@ -28,6 +27,25 @@ REPRESENTATIVE_CODEX = {
     'release_asset_sha256': '86f268d81b898f3e144c5ecff2ad2fda2c5802e042d6195b72538fe0fa125057',
     'executable_sha256': '628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1',
 }
+REPRESENTATIVE_TOOLCHAINS = {
+    'rustc': {'version': 'rustc 1.98.0 (88d9e12ae 2026-08-18)', 'version_arguments': ['--version']},
+    'cargo': {'version': 'cargo 1.98.0 (797e8a9bc 2026-08-05)', 'version_arguments': ['--version']},
+    'go': {'version': 'go version go1.27.2 linux/amd64', 'version_arguments': ['version']},
+    'python3': {'version': 'Python 3.14.8', 'version_arguments': ['--version']},
+}
+REPRESENTATIVE_TOOLCHAIN_ARTIFACTS = {
+    'rustc': {'distribution': 'upstream-release', 'artifact': 'rustc-1.98.0-x86_64-unknown-linux-gnu.tar.xz',
+              'sha256': '0e37cb339f447fc44d6d781073bacacebfdc5612f2600e4c7e84c266f5f3aced'},
+    'cargo': {'distribution': 'upstream-release', 'artifact': 'cargo-1.98.0-x86_64-unknown-linux-gnu.tar.xz',
+              'sha256': '2f512d170d3dd23e16ababcda32ee2e6d5172d861a7af1f504e0b1e270cafab9'},
+    'rust-std': {'distribution': 'upstream-release', 'artifact': 'rust-std-1.98.0-x86_64-unknown-linux-gnu.tar.xz',
+                 'sha256': 'f5022e6c95a5ad23cca2513dc8281200f585fa188de6370aa37b128a43f876a3'},
+    'go': {'distribution': 'upstream-release', 'artifact': 'go1.27.2.linux-amd64.tar.gz',
+           'sha256': 'ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5'},
+    'python': {'distribution': 'upstream-source-build', 'artifact': 'Python-3.14.8.tar.xz',
+               'sha256': 'c2215904f02b175596dc49351585104f4bc20341e1c47378b26a2c274360ce73'},
+}
+CARGO_VERSION = REPRESENTATIVE_TOOLCHAINS['cargo']['version']
 CLASSES = {'bugfix', 'feature', 'API', 'tests', 'refactor', 'security', 'CI', 'inspection'}
 TIERS = {'focused', 'multi-file', 'cross-cutting'}
 LIFECYCLE = {'inspect', 'edit', 'test', 'build/check', 'impact-analysis'}
@@ -202,7 +220,8 @@ def expected_campaign(m):
             'repetitions':2, 'seeds':[14], 'retries':0, 'timeout_seconds':120,
             'planned_primary_runs':len(m['scenarios'])*2*2,
             'maximum_codex_executions':len(m['scenarios'])*2*2,
-            'settings':settings, 'codex':REPRESENTATIVE_CODEX, 'toolchains':historical['toolchains'] | {'cargo':{'version':CARGO_VERSION,'version_arguments':['--version']}},
+            'settings':settings, 'codex':REPRESENTATIVE_CODEX, 'toolchains':REPRESENTATIVE_TOOLCHAINS,
+            'toolchain_artifacts': REPRESENTATIVE_TOOLCHAIN_ARTIFACTS,
             'cold_warm':historical['cold_warm'],
             'live_contract':{'status':'inherited-execution-contract-only','source_campaign':'initial-development-v1',
                              'scope':'Codex startup/auth/JSONL only; not representative grading compatibility'},

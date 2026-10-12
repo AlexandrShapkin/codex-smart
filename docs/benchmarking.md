@@ -484,6 +484,15 @@ its extracted executable (`628e3548...`) instead. Both report `codex-cli 0.162.1
 the differing checksums are expected because they are different packaging channels.
 No historical campaign byte or smoke result is rewritten by this representative pin.
 
+Representative toolchain provenance is also separate from the historical Arch host.
+Rust/Cargo 1.98.0 use the official minimal x86_64 GNU component archives: rustc (`0e37cb33...`), Cargo (`2f512d17...`) and rust-std (`f5022e6c...`).
+Go uses the official `go1.27.2.linux-amd64.tar.gz` archive (`ecbadb99...`) and therefore
+expects `go version go1.27.2 linux/amd64`; the historical Arch `X:nodwarf5` build remains
+unchanged only in `initial-development-v1`. Python 3.14.8 uses the official source
+archive (`c2215904...`) and must be built into the staged runtime. These artifact pins
+establish provenance, not runtime qualification; executable, sysroot, linker, library and
+standard-library byte inventories remain a separate host evidence requirement.
+
 Whole-agent credential isolation is now an explicit independent gate. Exact pinned
 `0.162.1` source shows keyring mode has no file fallback and removes `auth.json` after
 successful keyring storage, while the default child shell environment inherits all
