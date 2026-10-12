@@ -61,7 +61,7 @@ and a synthetic `auth.json` was readable. Under the exact representative overrid
 `shell_environment_policy.inherit=core`, the synthetic API key was absent while PATH
 and HOME remained available. `/run/user/1001/bus` was visible to the child but a Unix
 socket connect returned `EPERM`. Exact-source review at commit `092d3acd...` is pinned
-by `agent-execution-source-review-v1.json` (`1723618d...`): `codex exec` hard-defaults
+by `agent-execution-source-review-v1.json` (`8afeebe5...`): `codex exec` hard-defaults
 approvals to `Never`, approval requests are unsupported in exec mode, shell/unified-exec
 and apply-patch route through sandbox orchestration, spawned agents inherit live runtime
 policy, and Code Mode exposes controlled V8 globals/tools rather than ambient process

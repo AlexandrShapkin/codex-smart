@@ -30,7 +30,7 @@ def expected_contract():
         'contract_id': 'benchmark-agent-execution-isolation-v1',
         'codex_version': '0.162.1',
         'codex_executable_sha256': '628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1',
-        'source_review_sha256': '1723618d40fd11df4e0c1963f2f33476ad0f1e805f4e51527141c61c2d73a9ca',
+        'source_review_sha256': '8afeebe56c4292e632938de0adcb76f2591aeeace980bf7663db24019442ddba',
         'credential_store': 'keyring',
         'file_fallback_allowed': False,
         'auth_file_must_be_absent': True,

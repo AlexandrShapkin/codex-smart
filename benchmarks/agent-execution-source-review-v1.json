@@ -26,11 +26,28 @@
     "sandbox_orchestration": "shell/unified-exec and apply_patch route through shared sandbox policy/orchestrator",
     "subagents": "spawned agents clone effective parent config and live approval/sandbox policy",
     "code_mode": "V8 runtime exposes only controlled globals/tools and rejects unsupported module imports; representative campaign disables code_mode",
-    "external_surface": "representative campaign disables multi-agent and account/network-backed app/plugin/browser/computer/image/skill-search features"
+    "external_surface": "representative campaign disables multi-agent and account/network-backed app/plugin/browser/computer/image/skill-search features",
+    "linux_keyring_runtime": "Codex enables keyring 3.6.3 linux-native-async-persistent; its default Entry::new builder is keyutils_persistent, but that builder constructs SsCredential directly, so the Codex direct-keyring path depends on Secret Service IPC rather than a kernel-keyutils-only credential path."
   },
   "limitations": [
     "source review does not prove runtime host isolation",
     "source review does not authenticate a qualification receipt",
-    "future executable or source drift requires a new review"
-  ]
+    "future executable or source drift requires a new review",
+    "keyring 3.6.3 dependency behavior is pinned by crates.io package/file hashes and must be re-reviewed on dependency drift"
+  ],
+  "dependency_sources": {
+    "keyring-3.6.3": {
+      "crate_sha256": "eebcc3aff044e5944a8fbaf69eb277d11986064cba30c468730e8b9909fb551c",
+      "enabled_features": [
+        "crypto-rust",
+        "linux-native-async-persistent"
+      ],
+      "files": {
+        "Cargo.toml.orig": "435cc9ea9a2c68ff007da37f6072c3b1321fbefbef0ead36e4476d39eebb43b6",
+        "src/lib.rs": "dfa7fa25141b5cfa6d6000fa753bcdd956679dabc7c55293d0b9ebd5f9eaa8fc",
+        "src/keyutils_persistent.rs": "e0e23b80f8547a278ff9786892b3b61d92c671ea4af8643f344e3d92a80636c4",
+        "src/secret_service.rs": "1f3e0dab29e3805e2e2c17a17e3504997128444f50cd15b29e921bb3562b0d19"
+      }
+    }
+  }
 }

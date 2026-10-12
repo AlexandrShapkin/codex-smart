@@ -492,7 +492,7 @@ default `codex sandbox` could read a synthetic auth file and inherited a synthet
 `OPENAI_API_KEY`. With `shell_environment_policy.inherit=core`, the API key was absent
 while PATH/HOME remained available. The user D-Bus socket was visible but a child
 connect returned `EPERM`. Exact-source review is frozen separately in
-`agent-execution-source-review-v1.json` (`1723618d...`): headless exec uses approval
+`agent-execution-source-review-v1.json` (`8afeebe5...`): headless exec uses approval
 policy `Never`, model-visible execution routes through sandbox orchestration, subagents
 inherit the effective runtime policy, and Code Mode lacks ambient process/env/fs globals.
 The representative campaign also disables multi-agent and account/network-backed
