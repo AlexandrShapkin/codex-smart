@@ -75,7 +75,19 @@
       "skill_mcp_dependency_install",
       "skill_search",
       "code_mode"
-    ]
+    ],
+    "permission_profile": {
+      "id": "benchmark",
+      "extends": ":workspace",
+      "filesystem": {
+        "~/.local/share/keyrings": "deny"
+      }
+    },
+    "credential_backing_store": {
+      "child_unreadable_paths": [
+        "~/.local/share/keyrings"
+      ]
+    }
   },
   "codex": {
     "version": "0.162.1",
@@ -141,11 +153,11 @@
     "runner_sha256": "3848d4a293cad7a8e228f5e72a8246d7bde5dad494b6644f5e9b023d859e751c",
     "host_validator_sha256": "66f96641345a423cf4de768c8b09bc03ded557e652f775537228dd45a1f02f2b",
     "host_contract_sha256": "03d9007f2964d1fa67d4bc60269ee0df254bd8927de2813f0f4dde2e91e6d3de",
-    "agent_isolation_sha256": "09514bc7247f83bb244b3005721e6d7e676b6724b83f722a58486d8ac68b4cda",
-    "agent_isolation_contract_sha256": "7bd1f032743f1d0b67c397a870a91f3e5e3874c06eb92f9b6160b2b3b2c50b05",
-    "agent_source_review_sha256": "8afeebe56c4292e632938de0adcb76f2591aeeace980bf7663db24019442ddba",
-    "agent_probe_sha256": "ff61a926810a79424273dbb5af54be47875dec048ab846dda65c2ebfec973668",
-    "agent_candidate_evidence_sha256": "935a790c1d8174e9844abf21eaff1b36872d384ad10d237b73603afdb75daf3e",
+    "agent_isolation_sha256": "7c2498478c83425acd7fa534b8a712490dc929c5d8e1ab7fa6b509b060448513",
+    "agent_isolation_contract_sha256": "50ee695c15f866c5d47e40009f3381ef64264c91de0da5fc59df836308f88394",
+    "agent_source_review_sha256": "bca3f3d35779f809d46e37da6a808fba4cef59ecaeb499cc05efa5c765e4c6d6",
+    "agent_probe_sha256": "dd180124f2aed76d09c0d0c6108aa3000904140385f33a6ff64c1661854a8370",
+    "agent_candidate_evidence_sha256": "a61f16faaf3010c3e5ea9a0112962dfb65b4d2c9e08c873fbe083fd615a63fd2",
     "isolation_sha256": "23fd80123c66480c05649b641f543814e74b6610332b0b16d07b8ed7cb6a9aa7",
     "resource_contract_sha256": "36bc96d8323fd12812c6280f7067ca286a716fc9e5fce682b33f57d8e105f1bc",
     "harness_sha256": "0cc84b32d1418ddaed4ed620c122098adbb10bfe0f9061a694e8c2a9cd3af7b7"
@@ -153,7 +165,7 @@
   "pins": {
     "manifest_sha256": "90feb15e92815b3b9d6269f33a2f85b76b52350cdad72eb72a3f61916ac1ee7e",
     "grader_sha256": "a6c29565533fcc7fac548f78bfa4c8a45561284a468e0398d923c0308cd4df6d",
-    "coverage_validator_sha256": "32a72fa32acee56795e22b50922a09ea570ca3a53fa33f5df2926694b85c47cb",
+    "coverage_validator_sha256": "f3f292aa6a960b69bd607214c9faa7a063c33245efbcd6b49c2ef88ee36e1f31",
     "fixture_sha256": {
       "rust-ledger": "a1264d1c636814b10236bf3274955c8784ba36f6072b087c969494d9075f813c",
       "rust-duration": "efc103d011c309c4f7e42f82c399db717b912a7fad833e257ba930c16742713b",

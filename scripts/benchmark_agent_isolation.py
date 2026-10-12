@@ -30,11 +30,14 @@ def expected_contract():
         'contract_id': 'benchmark-agent-execution-isolation-v1',
         'codex_version': '0.162.1',
         'codex_executable_sha256': '628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1',
-        'source_review_sha256': '8afeebe56c4292e632938de0adcb76f2591aeeace980bf7663db24019442ddba',
+        'source_review_sha256': 'bca3f3d35779f809d46e37da6a808fba4cef59ecaeb499cc05efa5c765e4c6d6',
         'credential_store': 'keyring',
         'file_fallback_allowed': False,
         'auth_file_must_be_absent': True,
         'parent_openai_api_key_must_be_absent': True,
+        'credential_backing_store': {
+            'child_unreadable_paths': ['~/.local/share/keyrings'],
+        },
         'child_environment': {
             'inherit': 'core',
             'ignore_default_excludes': False,
@@ -44,12 +47,19 @@ def expected_contract():
             'socket_may_be_visible': True,
             'connectivity_required': 'blocked',
         },
+        'private_credential_ipc': {
+            'address_in_child_environment_required': False,
+            'connectivity_required': 'blocked',
+        },
         'required_evidence': [
             'exact-codex-identity',
             'keyring-mode-no-file-fallback-reviewed',
             'auth-file-absent-at-preflight',
             'synthetic-api-key-not-in-child-environment',
             'child-user-bus-connect-blocked',
+            'child-private-credential-bus-address-not-inherited',
+            'child-private-credential-bus-connect-blocked',
+            'child-credential-backing-store-unreadable',
             'external-account-backed-tool-surface-disabled',
             'model-reachable-command-paths-reviewed',
         ],
@@ -71,6 +81,9 @@ def load_contract(path=CONTRACT):
 def command_overrides():
     contract = load_contract()
     overrides = [
+        '-c', 'default_permissions="benchmark"',
+        '-c', 'permissions.benchmark.extends=":workspace"',
+        '-c', 'permissions.benchmark.filesystem={"~/.local/share/keyrings"="deny"}',
         '-c', 'shell_environment_policy.inherit=core',
         '-c', 'shell_environment_policy.ignore_default_excludes=false',
     ]
@@ -101,6 +114,9 @@ def evidence_reference(payload):
         'auth_file_absent',
         'api_key_in_child_environment',
         'user_bus_connectable',
+        'private_bus_address_in_child_environment',
+        'private_bus_connectable',
+        'credential_backing_store_readable',
         'external_tool_surface_disabled',
         'command_paths_reviewed',
     }
@@ -110,7 +126,9 @@ def evidence_reference(payload):
         raise ValueError('agent isolation Codex identity mismatch')
     if any(type(payload[key]) is not bool for key in (
         'auth_file_absent', 'api_key_in_child_environment',
-        'user_bus_connectable', 'external_tool_surface_disabled',
+        'user_bus_connectable', 'private_bus_address_in_child_environment',
+        'private_bus_connectable', 'credential_backing_store_readable',
+        'external_tool_surface_disabled',
         'command_paths_reviewed',
     )):
         raise ValueError('agent isolation evidence must use typed booleans')

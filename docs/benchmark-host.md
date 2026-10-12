@@ -59,9 +59,12 @@ and removes `auth.json` after a successful keyring save. The default shell envir
 policy is unsafe for this benchmark: a synthetic `OPENAI_API_KEY` reached `codex sandbox`
 and a synthetic `auth.json` was readable. Under the exact representative override
 `shell_environment_policy.inherit=core`, the synthetic API key was absent while PATH
-and HOME remained available. `/run/user/1001/bus` was visible to the child but a Unix
-socket connect returned `EPERM`. Exact-source review at commit `092d3acd...` is pinned
-by `agent-execution-source-review-v1.json` (`8afeebe5...`): `codex exec` hard-defaults
+and HOME remained available.  `/run/user/1001/bus` was visible to the child but a Unix
+socket connect returned `EPERM`. A second probe used a parent-only Unix socket as a
+private credential-bus surrogate: `DBUS_SESSION_BUS_ADDRESS` was absent from the
+core-only child environment and the child could not connect even when given the exact
+socket path. A separate synthetic keyring-backing file was readable under the default sandbox, then became unreadable under a reviewed `permissions.benchmark` filesystem deny for `~/.local/share/keyrings`. Exact-source review at commit `092d3acd...` is pinned
+by `agent-execution-source-review-v1.json` (`bca3f3d3...`): `codex exec` hard-defaults
 approvals to `Never`, approval requests are unsupported in exec mode, shell/unified-exec
 and apply-patch route through sandbox orchestration, spawned agents inherit live runtime
 policy, and Code Mode exposes controlled V8 globals/tools rather than ambient process
@@ -70,7 +73,7 @@ account/network-backed app/plugin/browser/computer/image/skill-search features. 
 are bounded observations and source evidence, not qualification:
 `agent-execution-isolation-v1.json` still accepts no evidence hash. The normalized
 credential-free candidate is frozen separately as
-`agent-execution-isolation-candidate-v1.json`, reference `43813f41...`; it is explicitly
+`agent-execution-isolation-candidate-v1.json`, reference `ae2840a9...`; it is explicitly
 not in the accepted list and therefore cannot enable execution. No real credential or
 model call was used for these probes.
 

@@ -491,15 +491,15 @@ parent variables. Synthetic probes on the disposable Ubuntu VM confirmed the ris
 default `codex sandbox` could read a synthetic auth file and inherited a synthetic
 `OPENAI_API_KEY`. With `shell_environment_policy.inherit=core`, the API key was absent
 while PATH/HOME remained available. The user D-Bus socket was visible but a child
-connect returned `EPERM`. Exact-source review is frozen separately in
-`agent-execution-source-review-v1.json` (`8afeebe5...`): headless exec uses approval
+connect returned `EPERM`. A synthetic keyring-backing file was also readable by default; the representative permission profile now extends `:workspace` and denies read access to `~/.local/share/keyrings`, which made that backing file unreadable in the pinned Linux sandbox. Exact-source review is frozen separately in
+`agent-execution-source-review-v1.json` (`bca3f3d3...`): headless exec uses approval
 policy `Never`, model-visible execution routes through sandbox orchestration, subagents
 inherit the effective runtime policy, and Code Mode lacks ambient process/env/fs globals.
 The representative campaign also disables multi-agent and account/network-backed
 app/plugin/browser/computer/image/skill-search surfaces for both variants. No real
 credential or model call was used. These observations motivate the pinned
 `agent-execution-isolation-v1` contract; they do not verify or accept runtime evidence.
-The reproducible credential-free probe produced candidate reference `43813f41...`,
+The reproducible credential-free probe produced candidate reference `ae2840a9...`,
 frozen in `agent-execution-isolation-candidate-v1.json`; the accepted-evidence list
 remains empty, so this candidate cannot enable execution.
 

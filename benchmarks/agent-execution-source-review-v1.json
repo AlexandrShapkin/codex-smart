@@ -14,7 +14,9 @@
     "codex-rs/core/src/agent/child_config.rs": "713c4418a912f98571ff95e8aec84df81524167e",
     "codex-rs/code-mode-runtime/src/runtime/globals.rs": "4ce226f68c742ca3c980c531d0234663d5de5520",
     "codex-rs/code-mode-runtime/src/runtime/module_loader.rs": "a3af147365b554c54cbeeeba48aa1121430fd0f7",
-    "codex-rs/features/src/lib.rs": "c68bc3bb748982281b62ce82b664c646e6bb4c7b"
+    "codex-rs/features/src/lib.rs": "c68bc3bb748982281b62ce82b664c646e6bb4c7b",
+    "codex-rs/linux-sandbox/src/bwrap.rs": "f4a428b20b1bfc3efbd14cedc3de08915e873d8a",
+    "codex-rs/config/src/permissions_toml.rs": "8853f73db2d8091c2caa5570d736437e6001434e"
   },
   "findings": {
     "keyring_mode": "keyring-only; no file fallback; successful keyring save removes auth.json",
@@ -27,7 +29,8 @@
     "subagents": "spawned agents clone effective parent config and live approval/sandbox policy",
     "code_mode": "V8 runtime exposes only controlled globals/tools and rejects unsupported module imports; representative campaign disables code_mode",
     "external_surface": "representative campaign disables multi-agent and account/network-backed app/plugin/browser/computer/image/skill-search features",
-    "linux_keyring_runtime": "Codex enables keyring 3.6.3 linux-native-async-persistent; its default Entry::new builder is keyutils_persistent, but that builder constructs SsCredential directly, so the Codex direct-keyring path depends on Secret Service IPC rather than a kernel-keyutils-only credential path."
+    "linux_keyring_runtime": "Codex enables keyring 3.6.3 linux-native-async-persistent; its default Entry::new builder is keyutils_persistent, but that builder constructs SsCredential directly, so the Codex direct-keyring path depends on Secret Service IPC rather than a kernel-keyutils-only credential path.",
+    "credential_backing_store_mask": "Linux bubblewrap expands deny-read filesystem entries into unreadable masks; permissions TOML supports deny access entries including home-relative paths"
   },
   "limitations": [
     "source review does not prove runtime host isolation",

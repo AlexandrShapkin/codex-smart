@@ -74,18 +74,22 @@ def run(executable):
     baseline_code = (
         "import json,os,socket;"
         "p=os.path.join(os.environ['CODEX_HOME'],'auth.json');"
+        "k=os.path.join(os.environ['HOME'],'.local/share/keyrings/probe.keyring');"
         "b=f'/run/user/{os.getuid()}/bus';"
         "s=socket.socket(socket.AF_UNIX);rc=s.connect_ex(b);"
         "print(json.dumps({'auth_file_readable':os.access(p,os.R_OK),"
         "'api_key_in_child_environment':'OPENAI_API_KEY' in os.environ,"
+        "'credential_backing_store_readable':os.access(k,os.R_OK),"
         "'user_bus_socket_visible':os.path.exists(b),'user_bus_connectable':rc==0},"
         "sort_keys=True))"
     )
     candidate_code = (
         "import json,os,socket;"
+        "k=os.path.join(os.environ['HOME'],'.local/share/keyrings/probe.keyring');"
         "b=f'/run/user/{os.getuid()}/bus';"
         "s=socket.socket(socket.AF_UNIX);rc=s.connect_ex(b);"
         "print(json.dumps({'api_key_in_child_environment':'OPENAI_API_KEY' in os.environ,"
+        "'credential_backing_store_readable':os.access(k,os.R_OK),"
         "'user_bus_socket_visible':os.path.exists(b),'user_bus_connectable':rc==0},"
         "sort_keys=True))"
     )
@@ -94,13 +98,20 @@ def run(executable):
         root = Path(tmp)
         codex_home = root / 'codex-home'
         codex_home.mkdir(mode=0o700)
+        home = root / 'home'
+        backing = home / '.local' / 'share' / 'keyrings'
+        backing.mkdir(parents=True, mode=0o700)
+        backing_file = backing / 'probe.keyring'
+        backing_file.write_text('synthetic backing store\n')
+        backing_file.chmod(0o600)
         auth_file = codex_home / 'auth.json'
         auth_file.write_text('{"synthetic":"sentinel"}\n')
         auth_file.chmod(0o600)
 
         env = {key: os.environ[key] for key in (
-            'PATH', 'HOME', 'USER', 'LOGNAME', 'SHELL', 'LANG', 'TERM'
+            'PATH', 'USER', 'LOGNAME', 'SHELL', 'LANG', 'TERM'
         ) if key in os.environ}
+        env['HOME'] = str(home)
         env['CODEX_HOME'] = str(codex_home)
         env['OPENAI_API_KEY'] = SYNTHETIC_API_KEY
         baseline = _sandbox(executable, [], baseline_code, env, root)
@@ -109,6 +120,24 @@ def run(executable):
         auth_file_absent = not auth_file.exists()
         overrides = agent.command_overrides()
         candidate = _sandbox(executable, overrides, candidate_code, env, root)
+
+        private_bus_path = root / 'private-credential-bus.sock'
+        listener = __import__('socket').socket(__import__('socket').AF_UNIX, __import__('socket').SOCK_STREAM)
+        listener.bind(str(private_bus_path))
+        listener.listen(1)
+        private_env = dict(env)
+        private_env['DBUS_SESSION_BUS_ADDRESS'] = f'unix:path={private_bus_path}'
+        private_code = (
+            "import json,os,socket;"
+            f"p={str(private_bus_path)!r};"
+            "s=socket.socket(socket.AF_UNIX);s.settimeout(1);rc=s.connect_ex(p);"
+            "print(json.dumps({'address_in_child_environment':'DBUS_SESSION_BUS_ADDRESS' in os.environ,"
+            "'connectable':rc==0},sort_keys=True));s.close()"
+        )
+        try:
+            private_bus = _sandbox(executable, overrides, private_code, private_env, root)
+        finally:
+            listener.close()
 
     expected_feature_overrides = {
         f'features.{feature}=false' for feature in contract['disabled_features']
@@ -125,6 +154,9 @@ def run(executable):
         'auth_file_absent': auth_file_absent,
         'api_key_in_child_environment': bool(candidate.get('api_key_in_child_environment')),
         'user_bus_connectable': bool(candidate.get('user_bus_connectable')),
+        'private_bus_address_in_child_environment': bool(private_bus.get('address_in_child_environment')),
+        'private_bus_connectable': bool(private_bus.get('connectable')),
+        'credential_backing_store_readable': bool(candidate.get('credential_backing_store_readable')),
         'external_tool_surface_disabled': external_surface_disabled,
         'command_paths_reviewed': True,
     }
@@ -139,6 +171,7 @@ def run(executable):
         'baseline_default': {
             'auth_file_readable': bool(baseline.get('auth_file_readable')),
             'api_key_in_child_environment': bool(baseline.get('api_key_in_child_environment')),
+            'credential_backing_store_readable': bool(baseline.get('credential_backing_store_readable')),
             'user_bus_socket_visible': bool(baseline.get('user_bus_socket_visible')),
             'user_bus_connectable': bool(baseline.get('user_bus_connectable')),
         },

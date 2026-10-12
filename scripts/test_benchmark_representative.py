@@ -238,6 +238,13 @@ class RepresentativeRunnerTests(unittest.TestCase):
         self.assertEqual(c['settings']['shell_environment_policy'],
                          {'inherit':'core','ignore_default_excludes':False})
         self.assertEqual(c['settings']['disabled_features'], list(agent_isolation.DISABLED_FEATURES))
+        self.assertEqual(c['settings']['permission_profile'], {'id':'benchmark','extends':':workspace',
+                         'filesystem':{'~/.local/share/keyrings':'deny'}})
+        self.assertEqual(c['settings']['credential_backing_store'],
+                         {'child_unreadable_paths':['~/.local/share/keyrings']})
+        self.assertIn('default_permissions="benchmark"', representative_vanilla)
+        self.assertIn('permissions.benchmark.extends=":workspace"', representative_vanilla)
+        self.assertIn('permissions.benchmark.filesystem={"~/.local/share/keyrings"="deny"}', representative_vanilla)
         self.assertIn('shell_environment_policy.inherit=core', representative_vanilla)
         self.assertIn('shell_environment_policy.ignore_default_excludes=false', representative_vanilla)
         for feature in agent_isolation.DISABLED_FEATURES:
@@ -252,7 +259,10 @@ class RepresentativeRunnerTests(unittest.TestCase):
         self.assertFalse(agent_isolation.representative_contract_verified(verified_host()))
         payload = {'codex_executable_sha256':contract['codex_executable_sha256'],
                    'auth_file_absent':True,'api_key_in_child_environment':False,
-                   'user_bus_connectable':False,'external_tool_surface_disabled':True,
+                   'user_bus_connectable':False,
+                   'private_bus_address_in_child_environment':False,
+                   'private_bus_connectable':False,'credential_backing_store_readable':False,
+                   'external_tool_surface_disabled':True,
                    'command_paths_reviewed':True}
         self.assertRegex(agent_isolation.evidence_reference(payload), r'^[0-9a-f]{64}$')
         candidate = agent_isolation.load_candidate_evidence()

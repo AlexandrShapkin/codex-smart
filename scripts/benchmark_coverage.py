@@ -187,6 +187,12 @@ def expected_campaign(m):
     agent_contract = agent_isolation.load_contract()
     settings['shell_environment_policy'] = agent_contract['child_environment']
     settings['disabled_features'] = agent_contract['disabled_features']
+    settings['permission_profile'] = {
+        'id': 'benchmark',
+        'extends': ':workspace',
+        'filesystem': {'~/.local/share/keyrings': 'deny'},
+    }
+    settings['credential_backing_store'] = agent_contract['credential_backing_store']
     return {'schema_version':1, 'campaign_id':'representative-development-v1',
             'status':'frozen-plan-isolation-blocked', 'coverage_role':'representative',
             'provenance':{'preliminary_campaign':'initial-development-v1',
