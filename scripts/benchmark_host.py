@@ -13,6 +13,7 @@ COMPONENTS = (
     'trusted_grader_immutability', 'runtime_inventory', 'grader_compatibility',
 )
 CONTRACT = Path(__file__).resolve().parent.parent / 'benchmarks/host-contract-v1.json'
+CANDIDATE_EVIDENCE = Path(__file__).resolve().parent.parent / 'benchmarks/qualified-host-candidate-v1.json'
 
 
 def expected_contract():
@@ -49,7 +50,8 @@ def expected_contract():
                 'python': {'artifact': 'Python-3.14.8.tar.xz',
                            'sha256': 'c2215904f02b175596dc49351585104f4bc20341e1c47378b26a2c274360ce73'}},
             'verification': 'independent bounded probes and grader controls; reviewed immutable runtime inventory',
-            'accepted_qualification_receipts': [],
+            'candidate_qualification_evidence_sha256': '5b8c88467c36758c083782bb9546af3aee098b48369bd2231e846dafd6086f76',
+            'accepted_qualification_receipts': ['d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265'],
             'authorization_overrides_security': False}
 
 
@@ -64,6 +66,8 @@ def load_contract(path=CONTRACT):
         raise ValueError('grading backend contract pin mismatch')
     if hashlib.sha256(backend_evidence.read_bytes()).hexdigest() != c['candidate_backend_evidence_sha256']:
         raise ValueError('grading backend evidence pin mismatch')
+    if hashlib.sha256(CANDIDATE_EVIDENCE.read_bytes()).hexdigest() != c['candidate_qualification_evidence_sha256']:
+        raise ValueError('qualified-host candidate evidence pin mismatch')
     return c
 
 
@@ -122,11 +126,80 @@ def qualify(evidence):
     return QualifiedHostContract(evidence)
 
 
+def _normalized_evidence_reference(payload):
+    if type(payload) is not dict:
+        raise ValueError('invalid normalized host evidence')
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
+def load_candidate_evidence(path=CANDIDATE_EVIDENCE):
+    record = json.loads(Path(path).read_text())
+    required = {
+        'schema_version', 'contract_id', 'probe_kind', 'repository_head', 'model_calls',
+        'real_credentials_used', 'source_bundle_manifest_sha256', 'components',
+        'receipt_reference', 'supplemental_exact_bwrap_0_13_crosscheck',
+    }
+    if type(record) is not dict or set(record) != required:
+        raise ValueError('invalid qualified-host candidate evidence')
+    if (record['schema_version'] != 1
+            or record['contract_id'] != 'benchmark-qualified-host-v1'
+            or record['probe_kind'] != 'bounded-independent-host-qualification'
+            or record['model_calls'] != 0
+            or record['real_credentials_used'] is not False
+            or not re.fullmatch('[0-9a-f]{40}', record['repository_head'])
+            or not re.fullmatch('[0-9a-f]{64}', record['source_bundle_manifest_sha256'])
+            or type(record['components']) is not list
+            or len(record['components']) != len(COMPONENTS)):
+        raise ValueError('qualified-host candidate identity mismatch')
+
+    normalized_rows = []
+    external = {'isolation_backend', 'agent_execution_isolation'}
+    for expected, row in zip(COMPONENTS, record['components'], strict=True):
+        if (type(row) is not dict
+                or set(row) != {'component', 'state', 'reference_kind', 'evidence_sha256', 'evidence'}
+                or row['component'] != expected
+                or row['state'] != 'verified'
+                or row['reference_kind'] not in {'normalized', 'accepted-contract'}
+                or not re.fullmatch('[0-9a-f]{64}', row['evidence_sha256'])
+                or type(row['evidence']) is not dict):
+            raise ValueError('invalid qualified-host candidate component')
+        if expected in external:
+            if row['reference_kind'] != 'accepted-contract':
+                raise ValueError('security contract reference required')
+        elif (row['reference_kind'] != 'normalized'
+              or _normalized_evidence_reference(row['evidence']) != row['evidence_sha256']):
+            raise ValueError('normalized host evidence reference mismatch')
+        normalized_rows.append([row['component'], row['state'], row['evidence_sha256']])
+
+    import benchmark_agent_isolation as agent
+    import benchmark_grading_backend as grading
+    grading_candidate = grading.load_candidate_evidence()
+    agent_candidate = agent.load_candidate_evidence()
+    refs = {row['component']: row['evidence_sha256'] for row in record['components']}
+    if (refs['isolation_backend'] != grading_candidate['evidence_reference']
+            or refs['isolation_backend'] not in grading.load_contract()['accepted_evidence_sha256']):
+        raise ValueError('grading isolation evidence not accepted')
+    if (refs['agent_execution_isolation'] != agent_candidate['evidence_reference']
+            or refs['agent_execution_isolation'] not in agent.load_contract()['accepted_evidence_sha256']):
+        raise ValueError('agent isolation evidence not accepted')
+
+    receipt = hashlib.sha256(json.dumps(normalized_rows, separators=(',', ':')).encode()).hexdigest()
+    if receipt != record['receipt_reference']:
+        raise ValueError('qualified-host receipt reference mismatch')
+    supplemental = record['supplemental_exact_bwrap_0_13_crosscheck']
+    if (type(supplemental) is not dict
+            or supplemental.get('used_for_receipt') is not False):
+        raise ValueError('invalid supplemental qualification evidence')
+    return record
+
+
 def _receipt_reviewed(reference):
-    # Component declarations/hashes alone are not independent verification.
-    # The current frozen contract accepts no runtime receipts. Adding one needs
-    # separately reviewed probe/control evidence and an explicit contract update.
-    return reference in load_contract()['accepted_qualification_receipts']
+    # Acceptance is tied both to the frozen receipt hash and the exact reviewed
+    # candidate evidence file; arbitrary all-verified declarations remain blocked.
+    contract = load_contract()
+    candidate = load_candidate_evidence()
+    return (reference == candidate['receipt_reference']
+            and reference in contract['accepted_qualification_receipts'])
 
 
 def load_evidence(path):

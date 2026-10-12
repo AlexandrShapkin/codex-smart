@@ -14,6 +14,7 @@ import benchmark_agent_isolation as agent_isolation
 import benchmark_campaign as historical
 import benchmark_coverage as coverage
 import benchmark_host as host
+import benchmark_grading_backend as grading_backend
 import benchmark_isolation as isolation
 import benchmark_representative as runner
 
@@ -35,7 +36,8 @@ class RepresentativeRunnerTests(unittest.TestCase):
         with patch.object(host, '_receipt_reviewed', return_value=False):
             q = verified_host()
             self.assertEqual(q.status, 'not-verified')
-            self.assertEqual(host.load_contract()['accepted_qualification_receipts'], [])
+            self.assertEqual(host.load_contract()['accepted_qualification_receipts'],
+                             ['d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265'])
             with patch.object(b,'execute',side_effect=AssertionError('process')),self.assertRaises(runner.PreflightRefusal):
                 runner.real_run('/fake/codex','fake',q,authorized=True)
 
@@ -255,7 +257,8 @@ class RepresentativeRunnerTests(unittest.TestCase):
 
     def test_agent_execution_isolation_contract_fail_closed(self):
         contract = agent_isolation.load_contract()
-        self.assertEqual(contract['accepted_evidence_sha256'], [])
+        self.assertEqual(contract['accepted_evidence_sha256'],
+                         ['ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb'])
         self.assertFalse(agent_isolation.representative_contract_verified(verified_host()))
         payload = {'codex_executable_sha256':contract['codex_executable_sha256'],
                    'auth_file_absent':True,'api_key_in_child_environment':False,
@@ -267,7 +270,7 @@ class RepresentativeRunnerTests(unittest.TestCase):
         self.assertRegex(agent_isolation.evidence_reference(payload), r'^[0-9a-f]{64}$')
         candidate = agent_isolation.load_candidate_evidence()
         self.assertEqual(candidate['evidence_reference'], agent_isolation.evidence_reference(candidate['candidate']))
-        self.assertNotIn(candidate['evidence_reference'], contract['accepted_evidence_sha256'])
+        self.assertIn(candidate['evidence_reference'], contract['accepted_evidence_sha256'])
         self.assertFalse(candidate['real_credentials_used'])
         self.assertEqual(candidate['model_calls'], 0)
         with tempfile.TemporaryDirectory() as tmp:
@@ -349,6 +352,56 @@ class RepresentativeRunnerTests(unittest.TestCase):
         with patch.object(b,'execute',side_effect=AssertionError('process')), \
              self.assertRaisesRegex(ValueError,'grading isolation'):
             historical.real_run('/fake/codex','fake',allow_preliminary_campaign=True)
+
+
+class ReviewedQualificationTests(unittest.TestCase):
+    def test_committed_candidate_receipt_is_reviewed_and_verified(self):
+        candidate = host.load_candidate_evidence()
+        receipt_path = Path(__file__).resolve().parent.parent / 'benchmarks/qualified-host-receipt-v1.json'
+        q = host.load_evidence(receipt_path)
+        self.assertEqual(candidate['receipt_reference'],
+                         'd2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265')
+        self.assertEqual(q.reference, candidate['receipt_reference'])
+        self.assertEqual(q.status, 'verified')
+        self.assertTrue(agent_isolation.representative_contract_verified(q))
+        self.assertTrue(grading_backend.representative_contract_verified(q))
+        self.assertEqual(candidate['model_calls'], 0)
+        self.assertFalse(candidate['real_credentials_used'])
+        self.assertFalse(candidate['supplemental_exact_bwrap_0_13_crosscheck']['used_for_receipt'])
+
+    def test_all_verified_but_unreviewed_receipt_remains_blocked(self):
+        receipt_path = Path(__file__).resolve().parent.parent / 'benchmarks/qualified-host-receipt-v1.json'
+        q = host.load_evidence(receipt_path)
+        changed = host.HostQualificationEvidence(q.evidence.contract_id, tuple(
+            host.ComponentEvidence(
+                c.component, c.state,
+                ('0' * 64 if c.component == 'platform' else c.evidence_sha256))
+            for c in q.evidence.components))
+        self.assertEqual(host.qualify(changed).status, 'not-verified')
+
+    def test_candidate_evidence_tamper_fails_closed(self):
+        candidate = json.loads(host.CANDIDATE_EVIDENCE.read_text())
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'candidate.json'
+            changed = copy.deepcopy(candidate)
+            changed['components'][0]['evidence']['architecture'] = 'tampered'
+            path.write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError, 'normalized host evidence reference mismatch'):
+                host.load_candidate_evidence(path)
+
+            changed = copy.deepcopy(candidate)
+            changed['receipt_reference'] = '0' * 64
+            path.write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError, 'receipt reference mismatch'):
+                host.load_candidate_evidence(path)
+
+    def test_contract_pins_exact_candidate_file(self):
+        contract = host.load_contract()
+        self.assertEqual(
+            hashlib.sha256(host.CANDIDATE_EVIDENCE.read_bytes()).hexdigest(),
+            contract['candidate_qualification_evidence_sha256'])
+        self.assertEqual(contract['accepted_qualification_receipts'],
+                         ['d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265'])
 
 
 if __name__=='__main__':unittest.main()

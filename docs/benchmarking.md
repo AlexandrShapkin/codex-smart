@@ -721,21 +721,23 @@ offline locked builds and no registry dependencies. A qualified host must demons
 that precise Cargo workflow within the final isolation boundary. This documentation
 adds an inventory requirement, not a verified runtime or a host fallback.
 
-Campaign identity/status and isolation dependency are unchanged. Grading isolation
-remains required-not-verified; representative_campaign_ready remains false; both
-campaigns are unexecuted. The historical seven-component manifest/preliminary 42-job
-plan and smoke evidence remain byte-identical. The current host blocker is unchanged,
-#14 open, #15 separate and benchmark partial.
+Campaign identity/status and readiness are unchanged:
+`representative_campaign_ready` remains false and both campaigns are unexecuted. A
+separate-host receipt, exact agent-isolation evidence and the constrained grading
+backend are now reviewed, but production submission grading is still unimplemented
+and therefore cannot promote readiness. The historical seven-component
+manifest/preliminary 42-job plan and smoke evidence remain byte-identical. #14 stays
+open, #15 separate and benchmark partial.
 
 ### Representative runner contract preparation
 
 #56 merged as `707c5f080af279cd99f54bfab564c3fe92798709`; active stage stays benchmark.
-The matrix is accepted, representative runner contract prepared (fake-tested adapter,
-not runtime verification), qualified host unavailable/not verified, grading isolation
-not verified, representative campaign not ready and measured comparative evidence none.
-See [the typed qualification and execution contract](benchmark-host.md). The current
-development host is not a candidate for further qualification work unless its
-capabilities materially change. No further current-host probes were performed.
+The matrix is accepted and the representative runner contract prepared (fake-tested
+adapter). A separate-host receipt plus agent-isolation and constrained grading-backend
+evidence are reviewed, but production submission grading remains refusal-only;
+therefore the representative campaign is still not ready and measured comparative
+evidence remains absent. See [the typed qualification and execution
+contract](benchmark-host.md). The historical development host remains non-qualified.
 
 `python3 -B scripts/benchmark_representative.py` prints an offline credential-free
 40-job plan with zero model calls and no artifacts or tool execution. One guarded

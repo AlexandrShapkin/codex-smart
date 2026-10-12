@@ -1,0 +1,90 @@
+{
+  "components": [
+    {
+      "component": "platform",
+      "evidence_sha256": "4b8faba748154ce083201d24b215b80ba8c23ea4526b2529b024df28d43ba84b",
+      "state": "verified"
+    },
+    {
+      "component": "codex_identity",
+      "evidence_sha256": "7b0f3a4584ebcdb842e24d4e5e6483066417116321a0a95e02735b37b68d7875",
+      "state": "verified"
+    },
+    {
+      "component": "toolchains",
+      "evidence_sha256": "f9913bf0675ea470a066d39165839f18b14359664d5e479ba13c7982a74ed767",
+      "state": "verified"
+    },
+    {
+      "component": "cargo_identity",
+      "evidence_sha256": "760ce7f33f2a00e67d8bffed47902ef66cfb6bfca0bf0b266edbfe4d39ef7209",
+      "state": "verified"
+    },
+    {
+      "component": "isolation_backend",
+      "evidence_sha256": "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec",
+      "state": "verified"
+    },
+    {
+      "component": "aggregate_memory",
+      "evidence_sha256": "a39253492f30328d8093cff199447282e4e218abe45670b2e70aceb205135d5b",
+      "state": "verified"
+    },
+    {
+      "component": "aggregate_tasks",
+      "evidence_sha256": "6d2750ea86e551760cddea69bc9c7d31aa3131978d873f2b746f39eb0fc25226",
+      "state": "verified"
+    },
+    {
+      "component": "descendants",
+      "evidence_sha256": "61bfe910fe076b925a67cd187694cfa4c8eed2e62410370217c523d8ff03a9bf",
+      "state": "verified"
+    },
+    {
+      "component": "cleanup",
+      "evidence_sha256": "8369fe4b5ee44fb69b431d9a3dcee2b50ae291b742f35e250db8e43469d2810c",
+      "state": "verified"
+    },
+    {
+      "component": "network",
+      "evidence_sha256": "600b89f281374a43d5b101a21574e89ddc2cf7e7085e36d1db5d3ca42937e7cc",
+      "state": "verified"
+    },
+    {
+      "component": "filesystem",
+      "evidence_sha256": "8ca261feb9a5a90cb6466fc6200c6e31c82933620f5bb7773c644e26513a66c4",
+      "state": "verified"
+    },
+    {
+      "component": "environment",
+      "evidence_sha256": "6fb2480735b6e69287fc7cef239cbd5566fe584bea7d776153022bf1b966dfe4",
+      "state": "verified"
+    },
+    {
+      "component": "agent_execution_isolation",
+      "evidence_sha256": "ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb",
+      "state": "verified"
+    },
+    {
+      "component": "privilege",
+      "evidence_sha256": "881f1025cd15a7443de4591bb65f68edd1466ce4620a43c3161ba173edf6e418",
+      "state": "verified"
+    },
+    {
+      "component": "trusted_grader_immutability",
+      "evidence_sha256": "8a0b23ffb3611d211b69e03cac2345588c10c9954fa3bd24bec10f35c5ea9912",
+      "state": "verified"
+    },
+    {
+      "component": "runtime_inventory",
+      "evidence_sha256": "d9c4670ff5414e77b0b807cfce2333ebfcf4788e99dafe0ce7ed116245ea82be",
+      "state": "verified"
+    },
+    {
+      "component": "grader_compatibility",
+      "evidence_sha256": "ee3485dc0bb3d0036a53fdf4964d074a6cf29e7ffd2e7a93e6cd589ebb6a9dfd",
+      "state": "verified"
+    }
+  ],
+  "contract_id": "benchmark-qualified-host-v1"
+}

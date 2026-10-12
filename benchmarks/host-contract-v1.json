@@ -68,6 +68,9 @@
     }
   },
   "verification": "independent bounded probes and grader controls; reviewed immutable runtime inventory",
-  "accepted_qualification_receipts": [],
-  "authorization_overrides_security": false
+  "accepted_qualification_receipts": [
+    "d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265"
+  ],
+  "authorization_overrides_security": false,
+  "candidate_qualification_evidence_sha256": "5b8c88467c36758c083782bb9546af3aee098b48369bd2231e846dafd6086f76"
 }
