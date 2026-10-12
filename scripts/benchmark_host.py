@@ -22,7 +22,9 @@ def expected_contract():
             'accepted_states': sorted(STATES),
             'required_state': 'verified',
             'backend': 'bubblewrap-equivalent-reviewed-unprivileged',
-            'candidate_backend_version': 'bubblewrap 0.13.0',
+            'candidate_backend_version': 'ubuntu-bubblewrap-0.11.1-1ubuntu0.3-constrained-v1',
+            'candidate_backend_contract_sha256': '2d998155b44bace387a52d3368fab6c1e08410bce24cab1ef51562e0df1a0970',
+            'candidate_backend_evidence_sha256': '269bef23c21e419216028a44611c36c4c32d2c33b1a32ba02d71dc5259c5e638',
             'codex_version': '0.162.1',
             'codex_distribution': 'upstream-release',
             'codex_release_tag': 'rust-v0.162.1',
@@ -55,6 +57,13 @@ def load_contract(path=CONTRACT):
     c = json.loads(Path(path).read_text())
     if json.dumps(c, sort_keys=True) != json.dumps(expected_contract(), sort_keys=True):
         raise ValueError('unreviewed qualified-host contract')
+    root = Path(__file__).resolve().parent.parent / 'benchmarks'
+    backend_contract = root / 'grading-isolation-backend-v1.json'
+    backend_evidence = root / 'grading-isolation-backend-candidate-v1.json'
+    if hashlib.sha256(backend_contract.read_bytes()).hexdigest() != c['candidate_backend_contract_sha256']:
+        raise ValueError('grading backend contract pin mismatch')
+    if hashlib.sha256(backend_evidence.read_bytes()).hexdigest() != c['candidate_backend_evidence_sha256']:
+        raise ValueError('grading backend evidence pin mismatch')
     return c
 
 

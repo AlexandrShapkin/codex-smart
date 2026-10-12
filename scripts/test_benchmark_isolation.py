@@ -21,16 +21,23 @@ class IsolationTests(unittest.TestCase):
             run.assert_not_called()
             probe.assert_not_called()
 
-    def test_version_and_privilege_drift_block(self):
+    def test_backend_identity_and_privilege_drift_block(self):
         with patch.object(isolation.BWRAP.__class__, 'is_file', return_value=True), \
              patch.object(isolation.BWRAP.__class__, 'stat', return_value=SimpleNamespace(st_mode=0o755)), \
-             patch.object(isolation.subprocess, 'run', return_value=SimpleNamespace(returncode=0, stdout='bubblewrap other')):
-            self.assertEqual(isolation.availability().reason, 'backend-version-unreviewed')
-            with patch.object(isolation.subprocess, 'run', return_value=SimpleNamespace(returncode=0, stdout=isolation.VERSION)):
-                self.assertEqual(isolation.availability().status, 'blocked')
-                self.assertEqual(isolation.availability().reason, 'aggregate-resource-controls-not-verified')
-            with patch.object(isolation.BWRAP.__class__, 'stat', return_value=SimpleNamespace(st_mode=stat.S_ISUID|0o755)):
-                self.assertEqual(isolation.availability().reason, 'privileged-backend-rejected')
+             patch.object(isolation.grading_backend, 'runtime_preflight', side_effect=ValueError('drift')):
+            self.assertEqual(isolation.availability().reason, 'backend-identity-unreviewed')
+        with patch.object(isolation.BWRAP.__class__, 'is_file', return_value=True), \
+             patch.object(isolation.BWRAP.__class__, 'stat', return_value=SimpleNamespace(st_mode=0o755)), \
+             patch.object(isolation.grading_backend, 'runtime_preflight',
+                          return_value=isolation.grading_backend.load_contract()):
+            self.assertEqual(isolation.availability().status, 'blocked')
+            self.assertEqual(isolation.availability().reason, 'aggregate-resource-controls-not-verified')
+        with patch.object(isolation.BWRAP.__class__, 'is_file', return_value=True), \
+             patch.object(isolation.BWRAP.__class__, 'stat',
+                          return_value=SimpleNamespace(st_mode=stat.S_ISUID|0o755)), \
+             patch.object(isolation.grading_backend, 'runtime_preflight') as preflight:
+            self.assertEqual(isolation.availability().reason, 'privileged-backend-rejected')
+            preflight.assert_not_called()
 
     def test_all_graders_refuse_without_backend_and_never_read_submission(self):
         for status in ['unavailable', 'blocked']:
@@ -55,11 +62,9 @@ class IsolationTests(unittest.TestCase):
             self.assertEqual(report['resource_controls'], 'not-verified')
             self.assertEqual(report['runtime_inventory'], 'not-verified')
         else:
-            # Unavailable/failed namespace tests are evidence of a blocker, never
-            # counted as successful escapes or accepted grading compatibility.
             self.assertNotEqual(report['availability']['status'], 'verified')
 
-    def test_probe_uses_arch_specific_lib64_symlink(self):
+    def test_probe_uses_arch_specific_lib64_symlink_and_untrusted_bind_last(self):
         with tempfile.TemporaryDirectory() as tmp, \
              patch.object(isolation.subprocess, 'Popen') as spawn:
             spawn.return_value.wait.return_value = 0
@@ -68,6 +73,11 @@ class IsolationTests(unittest.TestCase):
             triples = list(zip(argv, argv[1:], argv[2:]))
             self.assertIn(('--symlink', 'usr/lib', '/lib'), triples)
             self.assertIn(('--symlink', 'usr/lib64', '/lib64'), triples)
+            bind = argv.index('--bind')
+            self.assertEqual(argv[bind:bind+3], ['--bind', str(Path(tmp)), '/work'])
+            self.assertNotIn('--dir', argv[bind + 3:])
+            self.assertNotIn('--ro-bind', argv[bind + 3:])
+            self.assertNotIn('--tmpfs', argv[bind + 3:])
 
     def test_probe_interruption_kills_controller_group_and_reaps(self):
         with tempfile.TemporaryDirectory() as tmp, \

@@ -1,7 +1,8 @@
 # Benchmark qualified-host and representative runner contract
 
-Status: prepared adapter and reviewed qualification semantics; no qualified host,
-accepted agent-execution isolation evidence or accepted grading backend. Active work
+Status: prepared adapter and reviewed qualification semantics; no qualified host or
+accepted agent-execution isolation evidence. A constrained grading-backend candidate is
+accepted by its own frozen backend contract, but no host receipt is accepted. Active work
 remains #14. The representative matrix was
 accepted in #39; #56 planned future stages separately. No 0.4+ runtime feature,
 benchmark model execution, campaign execution or telemetry is added here.
@@ -31,7 +32,7 @@ component evidence only; it is not a self-referential file checksum.
 | Platform | Compatible Linux x86_64 execution and namespace/resource capabilities |
 | Codex identity | Exact official `rust-v0.162.1` x86_64 musl release asset/archive and executable bytes, plus codex-cli 0.162.1 |
 | Toolchains and Cargo | Exact frozen versions/arguments, including Cargo 1.98.0 |
-| Isolation backend | Reviewed unprivileged backend identity/version; candidate Bubblewrap 0.13.0 alone is not acceptance |
+| Isolation backend | Exact reviewed unprivileged backend identity plus the CVE-2026-87766 mount-topology guard and synthetic positive/negative controls |
 | Aggregate memory | Observed bounded allocation rejection/termination within an aggregate limit |
 | Aggregate tasks | Observed aggregate task/process rejection, not just command success |
 | Descendants | Controls apply to children and grandchildren |
@@ -61,6 +62,27 @@ to the official source archive (`c2215904...`) for a staged source build. The hi
 Go `go1.27.2-X:nodwarf5` pin remains historical evidence only and is not a qualified-host
 requirement. Runtime executable/library bytes still require a separate reviewed immutable
 inventory; source/archive provenance alone does not qualify them.
+
+The reviewed grading-backend candidate is deliberately narrower than accepting Ubuntu's
+Bubblewrap package in general. `grading-isolation-backend-v1.json` pins `/usr/bin/bwrap`
+`0.11.1-1ubuntu0.3`, executable SHA-256 `523da3e7...`, the loaded Ubuntu
+`bwrap-userns-restrict` profile SHA-256 `d61facde...`, and
+`kernel.apparmor_restrict_unprivileged_userns=1`. That upstream version is explicitly
+known to be affected by CVE-2026-87766; the contract does not claim otherwise. The
+compensating invariant is structural: attacker-controlled workspace content may only be
+bound once at `/work`, never at `/`, and that bind must be the final filesystem operation
+performed by Bubblewrap. No `--dir`, `--file`, nested bind, tmpfs, device/proc mount,
+symlink or other destination-creating operation may follow it. A repository validator
+constructs and checks this exact plan before process launch.
+
+The candidate probe requires both sides of the threat model. On the exact pinned Ubuntu
+binary, the upstream-vulnerable synthetic topology (`untrusted` bound at `/` followed by
+a destination-creating operation beneath an attacker symlink to `/oldroot`) must actually
+escape into a disposable host target; otherwise the probe is not exercising the known
+issue. The constrained topology must then complete with the same malicious symlink while
+creating nothing in that host target. The accepted normalized backend evidence reference
+is `af25f513...`; it made zero model calls. This accepts only the constrained backend
+contract, not a qualified host and not arbitrary Bubblewrap 0.11.1 invocations.
 
 Pinned `0.162.1` source and synthetic VM probes also separate credential ownership
 from model-reachable child execution. The pinned keyring backend has no file fallback

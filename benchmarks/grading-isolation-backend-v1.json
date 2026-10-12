@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "contract_id": "benchmark-grading-isolation-backend-v1",
+  "backend_id": "ubuntu-bubblewrap-0.11.1-constrained-v1",
+  "executable_path": "/usr/bin/bwrap",
+  "version": "bubblewrap 0.11.1",
+  "package_version": "0.11.1-1ubuntu0.3",
+  "executable_sha256": "523da3e7399044be5163aee6f57a77a6bef7454376e28f0a0627920bae1b76b6",
+  "apparmor_profile_path": "/etc/apparmor.d/bwrap-userns-restrict",
+  "apparmor_profile_sha256": "d61facde27707b9c47ffe47921b7273e788784484cb5530eb819e6daac1f1990",
+  "apparmor_restrict_unprivileged_userns": 1,
+  "setuid_allowed": false,
+  "known_upstream_issue": {
+    "id": "CVE-2026-87766",
+    "affected": true,
+    "fixed_upstream_in": "0.12.0",
+    "compensating_control": "untrusted-bind-last-no-followup-filesystem-ops",
+    "untrusted_destination": "/work",
+    "untrusted_root_bind_allowed": false,
+    "filesystem_ops_after_untrusted_bind_allowed": false
+  },
+  "required_evidence": [
+    "exact-binary-sha256",
+    "exact-package-version",
+    "exact-apparmor-profile-sha256",
+    "apparmor-userns-restriction-enabled",
+    "non-setuid-backend",
+    "unsafe-cve-control-escapes-synthetic-host-target",
+    "constrained-cve-control-does-not-escape",
+    "constrained-mount-plan-static-guard"
+  ],
+  "accepted_evidence_sha256": [
+    "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec"
+  ],
+  "authorization_overrides_security": false
+}

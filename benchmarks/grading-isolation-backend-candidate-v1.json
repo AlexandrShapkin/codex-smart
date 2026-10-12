@@ -1,0 +1,21 @@
+{
+  "backend_id": "ubuntu-bubblewrap-0.11.1-constrained-v1",
+  "candidate": {
+    "apparmor_profile_sha256": "d61facde27707b9c47ffe47921b7273e788784484cb5530eb819e6daac1f1990",
+    "apparmor_userns_restriction_enabled": true,
+    "backend_id": "ubuntu-bubblewrap-0.11.1-constrained-v1",
+    "constrained_control_completed": true,
+    "constrained_control_host_escape_observed": false,
+    "executable_sha256": "523da3e7399044be5163aee6f57a77a6bef7454376e28f0a0627920bae1b76b6",
+    "mount_plan_static_guard": true,
+    "package_version": "0.11.1-1ubuntu0.3",
+    "setuid_present": false,
+    "unsafe_control_host_escape_observed": true
+  },
+  "contract_id": "benchmark-grading-isolation-backend-v1",
+  "evidence_reference": "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec",
+  "model_calls": 0,
+  "probe_kind": "synthetic-cve-topology",
+  "schema_version": 1,
+  "version": "bubblewrap 0.11.1"
+}
