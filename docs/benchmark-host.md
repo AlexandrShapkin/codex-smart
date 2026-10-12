@@ -28,7 +28,7 @@ component evidence only; it is not a self-referential file checksum.
 | Component | Required independent evidence |
 | --- | --- |
 | Platform | Compatible Linux x86_64 execution and namespace/resource capabilities |
-| Codex identity | Exact reviewed executable bytes and codex-cli 0.162.1 |
+| Codex identity | Exact official `rust-v0.162.1` x86_64 musl release asset/archive and executable bytes, plus codex-cli 0.162.1 |
 | Toolchains and Cargo | Exact frozen versions/arguments, including Cargo 1.98.0 |
 | Isolation backend | Reviewed unprivileged backend identity/version; candidate Bubblewrap 0.13.0 alone is not acceptance |
 | Aggregate memory | Observed bounded allocation rejection/termination within an aggregate limit |
@@ -42,6 +42,14 @@ component evidence only; it is not a self-referential file checksum.
 | Trusted grader immutability | Independent grader/oracles/configuration outside submitted writable files |
 | Runtime inventory | Accepted immutable executable, sysroot, Cargo, library/linker/data closure with reviewed byte identities |
 | Grader compatibility | All ten references pass and all wrong controls fail inside the same final boundary |
+
+The representative contract intentionally does not reuse the historical Arch Linux
+package executable identity. The historical smoke remains pinned to its inspected
+`openai-codex 0.162.1-1` bytes (`89cc44e8...`) and is unchanged. The representative
+qualified-host contract instead pins OpenAI's official `rust-v0.162.1`
+`codex-x86_64-unknown-linux-musl.tar.gz` asset (`86f268d8...`) and the extracted
+static-pie executable (`628e3548...`). This separates historical provenance from a
+portable upstream artifact suitable for the disposable Ubuntu qualification host.
 
 Future receipts must refer to the same composed boundary and inventory. Review its
 actual resource limits, descendant scope and cleanup owner together. Version output,

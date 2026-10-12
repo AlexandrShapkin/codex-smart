@@ -17,6 +17,16 @@ MANIFEST = b.ROOT/'representative-manifest.json'
 CAMPAIGN = b.ROOT/'representative-campaign-v1.json'
 DOMAINS = {'Rust', 'Go', 'Python', 'infrastructure', 'repository/CI', 'exploration'}
 CARGO_VERSION = 'cargo 1.98.0 (797e8a9bc 2026-08-05)'
+REPRESENTATIVE_CODEX = {
+    'version': '0.162.1',
+    'reference': 'official OpenAI release rust-v0.162.1; x86_64-unknown-linux-musl',
+    'distribution': 'upstream-release',
+    'release_tag': 'rust-v0.162.1',
+    'release_commit': '092d3acd6bec3e3a14bdc7e7a2810ab628ab759d',
+    'release_asset': 'codex-x86_64-unknown-linux-musl.tar.gz',
+    'release_asset_sha256': '86f268d81b898f3e144c5ecff2ad2fda2c5802e042d6195b72538fe0fa125057',
+    'executable_sha256': '628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1',
+}
 CLASSES = {'bugfix', 'feature', 'API', 'tests', 'refactor', 'security', 'CI', 'inspection'}
 TIERS = {'focused', 'multi-file', 'cross-cutting'}
 LIFECYCLE = {'inspect', 'edit', 'test', 'build/check', 'impact-analysis'}
@@ -180,7 +190,7 @@ def expected_campaign(m):
             'unavailable_variants':{'legacy':'provenance archive absent','router-v2':'no verified decision-applying adapter'},
             'repetitions':2, 'seeds':[14], 'retries':0, 'timeout_seconds':120,
             'planned_primary_runs':len(m['scenarios'])*2*2, 'maximum_model_calls':len(m['scenarios'])*2*2,
-            'settings':historical['settings'], 'codex':historical['codex'], 'toolchains':historical['toolchains'] | {'cargo':{'version':CARGO_VERSION,'version_arguments':['--version']}},
+            'settings':historical['settings'], 'codex':REPRESENTATIVE_CODEX, 'toolchains':historical['toolchains'] | {'cargo':{'version':CARGO_VERSION,'version_arguments':['--version']}},
             'cold_warm':historical['cold_warm'],
             'live_contract':{'status':'inherited-execution-contract-only','source_campaign':'initial-development-v1',
                              'scope':'Codex startup/auth/JSONL only; not representative grading compatibility'},

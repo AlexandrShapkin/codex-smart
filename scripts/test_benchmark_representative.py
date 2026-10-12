@@ -89,6 +89,16 @@ class RepresentativeRunnerTests(unittest.TestCase):
             'representative_campaign_ready':False})
         self.assertEqual(hashlib.sha256(historical.CONFIG.read_bytes()).hexdigest(),
                          'cfc97144156b9321555cc98937d30d85f8e7bd39a5009954ae84d294156502f7')
+        historical_codex = historical.load()['codex']
+        self.assertEqual(historical_codex['executable_sha256'],
+                         '89cc44e820780120ba2c8bc4585c014815bdc7a1fc494c337a585a2c78dc59eb')
+        self.assertEqual(c['codex']['distribution'], 'upstream-release')
+        self.assertEqual(c['codex']['release_asset'], 'codex-x86_64-unknown-linux-musl.tar.gz')
+        self.assertEqual(c['codex']['release_asset_sha256'],
+                         '86f268d81b898f3e144c5ecff2ad2fda2c5802e042d6195b72538fe0fa125057')
+        self.assertEqual(c['codex']['executable_sha256'],
+                         '628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1')
+        self.assertNotEqual(c['codex']['executable_sha256'], historical_codex['executable_sha256'])
         self.assertEqual(len(historical.jobs(historical.load())),42)
 
     def test_pin_and_bounds_drift_before_any_execution(self):
