@@ -1,0 +1,323 @@
+{
+  "components": [
+    {
+      "component": "platform",
+      "evidence": {
+        "architecture": "x86_64",
+        "cgroup_filesystem": "cgroup2fs",
+        "controllers": [
+          "cpu",
+          "cpuset",
+          "dmem",
+          "hugetlb",
+          "io",
+          "memory",
+          "misc",
+          "pids",
+          "rdma"
+        ],
+        "kernel": "Linux 7.0.0-34-generic",
+        "source_sha256": "4adb38827d4d47cd0e7c699b8852e09314c708be1f91a4d8a6586829029595bf",
+        "systemd": "systemd 259 (259.5-0ubuntu3.4)",
+        "user_manager": "running"
+      },
+      "evidence_sha256": "4b8faba748154ce083201d24b215b80ba8c23ea4526b2529b024df28d43ba84b",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "codex_identity",
+      "evidence": {
+        "archive_sha256": "86f268d81b898f3e144c5ecff2ad2fda2c5802e042d6195b72538fe0fa125057",
+        "executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+        "release_tag": "rust-v0.162.1",
+        "source_sha256": "7cf1d519caf4acee0059c502492f11d8c58217d3bd47975765c87fc971556bb1",
+        "version": "codex-cli 0.162.1"
+      },
+      "evidence_sha256": "7b0f3a4584ebcdb842e24d4e5e6483066417116321a0a95e02735b37b68d7875",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "toolchains",
+      "evidence": {
+        "go": "go version go1.27.2 linux/amd64",
+        "python3": "Python 3.14.8",
+        "runtime_files_manifest_sha256": "50c3b03c2bf1ae30ecb6d910c8e6d5b422d8bf839597f1de6dce55b355ab82df",
+        "rustc": "rustc 1.98.0 (88d9e12ae 2026-08-18)",
+        "source_sha256": "8173e6d43c286f51b609ac78afdf2651acef461062b78e527f6bea31dc09ba27",
+        "upstream_artifact_sha256": {
+          "go": "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5",
+          "python": "c2215904f02b175596dc49351585104f4bc20341e1c47378b26a2c274360ce73",
+          "rust-std": "f5022e6c95a5ad23cca2513dc8281200f585fa188de6370aa37b128a43f876a3",
+          "rustc": "0e37cb339f447fc44d6d781073bacacebfdc5612f2600e4c7e84c266f5f3aced"
+        }
+      },
+      "evidence_sha256": "f9913bf0675ea470a066d39165839f18b14359664d5e479ba13c7982a74ed767",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "cargo_identity",
+      "evidence": {
+        "cargo": "cargo 1.98.0 (797e8a9bc 2026-08-05)",
+        "runtime_files_manifest_sha256": "50c3b03c2bf1ae30ecb6d910c8e6d5b422d8bf839597f1de6dce55b355ab82df",
+        "source_sha256": "8173e6d43c286f51b609ac78afdf2651acef461062b78e527f6bea31dc09ba27",
+        "upstream_artifact_sha256": "2f512d170d3dd23e16ababcda32ee2e6d5172d861a7af1f504e0b1e270cafab9"
+      },
+      "evidence_sha256": "760ce7f33f2a00e67d8bffed47902ef66cfb6bfca0bf0b266edbfe4d39ef7209",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "isolation_backend",
+      "evidence": {
+        "accepted_evidence_reference": "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec",
+        "backend_id": "ubuntu-bubblewrap-0.11.1-constrained-v1",
+        "contract_id": "benchmark-grading-isolation-backend-v1",
+        "mount_plan_valid": true,
+        "namespace_checks_passed": 7,
+        "namespace_probe_sha256": "756b95b13c856a70d82afa7ad401f25f0a65049a3fdf85aed90ffd4d88265903",
+        "runtime_preflight_sha256": "c85778a614924b614f7c8c4827a1493567b058ab55acb8fc0cb26d394f05e9ef",
+        "untrusted_bind_is_last": true
+      },
+      "evidence_sha256": "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec",
+      "reference_kind": "accepted-contract",
+      "state": "verified"
+    },
+    {
+      "component": "aggregate_memory",
+      "evidence": {
+        "enforced": true,
+        "memory_max": "64M",
+        "memory_swap_max": "0",
+        "result_rc": 1,
+        "source_sha256": "402ae1140bacb156c654502b71dc6657bc3532300023d42d11fdb9fdd87d3cde"
+      },
+      "evidence_sha256": "a39253492f30328d8093cff199447282e4e218abe45670b2e70aceb205135d5b",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "aggregate_tasks",
+      "evidence": {
+        "children_started": 4,
+        "enforced": true,
+        "grandchild_failures": 4,
+        "grandchildren_spawned": 11,
+        "planned_grandchildren": 48,
+        "source_sha256": "402ae1140bacb156c654502b71dc6657bc3532300023d42d11fdb9fdd87d3cde",
+        "tasks_max": 16
+      },
+      "evidence_sha256": "6d2750ea86e551760cddea69bc9c7d31aa3131978d873f2b746f39eb0fc25226",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "descendants",
+      "evidence": {
+        "child_branches": 4,
+        "grandchild_failures": 4,
+        "source_sha256": "402ae1140bacb156c654502b71dc6657bc3532300023d42d11fdb9fdd87d3cde",
+        "verified": true
+      },
+      "evidence_sha256": "61bfe910fe076b925a67cd187694cfa4c8eed2e62410370217c523d8ff03a9bf",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "cleanup",
+      "evidence": {
+        "explicit_stop": {
+          "child_survived": false,
+          "grandchild_survived": false,
+          "ready": true,
+          "unit_remaining": false,
+          "verified": true
+        },
+        "kill_mode": "control-group",
+        "source_sha256": "402ae1140bacb156c654502b71dc6657bc3532300023d42d11fdb9fdd87d3cde",
+        "timeout": {
+          "child_survived": false,
+          "grandchild_survived": false,
+          "rc": 1,
+          "ready": true,
+          "verified": true
+        }
+      },
+      "evidence_sha256": "8369fe4b5ee44fb69b431d9a3dcee2b50ae291b742f35e250db8e43469d2810c",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "network",
+      "evidence": {
+        "external_tcp_rc": 101,
+        "external_udp": {
+          "error": 101,
+          "sent": 0
+        },
+        "namespace_tcp_check": "passed",
+        "namespace_udp_check": "passed",
+        "source_sha256": [
+          "756b95b13c856a70d82afa7ad401f25f0a65049a3fdf85aed90ffd4d88265903",
+          "765963f8b1386e5c46dd4eda3baddb76ec7d83acbb4812f8ca4ae68a854acbb0"
+        ]
+      },
+      "evidence_sha256": "600b89f281374a43d5b101a21574e89ddc2cf7e7085e36d1db5d3ca42937e7cc",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "filesystem",
+      "evidence": {
+        "external_sentinel_visible": false,
+        "filesystem_check": "passed",
+        "grader_writeable": false,
+        "home_exists": false,
+        "runtime_writeable": false,
+        "source_sha256": [
+          "756b95b13c856a70d82afa7ad401f25f0a65049a3fdf85aed90ffd4d88265903",
+          "765963f8b1386e5c46dd4eda3baddb76ec7d83acbb4812f8ca4ae68a854acbb0"
+        ],
+        "symlink_check": "passed"
+      },
+      "evidence_sha256": "8ca261feb9a5a90cb6466fc6200c6e31c82933620f5bb7773c644e26513a66c4",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "environment",
+      "evidence": {
+        "env_keys": [
+          "CODEX_HOME",
+          "HOME",
+          "LANG",
+          "PATH",
+          "PWD"
+        ],
+        "environment_check": "passed",
+        "source_sha256": [
+          "756b95b13c856a70d82afa7ad401f25f0a65049a3fdf85aed90ffd4d88265903",
+          "765963f8b1386e5c46dd4eda3baddb76ec7d83acbb4812f8ca4ae68a854acbb0"
+        ]
+      },
+      "evidence_sha256": "6fb2480735b6e69287fc7cef239cbd5566fe584bea7d776153022bf1b966dfe4",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "agent_execution_isolation",
+      "evidence": {
+        "accepted_candidate_reference": "ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb",
+        "codex_executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+        "contract_id": "benchmark-agent-execution-isolation-v1",
+        "model_calls": 0,
+        "probe_sha256": "a61f16faaf3010c3e5ea9a0112962dfb65b4d2c9e08c873fbe083fd615a63fd2",
+        "real_credentials_used": false,
+        "source_review_sha256": "bca3f3d35779f809d46e37da6a808fba4cef59ecaeb499cc05efa5c765e4c6d6"
+      },
+      "evidence_sha256": "ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb",
+      "reference_kind": "accepted-contract",
+      "state": "verified"
+    },
+    {
+      "component": "privilege",
+      "evidence": {
+        "backend_mode": "755",
+        "backend_owner_gid": 0,
+        "backend_owner_uid": 0,
+        "backend_setuid": false,
+        "effective_capabilities": "0000000000000000",
+        "privileged_container_used": false,
+        "privileged_fallback_in_final_boundary": false,
+        "source_sha256": [
+          "4adb38827d4d47cd0e7c699b8852e09314c708be1f91a4d8a6586829029595bf",
+          "765963f8b1386e5c46dd4eda3baddb76ec7d83acbb4812f8ca4ae68a854acbb0"
+        ],
+        "supplemental_root_crosscheck_excluded_from_receipt": true,
+        "uid": 1000
+      },
+      "evidence_sha256": "881f1025cd15a7443de4591bb65f68edd1466ce4620a43c3161ba173edf6e418",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "trusted_grader_immutability",
+      "evidence": {
+        "grader_writeable": false,
+        "repository_head": "dc2befe8d143d670c7a0ac47c5c3141a964c0a7c",
+        "runtime_files_manifest_sha256": "50c3b03c2bf1ae30ecb6d910c8e6d5b422d8bf839597f1de6dce55b355ab82df",
+        "runtime_writeable": false,
+        "source_sha256": [
+          "c27cde4d7c0173dd89b3549b8398d03a693350d26848371f1b35c084bcf1c86f",
+          "765963f8b1386e5c46dd4eda3baddb76ec7d83acbb4812f8ca4ae68a854acbb0",
+          "40427138403c2b922e9b13d02c0b06ff7e30d61d1a346125053b121f00b32189"
+        ]
+      },
+      "evidence_sha256": "8a0b23ffb3611d211b69e03cac2345588c10c9954fa3bd24bec10f35c5ea9912",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "runtime_inventory",
+      "evidence": {
+        "all_match": true,
+        "directory_count": 2469,
+        "dirs_manifest_sha256": "663c3335fe7586f5372615c65d71b88f098b5673990a65a6659809eaef83c78d",
+        "files_manifest_sha256": "50c3b03c2bf1ae30ecb6d910c8e6d5b422d8bf839597f1de6dce55b355ab82df",
+        "regular_file_bytes": 2122138302,
+        "regular_file_count": 26885,
+        "regular_files_checked": 26885,
+        "repository_head": "dc2befe8d143d670c7a0ac47c5c3141a964c0a7c",
+        "source_sha256": [
+          "c27cde4d7c0173dd89b3549b8398d03a693350d26848371f1b35c084bcf1c86f",
+          "74ab1e96ad58d3b0fedbebbf11144ed422787b19b78c8b8f15b7d9a1bffa84c2"
+        ],
+        "symlink_count": 495,
+        "symlinks_checked": 495,
+        "symlinks_manifest_sha256": "e6831ba698554b772a1b7627833ad518cf43fe6eba451ddbdb02419d8fd1102d",
+        "upstream_artifact_sha256": {
+          "cargo": "2f512d170d3dd23e16ababcda32ee2e6d5172d861a7af1f504e0b1e270cafab9",
+          "go": "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5",
+          "python": "c2215904f02b175596dc49351585104f4bc20341e1c47378b26a2c274360ce73",
+          "rust-std": "f5022e6c95a5ad23cca2513dc8281200f585fa188de6370aa37b128a43f876a3",
+          "rustc": "0e37cb339f447fc44d6d781073bacacebfdc5612f2600e4c7e84c266f5f3aced"
+        }
+      },
+      "evidence_sha256": "d9c4670ff5414e77b0b807cfce2333ebfcf4788e99dafe0ce7ed116245ea82be",
+      "reference_kind": "normalized",
+      "state": "verified"
+    },
+    {
+      "component": "grader_compatibility",
+      "evidence": {
+        "control_count": 10,
+        "model_execution_enabled": false,
+        "references_passed": 10,
+        "repository_head": "dc2befe8d143d670c7a0ac47c5c3141a964c0a7c",
+        "source_sha256": "40427138403c2b922e9b13d02c0b06ff7e30d61d1a346125053b121f00b32189",
+        "wrong_controls_rejected": 20
+      },
+      "evidence_sha256": "ee3485dc0bb3d0036a53fdf4964d074a6cf29e7ffd2e7a93e6cd589ebb6a9dfd",
+      "reference_kind": "normalized",
+      "state": "verified"
+    }
+  ],
+  "contract_id": "benchmark-qualified-host-v1",
+  "model_calls": 0,
+  "probe_kind": "bounded-independent-host-qualification",
+  "real_credentials_used": false,
+  "receipt_reference": "d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265",
+  "repository_head": "dc2befe8d143d670c7a0ac47c5c3141a964c0a7c",
+  "schema_version": 1,
+  "source_bundle_manifest_sha256": "f37b2a28b67ca33d38aa36eb1a74028a4e63661865e3585989d13542172ab993",
+  "supplemental_exact_bwrap_0_13_crosscheck": {
+    "candidate_bwrap_sha256": "e36f8f0ebd7f8fe23e2e8772c97aca2329cb6bc0a83597299fd45a8c269ab9a6",
+    "qualification_summary_sha256": "df3de4449f28a455f750b5de0ed3cbd87fa02c2c7ee1f6f5adf453181c1fd580",
+    "results_manifest_sha256": "072bf9dadea4b62f749513ceaf9111860353d94667c51454d69952c66cfe8fa6",
+    "rollback_status_sha256": "abd9de29d917e5814ff34811d8ad9b7ed8c86e7aa8b234eeb9d12281c7187de2",
+    "system_backend_restored_sha256": "523da3e7399044be5163aee6f57a77a6bef7454376e28f0a0627920bae1b76b6",
+    "used_for_receipt": false
+  }
+}

@@ -63,7 +63,7 @@ def expected_contract():
             'external-account-backed-tool-surface-disabled',
             'model-reachable-command-paths-reviewed',
         ],
-        'accepted_evidence_sha256': [],
+        'accepted_evidence_sha256': ['ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb'],
         'authorization_overrides_security': False,
     }
 
@@ -167,6 +167,7 @@ def representative_contract_verified(qualification):
     import benchmark_host as host
 
     contract = load_contract()
+    candidate = load_candidate_evidence()
     if type(qualification) is not host.QualifiedHostContract or qualification.status != 'verified':
         return False
     component = next(
@@ -176,5 +177,6 @@ def representative_contract_verified(qualification):
     return (
         component is not None
         and component.state == 'verified'
+        and component.evidence_sha256 == candidate['evidence_reference']
         and component.evidence_sha256 in contract['accepted_evidence_sha256']
     )

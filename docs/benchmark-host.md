@@ -1,11 +1,13 @@
 # Benchmark qualified-host and representative runner contract
 
-Status: prepared adapter and reviewed qualification semantics; no qualified host or
-accepted agent-execution isolation evidence. A constrained grading-backend candidate is
-accepted by its own frozen backend contract, but no host receipt is accepted. Active work
-remains #14. The representative matrix was
-accepted in #39; #56 planned future stages separately. No 0.4+ runtime feature,
-benchmark model execution, campaign execution or telemetry is added here.
+Status: prepared adapter and reviewed qualification semantics; one bounded
+qualified-host receipt (`d2af64ce...`) and agent-execution isolation evidence
+(`ae2840a9...`) are accepted. The constrained grading-backend candidate remains
+accepted by its own frozen backend contract. Representative campaign readiness is
+still false because production submission grading is intentionally unimplemented and
+the frozen readiness fields have not been promoted. Active work remains #14. The
+representative matrix was accepted in #39; #56 planned future stages separately.
+No benchmark model execution, campaign execution or telemetry is added here.
 
 ## Qualification boundary
 
@@ -22,10 +24,12 @@ component/state/evidence-hash tuples; it contains no overall status override, ho
 identifier, private runtime path, prompt, source or arbitrary payload. Qualification
 is a conjunction, not a score. **Self-asserted verified states and hashes are
 insufficient**: the computed receipt reference must also be explicitly accepted by
-the frozen reviewed host contract. That acceptance list is currently empty. A future
-review must inspect independent evidence before admitting a receipt; hashes identify
-evidence, not authenticate the truth of a declaration. The receipt reference hashes
-component evidence only; it is not a self-referential file checksum.
+the frozen reviewed host contract. The contract accepts one reviewed receipt,
+`d2af64ce...`, tied to the exact normalized candidate evidence file
+`qualified-host-candidate-v1.json` (`5b8c8846...`). Any future receipt still requires
+independent review and an explicit contract update; hashes identify evidence, not
+authenticate the truth of a declaration. The receipt reference hashes component
+evidence only; it is not a self-referential file checksum.
 
 | Component | Required independent evidence |
 | --- | --- |
@@ -100,16 +104,17 @@ approvals to `Never`, approval requests are unsupported in exec mode, shell/unif
 and apply-patch route through sandbox orchestration, spawned agents inherit live runtime
 policy, and Code Mode exposes controlled V8 globals/tools rather than ambient process
 APIs. The representative campaign additionally disables multi-agent, Code Mode and
-account/network-backed app/plugin/browser/computer/image/skill-search features. These
-are bounded observations and source evidence, not qualification:
-`agent-execution-isolation-v1.json` still accepts no evidence hash. The normalized
-credential-free candidate is frozen separately as
-`agent-execution-isolation-candidate-v1.json`, reference `ae2840a9...`; it is explicitly
-not in the accepted list and therefore cannot enable execution. No real credential or
-model call was used for these probes.
+account/network-backed app/plugin/browser/computer/image/skill-search features. The
+normalized credential-free candidate is frozen as
+`agent-execution-isolation-candidate-v1.json`, reference `ae2840a9...`, and that exact
+reference is now accepted by `agent-execution-isolation-v1.json`. Acceptance is still
+conjunctive: the qualified-host receipt must carry the same component reference, and
+the frozen campaign readiness gate remains false. No real credential or model call was
+used for these probes.
 
-Future receipts must refer to the same composed boundary and inventory. Review its
-actual resource limits, descendant scope and cleanup owner together. Version output,
+The accepted receipt refers to one composed boundary and inventory; any future
+receipt must preserve the same review discipline. Review actual resource limits,
+descendant scope and cleanup owner together. Version output,
 controller existence, environment filtering, timeout alone or broad read-only `/usr`
 mounts do not verify isolation. Rust sysroot/Cargo must be staged without normal HOME,
 credential material or mutable package caches; runtime inventory must support offline
@@ -144,12 +149,13 @@ Gate order:
 8. Fresh private artifact target; existing identifiers and symlinks rejected.
 9. Only then model execution and isolated grading.
 
-Current frozen host, agent-execution-isolation and grading-isolation fields are
-`required-not-verified`; neither isolation contract accepts runtime evidence that can
-enable execution. Consequently public execution is unreachable,
-even with synthetic all-verified claims or authorization. Future acceptance needs
-separately reviewed evidence, backend implementation and explicit frozen-contract
-updates. The historical campaign remains immutably blocked by its own frozen loader;
+The frozen representative campaign readiness fields remain
+`required-not-verified`, even though the underlying reviewed host receipt, agent
+evidence and constrained grading-backend evidence now exist. Consequently public
+execution remains unreachable, including with the accepted receipt and explicit
+authorization. Promotion requires a separately reviewed production submission-grading
+implementation plus an explicit readiness repin. The historical campaign remains
+immutably blocked by its own frozen loader;
 it cannot become an alternate representative path. Legacy harness real mode stays
 disabled. Private injection-only helpers have no direct process-launch behavior.
 
@@ -204,12 +210,12 @@ report 40 synthetic attempts and zero model calls, not comparative measurements.
 ## Readiness and next action
 
 Matrix accepted; representative runner contract **prepared** means pinned adapter
-implementation tested with fakes, not host/runtime verification. Qualified host,
-agent execution isolation and grading isolation remain required-not-verified,
-representative readiness false,
-comparative evidence absent. Historical 42 jobs and representative 40 primary executions remain
-unexecuted; successful IaC smoke and historical failed evidence remain unchanged.
-Next qualify a separate host, verify the backend/runtime/grader boundary and review
-receipt/contract acceptance before any separately authorized spending. #14 stays
-open; #15 stays separate. Future playbooks/adaptive/automation/distribution #40–#55
-are not implemented here.
+implementation tested with fakes. One reviewed qualified-host receipt, exact agent
+isolation evidence and the constrained grading-backend contract are accepted, while
+representative readiness remains false because `grade_representative()` still refuses
+all submissions and performs no isolated production grading. Historical 42 jobs and
+representative 40 primary executions remain unexecuted; successful IaC smoke and
+historical failed evidence remain unchanged. Next implement the production submission
+grader using the accepted mount-plan/runtime inventory, rerun its positive/negative
+controls, then separately review a readiness repin before any authorized spending.
+#14 stays open; #15 stays separate.
