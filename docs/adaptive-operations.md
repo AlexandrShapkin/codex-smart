@@ -166,6 +166,11 @@ tokens, latency and cost remain unknown. Archive receipts contain source manifes
 execution-file integrity hashes, authenticated grading rows and stage/final receipts;
 raw logs remain local. Archive files are created exclusively and frozen read-only.
 Repeated archive calls verify integrity and refuse to overwrite conflicting evidence.
+Completion checks require the matching start receipt, complete output inventory,
+typed stage result and unchanged safe directory permissions. Archival rechecks source
+bytes and completed archive modes; diagnostics never repair drift. The
+[adversarial audit](diagnostics/2026-10-14-adaptive-orchestrator-audit.md) records the
+confirmed defects, transition boundaries and fake process-interruption evidence.
 Archives are **not accepted performance evidence**: no winner or savings claim exists
 without independent comparative acceptance. Operational transport/recovery latency
 is not fabricated as model-delegation overhead or a measured cost saving.
