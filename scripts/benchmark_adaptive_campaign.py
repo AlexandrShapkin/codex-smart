@@ -425,11 +425,17 @@ def run_initial(
     resume=False,
     execute_fn=b.execute,
     agent_artifacts=None,
+    planned_decisions=None,
 ):
     if authorized is not True:
         raise AdaptiveCampaignRefusal(
             "explicit adaptive lifecycle execution authorization required"
         )
+    if planned_decisions is not None and (
+        type(planned_decisions) is not dict
+        or set(planned_decisions) != {_job_id(*job) for job in jobs()}
+    ):
+        raise AdaptiveCampaignRefusal("complete reviewed decision matrix required")
     campaign, runtime, adapter = agent_preflight(
         codex, code_mode_host, runtime_root, inventory_dir, adapter, adapter_sha256
     )
@@ -448,7 +454,12 @@ def run_initial(
                 not resume
             ):
                 raise AdaptiveCampaignRefusal("existing or invalid initial attempt")
-            _load_started(attempt_dir, scenario_id, repetition, seed, 1)
+            started = _load_started(attempt_dir, scenario_id, repetition, seed, 1)
+            if planned_decisions is not None and any(
+                started[key] != planned_decisions[job_id][key]
+                for key in ("profile", "reasoning", "model_key")
+            ):
+                raise AdaptiveCampaignRefusal("started ledger differs from reviewed plan")
             if _load_attempt_result(attempt_dir, scenario_id, repetition, seed, 1) is not None:
                 completed += 1
             else:
@@ -459,6 +470,8 @@ def run_initial(
         decision = adaptive._adapter_output(
             adapter, adaptive.SCENARIO_POLICY[scenario_id]
         )
+        if planned_decisions is not None and decision != planned_decisions.get(job_id):
+            raise AdaptiveCampaignRefusal("controller decision differs from reviewed plan before launch")
         _execute_attempt(
             artifacts=artifacts,
             scenario=scenario,

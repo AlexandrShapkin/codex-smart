@@ -116,10 +116,21 @@ def tree(path):
 
 
 def check_files(root, expected):
+    private_directory(root)
+    if type(expected) is not dict:
+        raise OrchestrationRefusal("malformed output inventory")
     for name, record in expected.items():
-        if (Path(name).is_absolute() or ".." in Path(name).parts
+        if (type(name) is not str or Path(name).is_absolute() or ".." in Path(name).parts
+                or Path(name).as_posix() != name or type(record) is not dict
+                or set(record) != {"sha256", "mode"} or type(record["mode"]) is not int
+                or not isinstance(record["sha256"], str)
+                or not re.fullmatch(r"[0-9a-f]{64}", record["sha256"])
                 or file_record(Path(root) / name) != record):
             raise OrchestrationRefusal("immutable campaign receipt mismatch")
+        for parent in (Path(root) / name).parents:
+            if parent == Path(root):
+                break
+            private_directory(parent)
 
 
 def _source(source):
@@ -349,7 +360,8 @@ class Backend:
                                   initial_grades_sha256=live._sha256(state / "grades-1/summary.json"),
                                   agent_artifacts=state / "agent")
         return live.run_initial(*args, authorized=True, resume=(state / "agent").exists(),
-                                agent_artifacts=state / "agent")
+                                agent_artifacts=state / "agent",
+                                planned_decisions={row["job_id"]: row["decision"] for row in plan["jobs"]})
 
 
 class Campaign:
@@ -370,24 +382,109 @@ class Campaign:
         self.transport = transport or Transport()
 
     def receipt(self, stage):
+        private_directory(self.state)
+        private_directory(self.state / "stages")
         path = self.state / "stages" / f"{stage}.json"
         if not path.exists():
             return None
         value = read(path)
-        if (set(value) != {"stage", "plan_sha256", "dependencies", "outputs", "result"}
+        if (type(value) is not dict
+                or set(value) != {"stage", "plan_sha256", "dependencies", "outputs", "result"}
+                or type(value["result"]) is not dict
                 or value["plan_sha256"] != self.identity or value["stage"] != stage):
             raise OrchestrationRefusal("stage receipt identity mismatch")
         expected = {previous: live._sha256(regular(self.state / "stages" / f"{previous}.json"))
                     for previous in STAGES[:STAGES.index(stage)]}
         if value["dependencies"] != expected:
             raise OrchestrationRefusal("stage dependency receipt drift")
+        start = {key: value[key] for key in ("stage", "plan_sha256", "dependencies")}
+        if read(self.state / "stages" / f"{stage}.started.json") != start:
+            raise OrchestrationRefusal("stage start/completion receipt mismatch")
         check_files(self.state, value["outputs"])
+        self._check_receipt_content(stage, value)
         return value
 
+    def _check_receipt_content(self, stage, value):
+        result, outputs = value["result"], value["outputs"]
+        actual = {}
+        if stage in {"initial", "escalate"}:
+            ordinal = 1 if stage == "initial" else 2
+            summary = "initial-agent-summary.json" if ordinal == 1 else "retry-agent-summary.json"
+            actual[f"agent/{summary}"] = file_record(self.state / "agent" / summary)
+            for job in live.jobs():
+                path = self.state / "agent" / live._job_id(*job) / f"attempt-{ordinal}"
+                if path.exists():
+                    actual.update({f"agent/{live._job_id(*job)}/{path.name}/{name}": record
+                                   for name, record in tree(path).items()})
+                elif ordinal == 1:
+                    raise OrchestrationRefusal("all 20 initial ledgers required")
+            if result != read(self.state / "agent" / summary):
+                raise OrchestrationRefusal("execution summary receipt mismatch")
+        elif stage.startswith(("transfer-", "authenticate-")) or stage in {"finalize", "archive"}:
+            prefix = (f"bundle-{stage[-1]}" if stage.startswith("transfer-") else
+                      f"grades-{stage[-1]}" if stage.startswith("authenticate-") else
+                      "final" if stage == "finalize" else "archive")
+            manifest = tree(self.state / prefix)
+            actual = {f"{prefix}/{name}": record for name, record in manifest.items()}
+            if stage.startswith("transfer-"):
+                wanted = {"bundle_sha256": digest(manifest), "plan_sha256": self.identity}
+            elif stage.startswith("authenticate-"):
+                wanted = {"summary_sha256": live._sha256(self.state / prefix / "summary.json"),
+                          "ssh_fingerprint": handoff.TRUSTED_ED25519_SHA256}
+            elif stage == "finalize":
+                wanted = read(self.state / "final/summary.json")
+            else:
+                wanted = {"archive_sha256": live._sha256(self.state / "archive/archive-receipt.json"),
+                          "evidence_accepted": False}
+                if (stat.S_IMODE((self.state / "archive").stat().st_mode) != 0o500
+                        or any(record["mode"] != 0o400 for record in manifest.values())):
+                    raise OrchestrationRefusal("completed archive is not read-only")
+            if result != wanted:
+                raise OrchestrationRefusal("stage result/artifact mismatch")
+        elif stage.startswith("grade-"):
+            if (set(result) != {"summary_sha256", "plan_sha256"}
+                    or result["plan_sha256"] != self.identity
+                    or type(result["summary_sha256"]) is not str
+                    or not re.fullmatch(r"[0-9a-f]{64}", result["summary_sha256"])):
+                raise OrchestrationRefusal("malformed grading completion receipt")
+        elif stage == "preflight":
+            if (set(result) != {"source", "agent", "grader", "model_execution_enabled"}
+                    or result["model_execution_enabled"] is not False
+                    or any(type(result[key]) is not dict for key in ("source", "agent", "grader"))
+                    or set(result["source"]) != {"source_sha", "receipt_sha256", "files", "integrity"}
+                    or type(result["source"]["files"]) is not int or result["source"]["files"] < 1
+                    or result["source"]["integrity"] != "verified"
+                    or result["source"].get("source_sha") != self.plan["config"]["agent"]["source"]["sha"]
+                    or result["source"].get("receipt_sha256") != self.plan["config"]["agent"]["source"]["receipt_sha256"]
+                    or result["agent"] != {"runtime_reference": live.split.RUNTIME_INVENTORY_REFERENCE,
+                                           "adapter_sha256": self.plan["config"]["agent"]["adapter_sha256"]}
+                    or set(result["grader"]) != {"source", "runtime_reference", "qualified_host_reference",
+                                                "plan_sha256", "source_receipt"}
+                    or result["grader"].get("source") != self.plan["config"]["grader"]["source"]
+                    or result["grader"].get("plan_sha256") != self.identity
+                    or result["grader"].get("runtime_reference") != live.split.RUNTIME_INVENTORY_REFERENCE
+                    or result["grader"].get("qualified_host_reference") != live.split.GRADING_HOST_RECEIPT
+                    or hashlib.sha256(repository.encode(result["grader"].get("source_receipt"))).hexdigest()
+                    != self.plan["config"]["grader"]["source"]["receipt_sha256"]):
+                raise OrchestrationRefusal("malformed preflight completion receipt")
+        if outputs != actual:
+            raise OrchestrationRefusal("incomplete or unexpected stage output inventory")
+
     def status(self):
-        states = {stage: ("complete" if self.receipt(stage) else
-                         "interrupted-or-running" if (self.state / "stages" / f"{stage}.started.json").exists()
-                         else "pending") for stage in STAGES}
+        states = {}
+        for index, stage in enumerate(STAGES):
+            start = self.state / "stages" / f"{stage}.started.json"
+            if self.receipt(stage):
+                states[stage] = "complete"
+            elif start.exists():
+                expected = {"stage": stage, "plan_sha256": self.identity, "dependencies": {
+                    previous: live._sha256(regular(self.state / "stages" / f"{previous}.json"))
+                    for previous in STAGES[:index]}}
+                if read(start) != expected:
+                    raise OrchestrationRefusal("interrupted stage receipt mismatch")
+                states[stage] = "interrupted-or-running"
+            else:
+                states[stage] = "pending"
         return {"plan_sha256": self.identity, "stages": states,
                 "started_attempts": live._started_count(self.state / "agent") if (self.state / "agent").exists() else 0,
                 "maximum_attempts": 40, "model_execution_enabled": False}
@@ -438,6 +535,10 @@ class Campaign:
         if authoritative != self.receipt(f"grade-{ordinal}")["result"]["summary_sha256"]:
             raise OrchestrationRefusal("grading receipt changed after independent grading")
         _, rows = live._load_grade_round(directory, ordinal, authoritative)
+        expected_jobs = {live._job_id(*job) for job in live.jobs()
+                         if (self.state / "agent" / live._job_id(*job) / f"attempt-{ordinal}").exists()}
+        if set(rows) != expected_jobs:
+            raise OrchestrationRefusal("grading rows differ from started attempts")
         for job in live.jobs():
             attempt = self.state / "agent" / live._job_id(*job) / f"attempt-{ordinal}"
             if attempt.exists():
@@ -552,6 +653,7 @@ class Campaign:
         return self._archive(resume=resume)
 
     def _archive(self, *, resume):
+        verify_source(self.plan["config"]["agent"]["source"])
         root = self.state / "archive"
         if (root / "archive-receipt.json").exists():
             marker = read(root / "archive-receipt.json")
@@ -632,6 +734,10 @@ def host_request(request):
     identity = digest(plan)
     base = Path(grader["remote_root"])
     root = base / identity
+    if base.exists():
+        private_directory(base)
+    if root.exists():
+        private_directory(root)
     if action == "preflight":
         if not repository.safe_path(base.parent).is_dir():
             raise OrchestrationRefusal("grading destination parent missing")

@@ -42,6 +42,8 @@ def _ssh_options(known_hosts):
         "-o", "UpdateHostKeys=no",
         "-o", "VerifyHostKeyDNS=no",
         "-o", "ClearAllForwardings=yes",
+        "-o", "ForwardAgent=no",
+        "-o", "ForwardX11=no",
         "-o", "ConnectTimeout=10",
         "-o", "GlobalKnownHostsFile=/dev/null",
         "-o", f"UserKnownHostsFile={known_hosts}",

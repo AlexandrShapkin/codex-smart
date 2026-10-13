@@ -60,9 +60,12 @@ class FakeTransport(operation.Transport):
 
 class OrchestratorTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="adaptive-operator-test-", dir="/tmp")
-        self.addCleanup(self.temporary.cleanup)
-        self.root = Path(self.temporary.name)
+        if getattr(self, "fixture_root", None) is not None:
+            self.root = operation.private_directory(self.fixture_root, create=True)
+        else:
+            self.temporary = tempfile.TemporaryDirectory(prefix="adaptive-operator-test-", dir="/tmp")
+            self.addCleanup(self.temporary.cleanup)
+            self.root = Path(self.temporary.name)
         repo = self.root / "repository"
         repo.mkdir()
         for args in [("init", "-b", "main"), ("config", "user.name", "Offline fixture"),
