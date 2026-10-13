@@ -78,9 +78,23 @@ Every started attempt is retained with its profile, reasoning, outcome, validati
 
 #45 implements only a narrow delegation contract for read-only evidence and mechanical workspace changes. Context and resource scope are opaque bounded handles; child wall time, abstract cost units and output bytes have explicit ceilings; writable scope and declared validation are explicit; nested delegation is forbidden. Unknown safety remains an evidence gate, while high-risk parents plus security, concurrency, destructive migration, ambiguous API or conflicting-evidence hazards are blocked rather than assumed cheap-safe. Completed handoffs carry bounded evidence digests and still require parent review/revalidation; child failure, timeout, refusal and protocol violation remain recorded. The policy layer launches no child and carries no arbitrary source/prompt payload.
 
-Measure quality, total lifecycle tokens, estimated cost, latency, escalation rate,
-failed-cheap-attempt rate, strong-model-avoided rate and handoff overhead. Price
-alone cannot select a policy that compromises required quality.
+#46 now prepares that measurement as a separate benchmark-only adapter around the real
+#43/#44 policy rather than duplicating the state machine in Python. Ten representative
+scenarios have an explicit typed task/archetype/risk/safety mapping. Two repetitions and
+at most two attempts per job bound the adaptive campaign to 20 jobs / 40 Codex executions.
+The proposed benchmark profile map is Economy → `gpt-6-luna`, Standard → `gpt-6-sol` and
+Strong → `gpt-6-astra`; Standard deliberately retains the accepted baseline workhorse to
+reduce mapping confound. Local Codex model metadata advertises the required reasoning
+levels, but that is not execution evidence. A distinct three-execution profile smoke
+(Economy/Medium, Standard/High, Strong/High) must pass the accepted production grader
+before the mapping can be admitted, and the measured campaign still requires a separate
+explicit authorization. Until then model execution stays disabled.
+
+The lifecycle report must measure quality, summed attempt tokens, total lifecycle latency,
+escalation count, failed-cheap attempts, strong-model-avoided and handoff count/overhead.
+No reviewed price table exists, so estimated cost remains unknown rather than invented.
+Failed attempts remain in denominators; quality equivalence is required before any savings
+claim. Price alone cannot select a policy that compromises required quality.
 
 ## Reusable preparation and automation
 

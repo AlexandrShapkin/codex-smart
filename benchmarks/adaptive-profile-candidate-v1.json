@@ -1,0 +1,33 @@
+{
+  "candidate": {
+    "codex_version": "0.162.1",
+    "execution_verified": false,
+    "model_calls_during_probe": 0,
+    "profiles": {
+      "economy": {
+        "advertised_high_reasoning": true,
+        "advertised_medium_reasoning": true,
+        "model": "gpt-6-luna",
+        "model_key": 10,
+        "semantic_hint": "fast-and-affordable-easier-tasks"
+      },
+      "standard": {
+        "advertised_high_reasoning": true,
+        "advertised_medium_reasoning": true,
+        "model": "gpt-6-sol",
+        "model_key": 20,
+        "semantic_hint": "workhorse"
+      },
+      "strong": {
+        "advertised_high_reasoning": true,
+        "advertised_medium_reasoning": true,
+        "model": "gpt-6-astra",
+        "model_key": 30,
+        "semantic_hint": "frontier-demanding-work"
+      }
+    },
+    "source": "local-codex-model-cache-sanitized"
+  },
+  "evidence_reference": "baaab449793e0856b0d476732d6e1a547e6230bec0983c1d4f5b7452e210a0c1",
+  "schema_version": 1
+}

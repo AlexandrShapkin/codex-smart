@@ -1,0 +1,156 @@
+{
+  "adapter": {
+    "python_may_not_choose_profile_or_reasoning": true,
+    "source": "codex-smart-core/adaptive+adaptive_routing",
+    "source_sha256": "9a663cfe096785dcf13a365e17ffe618ae97f7ebbe12630f26c5d7c528c7b555"
+  },
+  "adaptive_campaign": {
+    "authorization_required": true,
+    "jobs": 20,
+    "max_attempts_per_job": 2,
+    "max_delegations_per_job": 0,
+    "max_retries_per_job": 1,
+    "maximum_codex_executions": 40,
+    "profile_mapping_evidence_required": true,
+    "repetitions": 2,
+    "seed": 14
+  },
+  "baseline": {
+    "comparison_policy": "same representative scenarios/repetitions/seed; baseline remains strict and failed runs stay in denominators",
+    "measurement_evidence_reference": "ffd8fbbc66934478e4591d65811daecc7b8012083157c9fabc97f4647c9bc347",
+    "variant": "native"
+  },
+  "interpretation_policy": {
+    "no_savings_claim_from_missing_cost_counter": true,
+    "no_savings_claim_from_unverified_profile_mapping": true,
+    "no_winner_claim_before_measurement_acceptance": true,
+    "quality_equivalence_required_before_savings_claim": true
+  },
+  "lifecycle_metrics": {
+    "escalation_count": true,
+    "estimated_cost": "unknown-until-reviewed-price-table",
+    "failed_attempts_remain_in_denominators": true,
+    "failed_cheap_attempt_count": true,
+    "handoff_count": true,
+    "handoff_overhead_seconds": true,
+    "missing_counters_remain_unknown": true,
+    "quality": true,
+    "strong_model_avoided": true,
+    "total_attempt_tokens": true,
+    "total_lifecycle_latency": true
+  },
+  "measurement_id": "adaptive-lifecycle-v1",
+  "profile_map": {
+    "10": {
+      "description": "fast-and-affordable-easier-tasks",
+      "model": "gpt-6-luna",
+      "profile": "economy",
+      "smoke_reasoning": "medium"
+    },
+    "20": {
+      "description": "workhorse",
+      "model": "gpt-6-sol",
+      "profile": "standard",
+      "smoke_reasoning": "high"
+    },
+    "30": {
+      "description": "frontier-demanding-work",
+      "model": "gpt-6-astra",
+      "profile": "strong",
+      "smoke_reasoning": "high"
+    }
+  },
+  "profile_smoke": {
+    "accepted_evidence_sha256": [],
+    "authorization_required": true,
+    "jobs": [
+      {
+        "model_key": 10,
+        "profile": "economy",
+        "reasoning": "medium",
+        "scenario_id": "explore-notification"
+      },
+      {
+        "model_key": 20,
+        "profile": "standard",
+        "reasoning": "high",
+        "scenario_id": "python-result-api"
+      },
+      {
+        "model_key": 30,
+        "profile": "strong",
+        "reasoning": "high",
+        "scenario_id": "infra-service-policy"
+      }
+    ],
+    "maximum_codex_executions": 3,
+    "retries": 0
+  },
+  "representative_campaign_sha256": "902659ca56285a4731c3b0a6095f3c293c77246991e43bfecd8bb237f82e7efd",
+  "representative_manifest_sha256": "56ce0de31ac4b1c070b8e1e1911d7f396f754c3fefdf4bf675a4aa2b894ac486",
+  "scenario_policy": {
+    "explore-notification": {
+      "archetype": "inspection",
+      "risk": "low",
+      "safety": "none",
+      "task": "inspect"
+    },
+    "go-pagination": {
+      "archetype": "api-change",
+      "risk": "medium",
+      "safety": "none",
+      "task": "edit"
+    },
+    "go-reservations": {
+      "archetype": "refactor",
+      "risk": "medium",
+      "safety": "none",
+      "task": "refactor"
+    },
+    "infra-service-policy": {
+      "archetype": "security-sensitive-change",
+      "risk": "high",
+      "safety": "security",
+      "task": "edit"
+    },
+    "python-billing": {
+      "archetype": "feature-implementation",
+      "risk": "medium",
+      "safety": "none",
+      "task": "edit"
+    },
+    "python-config-tests": {
+      "archetype": "failing-test-repair",
+      "risk": "low",
+      "safety": "none",
+      "task": "edit"
+    },
+    "python-result-api": {
+      "archetype": "api-change",
+      "risk": "medium",
+      "safety": "none",
+      "task": "refactor"
+    },
+    "repo-ci-gates": {
+      "archetype": "ci-config-repair",
+      "risk": "high",
+      "safety": "security",
+      "task": "edit"
+    },
+    "rust-duration": {
+      "archetype": "api-change",
+      "risk": "medium",
+      "safety": "none",
+      "task": "refactor"
+    },
+    "rust-ledger": {
+      "archetype": "focused-bug-fix",
+      "risk": "medium",
+      "safety": "none",
+      "task": "edit"
+    }
+  },
+  "schema_version": 1,
+  "split_host_topology_reference": "1a9e7a145e7271b872d2dfc54c92a6ac578cbd8859649f8c4c062a127f3aac43",
+  "status": "prepared-profile-smoke-required"
+}

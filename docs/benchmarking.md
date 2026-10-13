@@ -38,6 +38,31 @@ versioned candidate measurement is `representative-development-measurement-v1`; 
 traces/stderr remain private and only normalized hashes/aggregates are eligible for
 repository evidence.
 
+## Prepared adaptive lifecycle measurement — #46
+
+The accepted native baseline above is the comparison anchor for a separately frozen
+`adaptive-lifecycle-v1` measurement. This is not a production routing activation. A small
+Rust benchmark adapter replays the actual `codex-smart-core` workflow/adaptive/model
+resolver and emits only the next opaque profile/reasoning/model-key decision; Python is
+not allowed to choose those values. Scenario policy is explicit rather than inferred from
+prompt text.
+
+The measured design has 10 scenarios × 2 repetitions = 20 adaptive jobs, seed 14. Each
+job permits at most two attempts and one retry, so the absolute campaign ceiling remains
+40 Codex executions. Delegation execution is disabled for this variant because #45 is a
+policy-only contract; lifecycle output must therefore report handoff count/overhead as
+zero for this variant rather than fabricate child work. Failed initial attempts remain in
+total token/latency denominators. Missing model-request and price counters remain unknown.
+
+The proposed benchmark-only profile mapping is Economy → `gpt-6-luna`, Standard →
+`gpt-6-sol`, Strong → `gpt-6-astra`. A sanitized local Codex model cache advertises the
+required Medium/High reasoning support, candidate reference `baaab449...`, but execution
+verification is deliberately false. Before any adaptive campaign can run, a separate
+three-execution smoke must validate Economy/Medium, Standard/High and Strong/High through
+the same ThinkPad-agent / accepted-`srv0`-grader boundary. The smoke and later adaptive
+campaign each require their own explicit authorization. No adaptive winner or savings
+claim exists yet.
+
 ## Quality before cost
 
 Correctness, requirement coverage, regressions and security qualify a result before
