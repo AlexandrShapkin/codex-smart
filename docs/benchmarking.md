@@ -149,6 +149,49 @@ Export normalized records only after reviewing their metadata references; there 
 automatic commit/upload/export. This is benchmark-local instrumentation, not product
 prompt/source logging or telemetry.
 
+## Privacy-preserving aggregate telemetry
+
+`scripts/benchmark_telemetry.py` implements #15 as an explicitly invoked, local-only
+aggregation boundary over **normalized benchmark records only**. It never reads raw
+JSONL/stderr and rejects normalized JSON objects with unexpected top-level fields, so a
+raw-like `prompt`, `source`, `stderr` or other accidental field fails closed rather than
+being copied into telemetry. Failure strings outside the fixed normalized categories are
+counted as `other` and are never reflected. There is no network/export code.
+
+The default output contains only campaign-level and variant-level aggregates: run and
+quality counts, fixed failure buckets, retry/attempt counts, duration, observed token
+counters, observed tool-call lower bound, full-tool/model counters when actually known,
+and cache/overhead fields. Missing counters are represented as `samples=0` with
+`sum/median/range=null`, never inferred as zero. Cold/warm classification is counted
+explicitly; setup/index/bootstrap overhead is included when a normalized record exposes
+it and otherwise stays unknown. The accepted representative baseline correctly reports
+all 40 runs as cold/warm `unknown`, while fresh-input, total-token, full-tool-call,
+model-call and setup/index/bootstrap measurements remain unknown.
+
+Collection itself is opt-in because `--records-dir` is required; nothing runs from the
+product launcher or in the background. More granular scenario aggregates require the
+additional `--include-scenario-breakdown` opt-in. Output is stdout unless `--output` is
+explicitly supplied; file output refuses overwrite/symlinks and is chmod 0600. The
+schema is `benchmarks/schema/telemetry.schema.json`. A sanitized integration snapshot
+from the accepted 40-run baseline is `benchmarks/representative-telemetry-v1.json`,
+SHA-256 `359b01bcabd104a5b02289be9d9fdb599d0831acbbdf676514acc9fd7a2686a7`;
+it contains no scenario breakdown or raw content.
+
+Example local aggregation (no network):
+
+```bash
+PYTHONPATH=scripts:benchmarks python3 -B scripts/benchmark_telemetry.py \
+  --records-dir /path/to/normalized/graded-records
+```
+
+Scenario breakdown is intentionally separate:
+
+```bash
+PYTHONPATH=scripts:benchmarks python3 -B scripts/benchmark_telemetry.py \
+  --records-dir /path/to/normalized/graded-records \
+  --include-scenario-breakdown
+```
+
 ## Remaining acceptance work
 
 The representative execution, independent grading, private evidence preservation and

@@ -123,8 +123,10 @@ implementations exist. No variants or results are fabricated. Historical prelimi
 grading still requires a separately qualified isolation host. Representative readiness
 remains false. No savings or winner claim exists.
 
-#15 stays separate. Optional aggregate evaluation may record workflow/profile,
+#15 stays separate. Its implemented benchmark-local aggregate boundary consumes only
+normalized records and requires explicit invocation; scenario detail is separately
+opted in and there is no network export. Future workflow/profile aggregates may add
 escalation yes/no, validation pass/fail, retry counts and bounded token/cost/latency
-counters. Adaptive routing must function when private telemetry collection is disabled.
-Neither optimization nor telemetry requires source, prompts, credentials or arbitrary
+counters under the same privacy boundary. Adaptive routing must function when telemetry
+collection is disabled. Neither optimization nor telemetry requires source, prompts, credentials or arbitrary
 tool payload storage. Privacy review precedes any new collection contract.

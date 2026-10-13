@@ -1,0 +1,439 @@
+{
+  "campaign_id": "representative-development-v1",
+  "overall": {
+    "attempt_count": {
+      "median": 1.0,
+      "range": [
+        1,
+        1
+      ],
+      "samples": 40,
+      "sum": 40
+    },
+    "bootstrap_seconds": {
+      "median": null,
+      "range": null,
+      "samples": 0,
+      "sum": null
+    },
+    "cold_warm": {
+      "cold": 0,
+      "unknown": 40,
+      "warm": 0
+    },
+    "duration_seconds": {
+      "median": 60.297309948000475,
+      "range": [
+        36.64787478799553,
+        120.03055215199856
+      ],
+      "samples": 40,
+      "sum": 2610.3001298279705
+    },
+    "failure_counts": {
+      "agent-failure": 2,
+      "grading-refusal": 0,
+      "launch-failure": 0,
+      "none": 36,
+      "not-runnable": 0,
+      "other": 0,
+      "process-failure": 0,
+      "quality-failure": 0,
+      "submission-evidence-missing": 0,
+      "submission-export-refused": 0,
+      "timeout": 2,
+      "trace-invalid": 0
+    },
+    "full_tool_calls": {
+      "median": null,
+      "range": null,
+      "samples": 0,
+      "sum": null
+    },
+    "index_seconds": {
+      "median": null,
+      "range": null,
+      "samples": 0,
+      "sum": null
+    },
+    "model_calls": {
+      "median": null,
+      "range": null,
+      "samples": 0,
+      "sum": null
+    },
+    "observed_tool_calls_lower_bound": {
+      "median": 6.0,
+      "range": [
+        3,
+        17
+      ],
+      "samples": 38,
+      "sum": 266
+    },
+    "quality_failures": 4,
+    "quality_passes": 36,
+    "retry_count": {
+      "median": 0.0,
+      "range": [
+        0,
+        0
+      ],
+      "samples": 40,
+      "sum": 0
+    },
+    "runs": 40,
+    "setup_seconds": {
+      "median": null,
+      "range": null,
+      "samples": 0,
+      "sum": null
+    },
+    "tokens": {
+      "cached_input": {
+        "median": 112512.0,
+        "range": [
+          73216,
+          156032
+        ],
+        "samples": 36,
+        "sum": 4023424
+      },
+      "fresh_input": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      },
+      "input": {
+        "median": 127914.5,
+        "range": [
+          87923,
+          174912
+        ],
+        "samples": 36,
+        "sum": 4605872
+      },
+      "output": {
+        "median": 1680.0,
+        "range": [
+          1004,
+          2808
+        ],
+        "samples": 36,
+        "sum": 64736
+      },
+      "reasoning": {
+        "median": 132.5,
+        "range": [
+          38,
+          400
+        ],
+        "samples": 36,
+        "sum": 5559
+      },
+      "total": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      }
+    }
+  },
+  "privacy": {
+    "credential_data_ingested": false,
+    "input_contract": "normalized-records-only",
+    "network_export": false,
+    "prompt_ingested": false,
+    "raw_trace_ingested": false,
+    "scenario_breakdown_included": false,
+    "source_ingested": false,
+    "stderr_ingested": false
+  },
+  "record_count": 40,
+  "records_manifest_sha256": "83bd0247ffb1b9e7a496b029fca04c4153064a4bc2a049907cbb4b3d185b13cf",
+  "schema_version": 1,
+  "telemetry_kind": "benchmark-aggregate-v1",
+  "variants": {
+    "native": {
+      "attempt_count": {
+        "median": 1.0,
+        "range": [
+          1,
+          1
+        ],
+        "samples": 20,
+        "sum": 20
+      },
+      "bootstrap_seconds": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      },
+      "cold_warm": {
+        "cold": 0,
+        "unknown": 20,
+        "warm": 0
+      },
+      "duration_seconds": {
+        "median": 61.52577563600062,
+        "range": [
+          36.64787478799553,
+          120.03055215199856
+        ],
+        "samples": 20,
+        "sum": 1309.6501326259895
+      },
+      "failure_counts": {
+        "agent-failure": 2,
+        "grading-refusal": 0,
+        "launch-failure": 0,
+        "none": 17,
+        "not-runnable": 0,
+        "other": 0,
+        "process-failure": 0,
+        "quality-failure": 0,
+        "submission-evidence-missing": 0,
+        "submission-export-refused": 0,
+        "timeout": 1,
+        "trace-invalid": 0
+      },
+      "full_tool_calls": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      },
+      "index_seconds": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      },
+      "model_calls": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      },
+      "observed_tool_calls_lower_bound": {
+        "median": 6,
+        "range": [
+          3,
+          10
+        ],
+        "samples": 19,
+        "sum": 122
+      },
+      "quality_failures": 3,
+      "quality_passes": 17,
+      "retry_count": {
+        "median": 0.0,
+        "range": [
+          0,
+          0
+        ],
+        "samples": 20,
+        "sum": 0
+      },
+      "runs": 20,
+      "setup_seconds": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      },
+      "tokens": {
+        "cached_input": {
+          "median": 120704,
+          "range": [
+            79232,
+            146176
+          ],
+          "samples": 17,
+          "sum": 1968000
+        },
+        "fresh_input": {
+          "median": null,
+          "range": null,
+          "samples": 0,
+          "sum": null
+        },
+        "input": {
+          "median": 130281,
+          "range": [
+            87923,
+            174912
+          ],
+          "samples": 17,
+          "sum": 2189855
+        },
+        "output": {
+          "median": 1674,
+          "range": [
+            1004,
+            2808
+          ],
+          "samples": 17,
+          "sum": 31631
+        },
+        "reasoning": {
+          "median": 125,
+          "range": [
+            66,
+            400
+          ],
+          "samples": 17,
+          "sum": 2844
+        },
+        "total": {
+          "median": null,
+          "range": null,
+          "samples": 0,
+          "sum": null
+        }
+      }
+    },
+    "vanilla": {
+      "attempt_count": {
+        "median": 1.0,
+        "range": [
+          1,
+          1
+        ],
+        "samples": 20,
+        "sum": 20
+      },
+      "bootstrap_seconds": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      },
+      "cold_warm": {
+        "cold": 0,
+        "unknown": 20,
+        "warm": 0
+      },
+      "duration_seconds": {
+        "median": 59.57161994299895,
+        "range": [
+          39.00947895799618,
+          120.0232014830035
+        ],
+        "samples": 20,
+        "sum": 1300.649997201981
+      },
+      "failure_counts": {
+        "agent-failure": 0,
+        "grading-refusal": 0,
+        "launch-failure": 0,
+        "none": 19,
+        "not-runnable": 0,
+        "other": 0,
+        "process-failure": 0,
+        "quality-failure": 0,
+        "submission-evidence-missing": 0,
+        "submission-export-refused": 0,
+        "timeout": 1,
+        "trace-invalid": 0
+      },
+      "full_tool_calls": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      },
+      "index_seconds": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      },
+      "model_calls": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      },
+      "observed_tool_calls_lower_bound": {
+        "median": 7,
+        "range": [
+          5,
+          17
+        ],
+        "samples": 19,
+        "sum": 144
+      },
+      "quality_failures": 1,
+      "quality_passes": 19,
+      "retry_count": {
+        "median": 0.0,
+        "range": [
+          0,
+          0
+        ],
+        "samples": 20,
+        "sum": 0
+      },
+      "runs": 20,
+      "setup_seconds": {
+        "median": null,
+        "range": null,
+        "samples": 0,
+        "sum": null
+      },
+      "tokens": {
+        "cached_input": {
+          "median": 108800,
+          "range": [
+            73216,
+            156032
+          ],
+          "samples": 19,
+          "sum": 2055424
+        },
+        "fresh_input": {
+          "median": null,
+          "range": null,
+          "samples": 0,
+          "sum": null
+        },
+        "input": {
+          "median": 122305,
+          "range": [
+            90510,
+            173232
+          ],
+          "samples": 19,
+          "sum": 2416017
+        },
+        "output": {
+          "median": 1716,
+          "range": [
+            1035,
+            2657
+          ],
+          "samples": 19,
+          "sum": 33105
+        },
+        "reasoning": {
+          "median": 140,
+          "range": [
+            38,
+            277
+          ],
+          "samples": 19,
+          "sum": 2715
+        },
+        "total": {
+          "median": null,
+          "range": null,
+          "samples": 0,
+          "sum": null
+        }
+      }
+    }
+  }
+}

@@ -57,4 +57,6 @@ exported and all 36 passed the accepted production grader. Strict pass rates rem
 agent failures were provider-capacity errors and each variant had one timeout. The normalized measurement evidence `ffd8fbbc...` is accepted; it deliberately records
 no winner or savings claim. The current development host is not a submitted-code
 grading target. See [host/runner contract](../benchmark-host.md). #14 benchmark
-acceptance is complete; #15 is the next separate telemetry task.
+acceptance is complete. #15 local privacy-preserving aggregate telemetry is implemented
+over normalized records with explicit collection/detail opt-ins and no network export;
+its acceptance remains subject to exact-head review/CI.
