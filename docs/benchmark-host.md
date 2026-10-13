@@ -216,11 +216,15 @@ isolation evidence and the constrained grading-backend contract are accepted, wh
 representative readiness remains false because public `grade_representative()` still
 fails closed until production-grading evidence is separately admitted. The candidate
 implementation uses the accepted constrained mount plan, full immutable runtime rehash,
-transient systemd cgroup limits and a single final writable `/work` bind. Repository-owned
-controls on srv0 passed 10/10 references, rejected 20/20 wrong controls, and passed
-symlink, hardlink, special-node, exploration immutability, host/env/network/capability
-and descendant-cleanup security controls with zero model calls. Candidate evidence
-reference `b2126d54...` remains unaccepted by `submission-grading-v1.json`. Historical
+transient systemd cgroup limits and a single final writable `/work` bind. A trusted
+controller copies only reviewed submission paths through descriptor-relative `O_NOFOLLOW`
+opens into private tmpfs; hardlinks and special nodes are rejected. Verdict transport is
+a private Unix socket rather than submission-visible stdout, and the service is not
+released until its cgroup is empty. Repository-owned controls on srv0 passed 10/10
+references, rejected 20/20 wrong controls, and passed expected-file symlink/hardlink/FIFO,
+exploration immutability/extra-artifact, trusted/runtime read-only, host/env/network/capability,
+detached-descendant and forged-verdict security controls with zero model calls. Candidate
+evidence reference `38da2666...` remains unaccepted by `submission-grading-v1.json`. Historical
 42 jobs and representative 40 primary executions remain unexecuted; successful IaC
 smoke and historical failed evidence remain unchanged. Next separately review and admit
 that evidence, repin readiness, and only then consider authorized live execution.

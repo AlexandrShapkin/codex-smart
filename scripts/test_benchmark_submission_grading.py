@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -23,30 +24,108 @@ class SubmissionGradingTests(unittest.TestCase):
         receipt.start()
         self.addCleanup(receipt.stop)
 
-    def test_contract_is_review_required_and_pins_boundary(self):
-        c = grading.load_contract()
-        self.assertEqual(c["accepted_evidence_sha256"], [])
-        self.assertEqual(c["qualified_host_receipt"], grading.QUALIFIED_HOST_RECEIPT)
-        self.assertEqual(c["grading_backend_reference"], grading.GRADING_BACKEND_REFERENCE)
-        self.assertTrue(c["mount_policy"]["untrusted_bind_last"])
-        self.assertFalse(c["mount_policy"]["host_usr_mounted"])
-        self.assertEqual(c["resource_limits"]["kill_mode"], "control-group")
-        self.assertEqual(c["entrypoint_sha256"],
-                         __import__("hashlib").sha256(grading.ENTRYPOINT_SOURCE.encode()).hexdigest())
+    def test_contract_is_review_required_and_pins_trusted_code(self):
+        contract = grading.load_contract()
+        self.assertEqual(contract["accepted_evidence_sha256"], [])
+        self.assertEqual(contract["qualified_host_receipt"], grading.QUALIFIED_HOST_RECEIPT)
+        self.assertEqual(contract["grading_backend_reference"], grading.GRADING_BACKEND_REFERENCE)
+        self.assertEqual(contract["trusted_controller_sha256"], grading._sha256(grading.CONTROLLER))
+        self.assertEqual(contract["grading_supervisor_sha256"], grading._sha256(grading.SUPERVISOR))
+        self.assertEqual(contract["mount_policy"]["verdict_channel"], "private-unix-socket")
+        self.assertTrue(contract["submission_copy_policy"]["descriptor_relative"])
+        self.assertTrue(contract["submission_copy_policy"]["no_follow"])
+        self.assertTrue(contract["submission_copy_policy"]["hardlinks_rejected"])
 
-    def test_candidate_evidence_validates_but_public_contract_waits_for_review(self):
-        record = grading.load_candidate_evidence()
-        self.assertEqual(record["evidence_reference"],
-                         "b2126d5432a8b167cfa03d6d6f857b536948ddcc2d66e60a4b4e096c78f5d0af")
-        self.assertEqual(record["candidate"]["references_passed"], 10)
-        self.assertEqual(record["candidate"]["wrong_controls_rejected"], 20)
-        self.assertIn("hardlink-rejected", record["candidate"]["security_controls_passed"])
+    def test_public_contract_cannot_verify_before_separate_review(self):
         q = verified_host()
         with patch.object(backend, "representative_contract_verified", return_value=True):
             self.assertFalse(grading.contract_verified(q))
 
-    def test_candidate_evidence_tamper_is_rejected(self):
-        record = json.loads(grading.CANDIDATE_EVIDENCE.read_text())
+    def test_production_mount_plan_has_one_untrusted_final_bind_and_private_channel(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runtime = root / "runtime"
+            controller = root / "controller.py"
+            verdict = root / "verdict.sock"
+            workspace = root / "work"
+            runtime.mkdir()
+            workspace.mkdir()
+            controller.write_text("pass\n")
+            verdict.write_text("")
+            ops = backend.production_mount_plan(runtime, controller, verdict, workspace)
+        self.assertTrue(backend.validate_mount_plan(ops))
+        untrusted = [op for op in ops if op.trust == "untrusted"]
+        self.assertEqual(len(untrusted), 1)
+        self.assertEqual(untrusted[0].destination, "/work")
+        self.assertIs(ops[-1], untrusted[0])
+        self.assertTrue(any(op.destination == "/verdict.sock" for op in ops))
+        self.assertFalse(any(op.source == "/usr" for op in ops if op.source))
+
+    def test_candidate_rejects_unprepared_runtime_and_bad_policy_without_execution(self):
+        q = verified_host()
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(backend, "representative_contract_verified", return_value=True), \
+             patch.object(grading, "_execute_isolated_grade") as execute:
+            result = grading.grade_candidate_for_review(
+                "python-billing", Path(tmp), q, None,
+                SimpleNamespace(task_files_immutable=False, allowed_answer_artifacts=()),
+            )
+            self.assertEqual(result.reason, "grading-runtime-not-prepared")
+            runtime = grading.PreparedRuntime(
+                Path("/tmp/benchmark-runtime-test"), "1" * 64, (1, 2), ())
+            with patch.object(grading, "_runtime_identity_matches", return_value=True):
+                result = grading.grade_candidate_for_review(
+                    "python-billing", Path(tmp), q, runtime,
+                    SimpleNamespace(task_files_immutable="no", allowed_answer_artifacts=()),
+                )
+            self.assertEqual(result.reason, "submission-policy-mismatch")
+            execute.assert_not_called()
+
+    def test_runtime_identity_rejects_replacement(self):
+        with tempfile.TemporaryDirectory(dir="/tmp", prefix="benchmark-runtime-test-") as tmp:
+            root = Path(tmp)
+            for role in ("python", "rust", "go", "libraries", "linker", "grader"):
+                (root / role).mkdir()
+            info = root.stat()
+            roles = tuple(
+                (role, (root / role).stat().st_dev, (root / role).stat().st_ino)
+                for role in ("python", "rust", "go", "libraries", "linker", "grader"))
+            prepared = grading.PreparedRuntime(
+                root, "1" * 64, (info.st_dev, info.st_ino), roles)
+            self.assertTrue(grading._runtime_identity_matches(prepared))
+            old = root / "python"
+            old.rmdir()
+            old.mkdir()
+            self.assertFalse(grading._runtime_identity_matches(prepared))
+
+    def test_manifest_parsers_reject_unsafe_paths(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "files.tsv"
+            path.write_text("sha256\tsize\tmode\tpath\n" + "0" * 64
+                            + "\t1\t0o644\t../escape\n")
+            with self.assertRaises(ValueError):
+                grading._parse_file_manifest(path)
+            path.write_text("sha256\tsize\tmode\tpath\n" + "0" * 64
+                            + "\t1\t0o644\ta.txt\n")
+            self.assertEqual(set(grading._parse_file_manifest(path)), {"a.txt"})
+
+    def test_user_manager_environment_is_allowlisted(self):
+        env = grading._user_manager_env()
+        self.assertEqual(set(env), {"PATH", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS"})
+        self.assertEqual(env["PATH"], "/usr/bin:/bin")
+        self.assertTrue(env["XDG_RUNTIME_DIR"].endswith(str(os.getuid())))
+
+    def test_candidate_evidence_validates_and_tamper_is_rejected(self):
+        record = grading.load_candidate_evidence()
+        self.assertEqual(
+            record["evidence_reference"],
+            "38da26664d2bf8868677ec96c3875214b84da875ef0058f0faeae62bb15db019",
+        )
+        self.assertEqual(record["candidate"]["references_passed"], 10)
+        self.assertEqual(record["candidate"]["wrong_controls_rejected"], 20)
+        self.assertIn("forged-verdict-rejected",
+                      record["candidate"]["security_controls_passed"])
+        record = json.loads(json.dumps(record))
         record["candidate"]["references_passed"] = 9
         record["evidence_reference"] = grading.evidence_reference(record["candidate"])
         with tempfile.TemporaryDirectory() as tmp:
@@ -54,103 +133,6 @@ class SubmissionGradingTests(unittest.TestCase):
             path.write_text(json.dumps(record))
             with self.assertRaises(ValueError):
                 grading.load_candidate_evidence(path)
-
-    def test_mount_plan_has_one_untrusted_final_bind_and_no_host_usr(self):
-        runtime = grading.PreparedRuntime(Path("/tmp/benchmark-runtime-test"), "1" * 64)
-        with tempfile.TemporaryDirectory() as tmp:
-            workspace = Path(tmp) / "work"
-            workspace.mkdir()
-            entry = Path(tmp) / "entry.py"
-            entry.write_text("pass\n")
-            ops = grading._mount_plan(runtime, workspace, entry)
-        self.assertTrue(backend.validate_mount_plan(ops))
-        untrusted = [op for op in ops if op.trust == "untrusted"]
-        self.assertEqual(len(untrusted), 1)
-        self.assertEqual(untrusted[0].destination, "/work")
-        self.assertIs(ops[-1], untrusted[0])
-        self.assertFalse(any(op.source == "/usr" for op in ops if op.source))
-
-    def test_candidate_launcher_uses_systemd_limits_clearenv_and_final_work_bind(self):
-        q = verified_host()
-        runtime = grading.PreparedRuntime(Path("/tmp/benchmark-runtime-test"), "1" * 64)
-        response = SimpleNamespace(
-            returncode=0,
-            stdout=json.dumps({"schema_version": 1, "quality_pass": True,
-                               "policy_or_grader_refusal": False}),
-            stderr="",
-        )
-        original_exists = Path.exists
-
-        def exists(path):
-            if str(path).endswith("/bus"):
-                return True
-            return original_exists(path)
-
-        with tempfile.TemporaryDirectory() as tmp, \
-             patch.object(backend, "representative_contract_verified", return_value=True), \
-             patch.object(backend, "runtime_preflight"), \
-             patch.object(Path, "exists", exists), \
-             patch.object(grading.subprocess, "run", return_value=response) as run:
-            result = grading.grade_candidate_for_review(
-                "python-billing", Path(tmp), q, runtime,
-                SimpleNamespace(task_files_immutable=False, allowed_answer_artifacts=()),
-            )
-
-        self.assertEqual((result.status, result.quality_pass),
-                         ("verified", True))
-        argv = run.call_args.args[0]
-        self.assertEqual(argv[:6],
-                         ["/usr/bin/systemd-run", "--user", "--wait", "--collect", "--pipe", "--quiet"])
-        self.assertIn("MemoryMax=3G", argv)
-        self.assertIn("MemorySwapMax=0", argv)
-        self.assertIn("TasksMax=256", argv)
-        self.assertIn("RuntimeMaxSec=120s", argv)
-        self.assertIn("KillMode=control-group", argv)
-        self.assertIn("--clearenv", argv)
-        bind = max(i for i, value in enumerate(argv) if value == "--bind")
-        self.assertEqual(argv[bind:bind+3], ["--bind", str(Path(tmp)), "/work"])
-        filesystem_options = {"--bind", "--ro-bind", "--dir", "--tmpfs", "--proc", "--dev", "--symlink"}
-        self.assertFalse(any(value in filesystem_options for value in argv[bind+3:]))
-        self.assertEqual(run.call_args.kwargs["env"],
-                         {"PATH": "/usr/bin",
-                          "XDG_RUNTIME_DIR": f"/run/user/{__import__('os').getuid()}",
-                          "DBUS_SESSION_BUS_ADDRESS":
-                              f"unix:path=/run/user/{__import__('os').getuid()}/bus"})
-
-    def test_candidate_rejects_unprepared_runtime_and_bad_policy_without_execution(self):
-        q = verified_host()
-        with tempfile.TemporaryDirectory() as tmp, \
-             patch.object(backend, "representative_contract_verified", return_value=True), \
-             patch.object(grading.subprocess, "run") as run:
-            result = grading.grade_candidate_for_review(
-                "python-billing", Path(tmp), q, None,
-                SimpleNamespace(task_files_immutable=False, allowed_answer_artifacts=()),
-            )
-            self.assertEqual(result.reason, "grading-runtime-not-prepared")
-            result = grading.grade_candidate_for_review(
-                "python-billing", Path(tmp), q,
-                grading.PreparedRuntime(Path("/tmp/benchmark-runtime-test"), "1"*64),
-                SimpleNamespace(task_files_immutable="no", allowed_answer_artifacts=()),
-            )
-            self.assertEqual(result.reason, "submission-policy-mismatch")
-            run.assert_not_called()
-
-    def test_entrypoint_enforces_exploration_immutability_and_special_nodes(self):
-        source = grading.ENTRYPOINT_SOURCE
-        self.assertIn("immutable task file changed", source)
-        self.assertIn("unsafe submission node", source)
-        self.assertIn("hardlinked submission file rejected", source)
-        self.assertIn("files != expected_all", source)
-        self.assertIn("representative_graders", source)
-
-    def test_manifest_parsers_reject_unsafe_paths(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            p = Path(tmp) / "files.tsv"
-            p.write_text("sha256\tsize\tmode\tpath\n" + "0"*64 + "\t1\t0o644\t../escape\n")
-            with self.assertRaises(ValueError):
-                grading._parse_file_manifest(p)
-            p.write_text("sha256\tsize\tmode\tpath\n" + "0"*64 + "\t1\t0o644\ta.txt\n")
-            self.assertEqual(set(grading._parse_file_manifest(p)), {"a.txt"})
 
 
 if __name__ == "__main__":

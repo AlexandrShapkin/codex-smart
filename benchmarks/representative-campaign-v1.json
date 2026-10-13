@@ -180,7 +180,7 @@
     "runner_sha256": "3848d4a293cad7a8e228f5e72a8246d7bde5dad494b6644f5e9b023d859e751c",
     "host_validator_sha256": "0ab4794ccb5dab1402b2b814d755830b24aba667a4dae66eb531114c298ee89a",
     "host_contract_sha256": "3adfc594513aee78e27eface98d820f6d7ec70be7625abd1dacff05f719e375e",
-    "grading_backend_sha256": "c399a077a59a734073ee6d92728b162bccf0a0b2c8f17480a5ace64e92c9fc3d",
+    "grading_backend_sha256": "07740ba2da71a354645416c245dbf689bb87570eda174a8a20321ac36c309240",
     "grading_backend_contract_sha256": "2d998155b44bace387a52d3368fab6c1e08410bce24cab1ef51562e0df1a0970",
     "grading_backend_probe_sha256": "767f77fc640d93d976ce12081b105d40f6a276f8e065367fbaeeb53f4f4a3f1f",
     "grading_backend_candidate_evidence_sha256": "269bef23c21e419216028a44611c36c4c32d2c33b1a32ba02d71dc5259c5e638",

@@ -1,12 +1,10 @@
 """Production representative-submission grading candidate.
 
-This module owns the only candidate path that may execute an untrusted representative
-submission. Public representative grading remains fail-closed until a separately
-reviewed production-grading evidence reference is admitted by the contract.
-
-The accepted Ubuntu Bubblewrap backend is used only with its reviewed constrained
-mount topology: trusted mounts first, exactly one writable untrusted bind at /work,
-and no filesystem operation after that bind.
+The production path is deliberately separate from representative execution readiness:
+candidate evidence can be generated and reviewed without enabling model execution.
+Untrusted workspace bytes are mounted once, last, at /work. The sandbox-side trusted
+controller copies only reviewed expected files through descriptor-relative no-follow
+reads into private tmpfs before invoking the immutable grader.
 """
 
 from dataclasses import dataclass
@@ -15,9 +13,13 @@ import json
 import os
 from pathlib import Path
 import re
+import secrets
+import socket
 import stat
+import struct
 import subprocess
 import tempfile
+import time
 
 import benchmark_grading_backend as grading_backend
 import benchmark_host as host
@@ -26,6 +28,11 @@ ROOT = Path(__file__).resolve().parent.parent
 CONTRACT = ROOT / "benchmarks/submission-grading-v1.json"
 CANDIDATE_EVIDENCE = ROOT / "benchmarks/submission-grading-candidate-v1.json"
 PROBE = Path(__file__).with_name("benchmark_submission_grading_probe.py")
+CONTROLLER = Path(__file__).with_name("benchmark_submission_grader.py")
+SUPERVISOR = Path(__file__).with_name("benchmark_grading_supervisor.py")
+BWRAP = Path("/usr/bin/bwrap")
+SYSTEMD_RUN = Path("/usr/bin/systemd-run")
+SYSTEMCTL = Path("/usr/bin/systemctl")
 
 RUNTIME_REPOSITORY_HEAD = "dc2befe8d143d670c7a0ac47c5c3141a964c0a7c"
 RUNTIME_FILES_MANIFEST_SHA256 = "50c3b03c2bf1ae30ecb6d910c8e6d5b422d8bf839597f1de6dce55b355ab82df"
@@ -37,91 +44,21 @@ RUNTIME_DIR_COUNT = 2469
 QUALIFIED_HOST_RECEIPT = "d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265"
 GRADING_BACKEND_REFERENCE = "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec"
 
+CONTROLLER_SHA256 = "2d9212462ea84ca94491169d5b6d97649cd49a4e5494a17983c8ca62a3e8a652"
+SUPERVISOR_SHA256 = "002224942d0f061718af15ac4dc562e9e1cd64931fe394b8c2ffd74bea8e57f8"
+
 MEMORY_MAX = "3G"
 MEMORY_SWAP_MAX = "0"
 TASKS_MAX = 256
 RUNTIME_MAX_SECONDS = 120
-
-ENTRYPOINT_SOURCE = r'''import json
-from pathlib import Path
-import stat
-import sys
-
-sys.path.insert(0, "/runtime/grader/repo/scripts")
-sys.path.insert(0, "/runtime/grader/repo/benchmarks")
-
-import benchmark_coverage as coverage
-import representative_graders as graders
-
-
-def safe_relative(value):
-    path = Path(value)
-    return (not path.is_absolute() and ".." not in path.parts and "." not in path.parts
-            and str(path) not in {"", "."})
-
-
-def regular_tree(root):
-    files = set()
-    dirs = set()
-    for item in root.rglob("*"):
-        rel = item.relative_to(root).as_posix()
-        mode = item.lstat().st_mode
-        if stat.S_ISLNK(mode) or not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
-            raise ValueError("unsafe submission node")
-        if stat.S_ISREG(mode) and item.stat().st_nlink != 1:
-            raise ValueError("hardlinked submission file rejected")
-        (dirs if stat.S_ISDIR(mode) else files).add(rel)
-    return files, dirs
-
-
-def enforce_policy(fixture, workspace, immutable, allowed):
-    files, dirs = regular_tree(workspace)
-    if not immutable:
-        return
-    expected = set(fixture["files"])
-    allowed = set(allowed)
-    if any(not safe_relative(name) for name in allowed):
-        raise ValueError("unsafe answer artifact")
-    expected_all = expected | allowed
-    expected_dirs = {
-        parent.as_posix()
-        for name in expected_all
-        for parent in Path(name).parents
-        if parent != Path(".")
-    }
-    if files != expected_all or not dirs <= expected_dirs:
-        raise ValueError("submission policy mismatch")
-    for name, content in fixture["files"].items():
-        path = workspace / name
-        if not path.is_file() or path.read_text() != content:
-            raise ValueError("immutable task file changed")
-
-
-scenario_id = sys.argv[1]
-immutable = sys.argv[2] == "1"
-allowed = json.loads(sys.argv[3])
-manifest = coverage.load_manifest()
-scenario = next((row for row in manifest["scenarios"] if row["id"] == scenario_id), None)
-if scenario is None:
-    raise SystemExit(64)
-fixture = coverage.fixture(scenario)
-workspace = Path("/work")
-try:
-    enforce_policy(fixture, workspace, immutable, allowed)
-    quality = bool(graders.check(scenario, fixture, workspace))
-except (OSError, ValueError, TypeError):
-    print(json.dumps({"schema_version": 1, "quality_pass": False, "policy_or_grader_refusal": True},
-                     sort_keys=True))
-    raise SystemExit(0)
-print(json.dumps({"schema_version": 1, "quality_pass": quality,
-                  "policy_or_grader_refusal": False}, sort_keys=True))
-'''
 
 
 @dataclass(frozen=True)
 class PreparedRuntime:
     root: Path
     inventory_reference: str
+    root_identity: tuple[int, int]
+    role_identities: tuple[tuple[str, int, int], ...]
 
 
 @dataclass(frozen=True)
@@ -161,6 +98,8 @@ def expected_contract():
             "symlink_count": RUNTIME_SYMLINK_COUNT,
             "directory_count": RUNTIME_DIR_COUNT,
         },
+        "trusted_controller_sha256": CONTROLLER_SHA256,
+        "grading_supervisor_sha256": SUPERVISOR_SHA256,
         "resource_limits": {
             "memory_max": MEMORY_MAX,
             "memory_swap_max": MEMORY_SWAP_MAX,
@@ -174,21 +113,36 @@ def expected_contract():
             "untrusted_bind_last": True,
             "host_usr_mounted": False,
             "runtime_read_only": True,
+            "trusted_controller_read_only": True,
+            "verdict_channel": "private-unix-socket",
             "clear_environment": True,
             "network_namespace": True,
             "cap_drop_all": True,
         },
-        "entrypoint_sha256": hashlib.sha256(ENTRYPOINT_SOURCE.encode()).hexdigest(),
+        "submission_copy_policy": {
+            "descriptor_relative": True,
+            "no_follow": True,
+            "hardlinks_rejected": True,
+            "special_nodes_rejected": True,
+            "private_tmpfs_copy": True,
+            "max_file_bytes": 8388608,
+            "max_total_bytes": 33554432,
+        },
         "required_evidence": [
             "runtime-full-inventory-rehash",
             "all-reference-controls-pass",
             "all-wrong-controls-rejected",
-            "symlink-and-special-node-rejected",
-            "hardlink-rejected",
+            "expected-file-symlink-rejected",
+            "expected-file-hardlink-rejected",
+            "expected-file-special-node-rejected",
+            "exploration-immutability-and-extra-artifact-rejected",
+            "trusted-runtime-read-only",
             "host-filesystem-write-blocked",
             "credential-and-environment-isolation",
             "network-isolation",
-            "descendant-cleanup",
+            "zero-effective-capabilities",
+            "detached-descendant-cleanup",
+            "forged-verdict-rejected",
             "resource-limit-launch-shape",
         ],
         "accepted_evidence_sha256": [],
@@ -252,12 +206,26 @@ def prepare_runtime(runtime_root, inventory_dir, qualification):
             or qualification.reference != contract["qualified_host_receipt"]
             or not grading_backend.representative_contract_verified(qualification)):
         raise ValueError("qualified host/backend required")
+    grading_backend.runtime_preflight(BWRAP)
 
     root = Path(runtime_root)
     inventory = Path(inventory_dir)
-    if (not root.is_absolute() or root.is_symlink() or not root.is_dir()
+    if (not root.is_absolute() or root.parent != Path("/tmp")
+            or root.is_symlink() or not root.is_dir()
             or not root.name.startswith("benchmark-runtime-")):
         raise ValueError("unreviewed runtime staging root")
+
+    roles = ("python", "rust", "go", "libraries", "linker", "grader")
+    if {entry.name for entry in root.iterdir()} != set(roles):
+        raise ValueError("runtime role set mismatch")
+    role_identities = []
+    for role in roles:
+        source = root / role
+        if source.is_symlink() or not source.is_dir() or source.resolve() != source.absolute():
+            raise ValueError("runtime role rejected")
+        info = source.stat()
+        role_identities.append((role, info.st_dev, info.st_ino))
+
     manifest_paths = {
         "files": inventory / "runtime-files.tsv",
         "symlinks": inventory / "runtime-symlinks.tsv",
@@ -300,14 +268,13 @@ def prepare_runtime(runtime_root, inventory_dir, qualification):
                 seen_files.add(rel)
             else:
                 raise ValueError("runtime special node rejected")
-
     if seen_files != set(files) or seen_links != set(links) or seen_dirs != set(dirs):
         raise ValueError("runtime inventory topology mismatch")
 
     for rel, (digest, size, mode) in files.items():
         p = root / rel
-        st = p.stat()
-        if st.st_size != size or stat.S_IMODE(st.st_mode) != mode or _sha256(p) != digest:
+        info = p.stat()
+        if info.st_size != size or stat.S_IMODE(info.st_mode) != mode or _sha256(p) != digest:
             raise ValueError("runtime file mismatch")
     for rel, (mode, target) in links.items():
         p = root / rel
@@ -319,8 +286,12 @@ def prepare_runtime(runtime_root, inventory_dir, qualification):
             raise ValueError("runtime directory mismatch")
 
     head = root / "grader/repository-head.txt"
-    if (not head.is_file() or head.read_text().strip() != contract["runtime_repository_head"]):
+    if not head.is_file() or head.read_text().strip() != contract["runtime_repository_head"]:
         raise ValueError("runtime grader repository identity mismatch")
+    if _sha256(CONTROLLER) != contract["trusted_controller_sha256"]:
+        raise ValueError("trusted controller identity mismatch")
+    if _sha256(SUPERVISOR) != contract["grading_supervisor_sha256"]:
+        raise ValueError("grading supervisor identity mismatch")
 
     reference = hashlib.sha256(json.dumps({
         "files": expected["files_manifest_sha256"],
@@ -328,32 +299,28 @@ def prepare_runtime(runtime_root, inventory_dir, qualification):
         "dirs": expected["dirs_manifest_sha256"],
         "head": contract["runtime_repository_head"],
     }, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    return PreparedRuntime(root.resolve(), reference)
-
-
-def _mount_plan(runtime, workspace, entrypoint):
-    root = runtime.root
-    ops = (
-        grading_backend.MountOp("--ro-bind", "/runtime", str(root)),
-        grading_backend.MountOp("--dir", "/lib"),
-        grading_backend.MountOp("--ro-bind", "/lib/x86_64-linux-gnu",
-                                str(root / "libraries/x86_64-linux-gnu")),
-        grading_backend.MountOp("--dir", "/usr"),
-        grading_backend.MountOp("--dir", "/usr/lib"),
-        grading_backend.MountOp("--ro-bind", "/usr/lib/x86_64-linux-gnu",
-                                str(root / "libraries/x86_64-linux-gnu")),
-        grading_backend.MountOp("--dir", "/lib64"),
-        grading_backend.MountOp("--ro-bind", "/lib64/ld-linux-x86-64.so.2",
-                                str(root / "libraries/lib64/ld-linux-x86-64.so.2")),
-        grading_backend.MountOp("--proc", "/proc"),
-        grading_backend.MountOp("--dev", "/dev"),
-        grading_backend.MountOp("--tmpfs", "/tmp", size_bytes=2147483648),
-        grading_backend.MountOp("--dir", "/empty-home"),
-        grading_backend.MountOp("--ro-bind", "/grader-entry.py", str(entrypoint)),
-        grading_backend.MountOp("--bind", "/work", str(workspace), "untrusted"),
+    root_info = root.stat()
+    return PreparedRuntime(
+        root.resolve(),
+        reference,
+        (root_info.st_dev, root_info.st_ino),
+        tuple(role_identities),
     )
-    grading_backend.validate_mount_plan(ops)
-    return ops
+
+
+def _runtime_identity_matches(runtime):
+    try:
+        info = runtime.root.stat()
+        if runtime.root.is_symlink() or (info.st_dev, info.st_ino) != runtime.root_identity:
+            return False
+        for role, device, inode in runtime.role_identities:
+            path = runtime.root / role
+            current = path.stat()
+            if path.is_symlink() or (current.st_dev, current.st_ino) != (device, inode):
+                return False
+    except OSError:
+        return False
+    return True
 
 
 def _policy_values(policy):
@@ -366,12 +333,208 @@ def _policy_values(policy):
     return immutable, allowed
 
 
+def _user_manager_env():
+    runtime = Path("/run/user") / str(os.getuid())
+    return {
+        "PATH": "/usr/bin:/bin",
+        "XDG_RUNTIME_DIR": str(runtime),
+        "DBUS_SESSION_BUS_ADDRESS": "unix:path=" + str(runtime / "bus"),
+    }
+
+
+def _unit_state(unit):
+    try:
+        result = subprocess.run(
+            [str(SYSTEMCTL), "--user", "show", unit, "--property=ActiveState", "--value"],
+            env=_user_manager_env(), stdin=subprocess.DEVNULL,
+            capture_output=True, text=True, timeout=3, check=False, close_fds=True)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return result.stdout.strip() if result.returncode == 0 else None
+
+
+def _unit_control_group(unit):
+    try:
+        result = subprocess.run(
+            [str(SYSTEMCTL), "--user", "show", unit, "--property=ControlGroup", "--value"],
+            env=_user_manager_env(), stdin=subprocess.DEVNULL,
+            capture_output=True, text=True, timeout=3, check=False, close_fds=True)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    value = result.stdout.strip() if result.returncode == 0 else ""
+    if not value.startswith("/") or ".." in Path(value).parts:
+        return None
+    return value
+
+
+def _cgroup_empty(control_group):
+    if control_group is None:
+        return None
+    path = Path("/sys/fs/cgroup") / control_group.lstrip("/")
+    try:
+        return not (path / "cgroup.procs").read_text().strip()
+    except FileNotFoundError:
+        return True
+    except OSError:
+        return None
+
+
+def _stop_unit(unit, control_group=None):
+    if control_group is None:
+        control_group = _unit_control_group(unit)
+    state = _unit_state(unit)
+    if state not in {None, "inactive", "failed"}:
+        try:
+            result = subprocess.run(
+                [str(SYSTEMCTL), "--user", "stop", unit],
+                env=_user_manager_env(), stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                timeout=8, check=False, close_fds=True)
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+        if result.returncode != 0 and _unit_state(unit) not in {None, "inactive", "failed"}:
+            return False
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        empty = _cgroup_empty(control_group)
+        state = _unit_state(unit)
+        if empty is True and state in {None, "inactive", "failed"}:
+            return True
+        if control_group is None and state in {None, "inactive", "failed"}:
+            return True
+        time.sleep(0.05)
+    return False
+
+
+def _execute_isolated_grade(scenario, workspace, runtime):
+    unit = f"codex-smart-grade-{os.getpid()}-{secrets.token_hex(6)}.service"
+    with tempfile.TemporaryDirectory(prefix="codex-smart-grade-channel-", dir="/tmp") as tmp:
+        socket_path = Path(tmp) / "verdict.sock"
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
+            listener.bind(str(socket_path))
+            os.chmod(socket_path, 0o600)
+            listener.listen(1)
+            listener.settimeout(0.1)
+
+            mounts = grading_backend.production_mount_plan(
+                runtime.root, CONTROLLER, socket_path, workspace)
+            sandbox = [
+                str(BWRAP), "--unshare-user", "--unshare-all", "--disable-userns",
+                "--assert-userns-disabled", "--uid", str(os.getuid()), "--gid", str(os.getgid()),
+                "--cap-drop", "ALL", "--die-with-parent", "--new-session", "--clearenv",
+                *grading_backend.render_mount_plan(mounts),
+                "--setenv", "HOME", "/empty-home",
+                "--setenv", "CODEX_HOME", "/empty-home",
+                "--setenv", "PATH",
+                "/trusted/bin:/runtime/linker/bin:/runtime/rust/bin:/runtime/go/bin:/runtime/python/bin",
+                "--setenv", "RUSTUP_TOOLCHAIN", "1.98.0",
+                "--setenv", "LANG", "C",
+                "--setenv", "PYTHONDONTWRITEBYTECODE", "1",
+                "--chdir", "/work",
+                "--", "/runtime/python/bin/python3.14", "-B", "/controller.py", scenario,
+            ]
+            command = [
+                str(SYSTEMD_RUN), "--user", "--unit=" + unit, "--collect", "--quiet",
+                f"--property=MemoryMax={MEMORY_MAX}",
+                f"--property=MemorySwapMax={MEMORY_SWAP_MAX}",
+                f"--property=TasksMax={TASKS_MAX}",
+                f"--property=RuntimeMaxSec={RUNTIME_MAX_SECONDS}s",
+                "--property=KillMode=control-group",
+                "--", "/usr/bin/python3", "-B", str(SUPERVISOR), "--", *sandbox,
+            ]
+            try:
+                launched = subprocess.run(
+                    command, env=_user_manager_env(), stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    timeout=8, check=False, close_fds=True)
+            except (OSError, subprocess.TimeoutExpired):
+                _stop_unit(unit)
+                return CandidateGrade("blocked", "grading-launch-failed")
+            if launched.returncode != 0:
+                _stop_unit(unit)
+                return CandidateGrade("blocked", "grading-launch-failed")
+            control_group = _unit_control_group(unit)
+
+            connection = None
+            deadline = time.monotonic() + 8
+            try:
+                while time.monotonic() < deadline:
+                    try:
+                        connection, _ = listener.accept()
+                        break
+                    except socket.timeout:
+                        if _unit_state(unit) in {None, "failed", "inactive"}:
+                            break
+                if connection is None:
+                    _stop_unit(unit, control_group)
+                    return CandidateGrade("blocked", "grading-service-failed")
+
+                with connection:
+                    credentials = connection.getsockopt(
+                        socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i"))
+                    _pid, uid, _gid = struct.unpack("3i", credentials)
+                    if uid != os.getuid():
+                        _stop_unit(unit, control_group)
+                        return CandidateGrade("blocked", "grading-channel-peer-rejected")
+                    verdict_deadline = time.monotonic() + RUNTIME_MAX_SECONDS + 5
+                    connection.settimeout(0.2)
+                    data = bytearray()
+                    while time.monotonic() < verdict_deadline:
+                        try:
+                            chunk = connection.recv(4097 - len(data))
+                        except socket.timeout:
+                            if _unit_state(unit) in {None, "failed", "inactive"}:
+                                break
+                            continue
+                        if not chunk:
+                            break
+                        data.extend(chunk)
+                        if len(data) > 4096 or b"\n" in data:
+                            break
+                    raw = bytes(data)
+            except KeyboardInterrupt:
+                _stop_unit(unit, control_group)
+                raise
+            except OSError:
+                _stop_unit(unit, control_group)
+                return CandidateGrade("blocked", "grading-channel-failed")
+
+        if not _stop_unit(unit, control_group):
+            return CandidateGrade("blocked", "grading-cleanup-failed")
+        if not raw or b"\n" not in raw:
+            return CandidateGrade("blocked", "grading-service-failed")
+        if len(raw) > 4096:
+            return CandidateGrade("blocked", "grading-result-invalid")
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            return CandidateGrade("blocked", "grading-result-invalid")
+        lines = [line for line in text.splitlines() if line.strip()]
+        if len(lines) != 1:
+            return CandidateGrade("blocked", "grading-result-invalid")
+        try:
+            payload = json.loads(lines[0])
+        except (json.JSONDecodeError, TypeError):
+            return CandidateGrade("blocked", "grading-result-invalid")
+        required = {"status", "quality_pass"}
+        if type(payload) is not dict or set(payload) not in (required, required | {"reason"}):
+            return CandidateGrade("blocked", "grading-result-invalid")
+        if payload.get("status") == "blocked":
+            return CandidateGrade("blocked", "trusted-grader-failure")
+        if payload.get("status") != "verified" or type(payload.get("quality_pass")) is not bool:
+            return CandidateGrade("blocked", "grading-result-invalid")
+        reason = payload.get("reason", "isolated-grading-complete")
+        return CandidateGrade("verified", reason, payload["quality_pass"])
+
+
 def _run_candidate(scenario, workspace, runtime, policy):
-    load_contract()
+    contract = load_contract()
     if type(runtime) is not PreparedRuntime:
         return CandidateGrade("blocked", "grading-runtime-not-prepared")
+    if not _runtime_identity_matches(runtime):
+        return CandidateGrade("blocked", "grading-runtime-identity-drift")
     workspace = Path(workspace)
-    if (not workspace.is_absolute() or workspace.is_symlink() or not workspace.is_dir()):
+    if not workspace.is_absolute() or workspace.is_symlink() or not workspace.is_dir():
         return CandidateGrade("blocked", "submission-workspace-rejected")
     if type(scenario) is not str or not re.fullmatch(r"[a-z][a-z0-9-]{1,63}", scenario):
         return CandidateGrade("blocked", "scenario-rejected")
@@ -379,76 +542,24 @@ def _run_candidate(scenario, workspace, runtime, policy):
         immutable, allowed = _policy_values(policy)
     except ValueError:
         return CandidateGrade("blocked", "submission-policy-mismatch")
+    expected = (True, ("answer.json",)) if scenario == "explore-notification" else (False, ())
+    if (immutable, allowed) != expected:
+        return CandidateGrade("blocked", "submission-policy-mismatch")
     try:
-        grading_backend.runtime_preflight()
+        grading_backend.runtime_preflight(BWRAP)
+        if _sha256(CONTROLLER) != contract["trusted_controller_sha256"]:
+            raise ValueError
+        if _sha256(SUPERVISOR) != contract["grading_supervisor_sha256"]:
+            raise ValueError
     except (OSError, ValueError):
-        return CandidateGrade("blocked", "grading-backend-runtime-rejected")
-
-    runtime_dir = Path("/run/user") / str(os.getuid())
-    bus = runtime_dir / "bus"
+        return CandidateGrade("blocked", "grading-runtime-identity-drift")
+    bus = Path("/run/user") / str(os.getuid()) / "bus"
     if not bus.exists():
         return CandidateGrade("unavailable", "user-systemd-manager-unavailable")
-
-    with tempfile.TemporaryDirectory(prefix="submission-grader-") as tmp:
-        entrypoint = Path(tmp) / "grader-entry.py"
-        entrypoint.write_text(ENTRYPOINT_SOURCE)
-        entrypoint.chmod(0o444)
-        mounts = _mount_plan(runtime, workspace, entrypoint)
-        bwrap = [
-            "/usr/bin/bwrap",
-            "--unshare-user", "--unshare-all", "--disable-userns", "--assert-userns-disabled",
-            "--uid", str(os.getuid()), "--gid", str(os.getgid()),
-            "--cap-drop", "ALL", "--die-with-parent", "--new-session", "--clearenv",
-            *grading_backend.render_mount_plan(mounts),
-            "--setenv", "HOME", "/empty-home",
-            "--setenv", "CODEX_HOME", "/empty-home",
-            "--setenv", "PATH",
-            "/runtime/grader/bin:/runtime/linker/bin:/runtime/rust/bin:/runtime/go/bin:/runtime/python/bin",
-            "--setenv", "COMPILER_PATH",
-            "/runtime/linker/libexec/gcc/x86_64-linux-gnu/15:/runtime/linker/lib/gcc/x86_64-linux-gnu/15:/runtime/linker/bin",
-            "--setenv", "LIBRARY_PATH",
-            "/runtime/linker/lib/gcc/x86_64-linux-gnu/15:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu",
-            "--setenv", "RUSTUP_TOOLCHAIN", "1.98.0",
-            "--setenv", "LANG", "C",
-            "--chdir", "/work",
-            "--", "/runtime/python/bin/python3.14", "-B", "/grader-entry.py",
-            scenario, "1" if immutable else "0", json.dumps(list(allowed), separators=(",", ":")),
-        ]
-        command = [
-            "/usr/bin/systemd-run", "--user", "--wait", "--collect", "--pipe", "--quiet",
-            "-p", f"MemoryMax={MEMORY_MAX}",
-            "-p", f"MemorySwapMax={MEMORY_SWAP_MAX}",
-            "-p", f"TasksMax={TASKS_MAX}",
-            "-p", f"RuntimeMaxSec={RUNTIME_MAX_SECONDS}s",
-            "-p", "KillMode=control-group",
-            *bwrap,
-        ]
-        env = {
-            "PATH": "/usr/bin",
-            "XDG_RUNTIME_DIR": str(runtime_dir),
-            "DBUS_SESSION_BUS_ADDRESS": "unix:path=" + str(bus),
-        }
-        try:
-            result = subprocess.run(command, env=env, stdin=subprocess.DEVNULL,
-                                    capture_output=True, text=True, timeout=RUNTIME_MAX_SECONDS + 15,
-                                    close_fds=True)
-        except (OSError, subprocess.TimeoutExpired):
-            return CandidateGrade("blocked", "grading-sandbox-launch-failed")
-    if result.returncode != 0 or len(result.stdout) > 4096 or len(result.stderr) > 16384:
-        return CandidateGrade("blocked", "grading-sandbox-failed")
     try:
-        record = json.loads(result.stdout)
-    except (json.JSONDecodeError, TypeError):
-        return CandidateGrade("blocked", "grading-result-rejected")
-    if (type(record) is not dict
-            or set(record) != {"schema_version", "quality_pass", "policy_or_grader_refusal"}
-            or record["schema_version"] != 1
-            or type(record["quality_pass"]) is not bool
-            or type(record["policy_or_grader_refusal"]) is not bool):
-        return CandidateGrade("blocked", "grading-result-rejected")
-    if record["policy_or_grader_refusal"]:
-        return CandidateGrade("verified", "isolated-grader-refused-submission", False)
-    return CandidateGrade("verified", "isolated-grader-completed", record["quality_pass"])
+        return _execute_isolated_grade(scenario, workspace, runtime)
+    except ValueError:
+        return CandidateGrade("blocked", "grading-mount-plan-rejected")
 
 
 def evidence_reference(payload):
@@ -475,7 +586,7 @@ def load_candidate_evidence(path=CANDIDATE_EVIDENCE):
     required = {
         "qualified_host_receipt", "grading_backend_reference", "runtime_repository_head",
         "runtime_inventory_reference", "runtime_full_rehash", "implementation_sha256",
-        "probe_sha256", "contract_sha256", "entrypoint_sha256",
+        "probe_sha256", "contract_sha256", "controller_sha256", "supervisor_sha256",
         "correctness_controls_sha256", "security_controls_sha256",
         "references_passed", "wrong_controls_rejected", "security_controls_passed",
         "resource_limit_launch_shape", "model_calls", "real_credentials_used",
@@ -489,13 +600,15 @@ def load_candidate_evidence(path=CANDIDATE_EVIDENCE):
         "head": contract["runtime_repository_head"],
     }, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     expected_security = [
-        "symlink-rejected",
-        "hardlink-rejected",
-        "special-node-rejected",
+        "expected-file-symlink-rejected",
+        "expected-file-hardlink-rejected",
+        "expected-file-special-node-rejected",
         "exploration-task-immutability",
         "exploration-extra-artifact-rejected",
         "host-env-network-capability-isolation",
-        "descendant-cleanup",
+        "trusted-runtime-readonly",
+        "detached-descendant-cleanup",
+        "forged-verdict-rejected",
     ]
     if (candidate["qualified_host_receipt"] != contract["qualified_host_receipt"]
             or candidate["grading_backend_reference"] != contract["grading_backend_reference"]
@@ -505,7 +618,8 @@ def load_candidate_evidence(path=CANDIDATE_EVIDENCE):
             or candidate["implementation_sha256"] != _sha256(Path(__file__))
             or candidate["probe_sha256"] != _sha256(PROBE)
             or candidate["contract_sha256"] != _sha256(CONTRACT)
-            or candidate["entrypoint_sha256"] != contract["entrypoint_sha256"]
+            or candidate["controller_sha256"] != contract["trusted_controller_sha256"]
+            or candidate["supervisor_sha256"] != contract["grading_supervisor_sha256"]
             or candidate["references_passed"] != 10
             or candidate["wrong_controls_rejected"] != 20
             or candidate["security_controls_passed"] != expected_security
@@ -517,8 +631,9 @@ def load_candidate_evidence(path=CANDIDATE_EVIDENCE):
             or candidate["real_credentials_used"] is not False):
         raise ValueError("production grading candidate failed required evidence")
     for key in ("implementation_sha256", "probe_sha256", "contract_sha256",
-                "entrypoint_sha256", "correctness_controls_sha256",
-                "security_controls_sha256", "runtime_inventory_reference"):
+                "controller_sha256", "supervisor_sha256",
+                "correctness_controls_sha256", "security_controls_sha256",
+                "runtime_inventory_reference"):
         if type(candidate[key]) is not str or not re.fullmatch("[0-9a-f]{64}", candidate[key]):
             raise ValueError("invalid production grading evidence digest")
     if evidence_reference(candidate) != record["evidence_reference"]:

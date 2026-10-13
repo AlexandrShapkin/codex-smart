@@ -181,6 +181,42 @@ def probe_mount_plan(probe_source, workspace):
     return ops
 
 
+def production_mount_plan(runtime_root, controller_source, verdict_socket, workspace):
+    """Exact production grading topology; untrusted /work is always mounted last."""
+    runtime_root = Path(runtime_root)
+    controller_source = Path(controller_source)
+    verdict_socket = Path(verdict_socket)
+    workspace = Path(workspace)
+    ops = (
+        MountOp("--dir", "/runtime"),
+        MountOp("--dir", "/lib"),
+        MountOp("--dir", "/usr"),
+        MountOp("--dir", "/usr/lib"),
+        MountOp("--dir", "/lib64"),
+        MountOp("--dir", "/empty-home"),
+        MountOp("--ro-bind", "/runtime/python", str(runtime_root / "python")),
+        MountOp("--ro-bind", "/runtime/rust", str(runtime_root / "rust")),
+        MountOp("--ro-bind", "/runtime/go", str(runtime_root / "go")),
+        MountOp("--ro-bind", "/runtime/linker", str(runtime_root / "linker")),
+        MountOp("--ro-bind", "/runtime/libraries", str(runtime_root / "libraries")),
+        MountOp("--ro-bind", "/trusted", str(runtime_root / "grader")),
+        MountOp("--ro-bind", "/lib/x86_64-linux-gnu",
+                str(runtime_root / "libraries" / "x86_64-linux-gnu")),
+        MountOp("--ro-bind", "/usr/lib/x86_64-linux-gnu",
+                str(runtime_root / "libraries" / "x86_64-linux-gnu")),
+        MountOp("--ro-bind", "/lib64/ld-linux-x86-64.so.2",
+                str(runtime_root / "libraries" / "lib64" / "ld-linux-x86-64.so.2")),
+        MountOp("--proc", "/proc"),
+        MountOp("--dev", "/dev"),
+        MountOp("--tmpfs", "/tmp", size_bytes=2147483648),
+        MountOp("--ro-bind", "/controller.py", str(controller_source)),
+        MountOp("--bind", "/verdict.sock", str(verdict_socket)),
+        MountOp("--bind", "/work", str(workspace), "untrusted"),
+    )
+    validate_mount_plan(ops)
+    return ops
+
+
 def render_mount_plan(ops):
     validate_mount_plan(ops)
     argv = []

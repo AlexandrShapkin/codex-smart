@@ -724,9 +724,10 @@ adds an inventory requirement, not a verified runtime or a host fallback.
 Campaign identity/status and readiness are unchanged:
 `representative_campaign_ready` remains false and both campaigns are unexecuted. A
 separate-host receipt, exact agent-isolation evidence and the constrained grading
-backend are now reviewed. Production submission grading now has a bounded candidate
-implementation and review evidence, but that evidence is not yet accepted by its
-frozen contract and therefore cannot promote readiness. The historical seven-component
+backend are now reviewed. Production submission grading now has a bounded candidate implementation with
+descriptor-relative no-follow submission copying, private tmpfs grading input, a private
+verdict channel and cgroup-empty cleanup evidence, but that evidence is not yet accepted
+by its frozen contract and therefore cannot promote readiness. The historical seven-component
 manifest/preliminary 42-job plan and smoke evidence remain byte-identical. #14 stays
 open, #15 separate and benchmark partial.
 
