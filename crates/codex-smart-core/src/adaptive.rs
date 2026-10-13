@@ -19,8 +19,8 @@ pub const MAX_DELEGATIONS: u8 = 1;
 pub struct ExecutionBudget {
     pub max_attempts: u8,
     pub max_retries: u8,
-    /// Reserved ceiling for the later bounded-delegation stage. This controller does
-    /// not execute or authorize delegation.
+    /// Ceiling consumed only by the separate bounded-delegation policy contract.
+    /// This controller still launches no child process itself.
     pub max_delegations: u8,
 }
 
@@ -148,8 +148,8 @@ pub struct AdaptiveController {
     pub budget: ExecutionBudget,
     pub attempts_started: u8,
     pub retries_used: u8,
-    /// Delegation is intentionally not implemented in #43. Keeping the observed count
-    /// explicit prevents later work from hiding handoffs outside the lifecycle budget.
+    /// Observed bounded-delegation count. The separate delegation contract consumes this
+    /// counter so handoffs cannot hide outside the lifecycle budget.
     pub delegations_used: u8,
     pub state: ControllerState,
     pub allowed_triggers: BTreeSet<AdaptiveTrigger>,
@@ -418,7 +418,7 @@ impl AdaptiveController {
     /// paths, provider/model names, credentials, tool output or execution authority.
     pub fn render(&self) -> String {
         format!(
-            "Adaptive execution contract (no execution)\nSchema: {}\nWorkflow: {:?}\nRisk: {:?}\nState: {:?}\nFloor: profile={:?}; reasoning={:?}\nCurrent: profile={:?}; reasoning={:?}\nBudget: attempts={}; retries={}; delegations={} (delegation not implemented)\nUsed: attempts={}; retries={}; delegations={}\nAllowed triggers: {:?}\nHistory: {:?}\n",
+            "Adaptive execution contract (no execution)\nSchema: {}\nWorkflow: {:?}\nRisk: {:?}\nState: {:?}\nFloor: profile={:?}; reasoning={:?}\nCurrent: profile={:?}; reasoning={:?}\nBudget: attempts={}; retries={}; delegations={} (separate bounded contract)\nUsed: attempts={}; retries={}; delegations={}\nAllowed triggers: {:?}\nHistory: {:?}\n",
             self.schema_version,
             self.archetype,
             self.risk,
@@ -747,7 +747,7 @@ mod tests {
             "Adaptive execution contract (no execution)",
             "Workflow: Inspection",
             "Floor: profile=Economy; reasoning=Medium",
-            "delegations=1 (delegation not implemented)",
+            "delegations=1 (separate bounded contract)",
             "Allowed triggers:",
         ] {
             assert!(rendered.contains(expected), "missing {expected}");

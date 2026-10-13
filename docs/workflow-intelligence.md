@@ -1,6 +1,6 @@
 # Workflow intelligence target
 
-Status: Playbooks 0.4 is implemented and accepted; Adaptive Execution 0.5 is the next active stage. #14 measured benchmark and #15 aggregate telemetry are accepted. Router v2 and the single Codex launch remain production behavior. Playbooks now provides typed workflow semantics, pure deterministic selection/resource planning, bounded native validation recipes and enum-only explanation. These contracts do not prepare resources, execute tools, enable adaptive execution/delegation or authorize model calls.
+Status: Playbooks 0.4 is implemented and accepted; Adaptive Execution 0.5 is active. #43 bounded execution, #44 replaceable model compatibility routing and #45 bounded delegation policy are implemented; #46 lifecycle measurement remains. #14 measured benchmark and #15 aggregate telemetry are accepted. Router v2 and the single Codex launch remain production behavior. These policy contracts still do not launch adaptive retries, children or model calls.
 
 ## Objective and boundaries
 
@@ -72,16 +72,11 @@ for reproducibility.
 
 The #43 pure adaptive controller now consumes only a `Ready` workflow plan, a `Ready` validation recipe and a bounded execution budget. It preserves the selected workflow profile/reasoning as a hard floor: economy may advance to standard and then strong/high, but no transition can lower the floor. High-risk/security plans therefore start strong/high rather than trying a cheaper profile first. Runtime failure and timeout are explicit controller triggers; playbook ambiguity/context/capability/validation triggers remain typed and inspectable. Missing evidence enters `NeedsEvidence` rather than being assumed away; unavailable or conflicting safety/validation evidence blocks.
 
-Every started attempt is retained with its profile, reasoning, outcome, validation result and trigger. Completion is impossible until an attempt completes and independent validation passes. Retry and attempt ceilings are explicit (`MAX_ATTEMPTS=4`, `MAX_RETRIES=3`); exhaustion is terminal. A delegation ceiling is carried in the budget but #43 deliberately grants no delegation authority—#45 owns that implementation.
+Every started attempt is retained with its profile, reasoning, outcome, validation result and trigger. Completion is impossible until an attempt completes and independent validation passes. Retry and attempt ceilings are explicit (`MAX_ATTEMPTS=4`, `MAX_RETRIES=3`); exhaustion is terminal. The lifecycle budget also carries one bounded delegation slot; #45 consumes that slot through a separate ledger so child work cannot hide outside lifecycle accounting.
 
 #44 separates product capability classes from provider/model identity with a pure replaceable catalog. Provider/model handles are opaque policy IDs; each descriptor independently reports verified/unknown/unsupported/unavailable/blocked availability and Medium/High reasoning compatibility. The resolver accepts only candidates at or above the controller's current profile floor, selects the smallest verified class deterministically, and can use a verified stronger candidate rather than an unknown/unavailable exact-class mapping. It never substitutes a lower class or promotes Unknown to ready. Re-resolving after #43 escalation yields progressive Economy → Standard → Strong/High routing without hardcoding benchmark or commercial model names. Concrete provider/model strings and production argv/runtime application remain a separately verified adapter; current production `run` remains passthrough.
 
-Future bounded delegation may suit narrow read-only inspection, mechanical
-transformation, selected-context summarization, simple deterministic repair or
-search. It must not assume cheap delegation is suitable for security decisions,
-concurrency reasoning, destructive migrations, ambiguous API design or conflicting
-final evidence. Each delegation needs bounded authority, context, cost/time,
-validation and evidence-preserving handoff. No delegation is implemented here.
+#45 implements only a narrow delegation contract for read-only evidence and mechanical workspace changes. Context and resource scope are opaque bounded handles; child wall time, abstract cost units and output bytes have explicit ceilings; writable scope and declared validation are explicit; nested delegation is forbidden. Unknown safety remains an evidence gate, while high-risk parents plus security, concurrency, destructive migration, ambiguous API or conflicting-evidence hazards are blocked rather than assumed cheap-safe. Completed handoffs carry bounded evidence digests and still require parent review/revalidation; child failure, timeout, refusal and protocol violation remain recorded. The policy layer launches no child and carries no arbitrary source/prompt payload.
 
 Measure quality, total lifecycle tokens, estimated cost, latency, escalation rate,
 failed-cheap-attempt rate, strong-model-avoided rate and handoff overhead. Price
