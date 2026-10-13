@@ -12,6 +12,11 @@ No runtime orchestration framework, second agent, online docs-check, automatic s
 
 just context and just context tools emit at most 8192 UTF-8 bytes offline. docs-check rejects missing ownership, cycles, broken local links, incomplete contracts and generated drift. CI runs just check.
 
+The [workflow normalization audit](../diagnostics/2026-10-14-workflow-normalization.md)
+adds verified-main task isolation and source receipts through the same command
+surface. Preserve existing checkouts/deployments; diagnostics stay read-only, remote
+freshness stays unknown offline, and live benchmark execution needs separate authority.
+
 ## Validation
 
 just docs-generate; just docs-check; just check. Isolated regression tests; dogfood context on #7; verify pushed CI.
@@ -22,4 +27,4 @@ Read [docs/workflow.md](../../docs/workflow.md), [docs/development.md](../../doc
 
 ## Follow-ups
 
-Only explicit docs-generate writes the two generated views. Durable contracts require owner updates; context limits require deeper targeted reads when needed.
+Only explicit docs-generate writes the two generated views. Durable contracts require owner updates; context limits require deeper targeted reads when needed. Host connectivity and legacy snapshot identity must be verified by operators before selecting any new deployment; source receipts do not qualify runtimes or authorize model calls.

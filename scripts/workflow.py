@@ -205,12 +205,29 @@ class Repository:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["context", "check", "generate"])
+    actions = ["repo-inspect", "task-start", "source-verify", "snapshot-export", "snapshot-verify"]
+    parser.add_argument("action", choices=["context", "check", "generate", *actions])
     parser.add_argument("stage", nargs="?")
+    parser.add_argument("--root", default=str(ROOT))
+    parser.add_argument("--branch")
+    parser.add_argument("--destination")
+    parser.add_argument("--expected-sha")
+    parser.add_argument("--snapshot")
+    parser.add_argument("--receipt-sha256")
     args = parser.parse_args()
     if args.stage is not None and args.action != "context":
         parser.error("Only context accepts a stage")
+    required = {"task-start": ["branch", "destination", "expected_sha"],
+                "source-verify": ["expected_sha"],
+                "snapshot-export": ["expected_sha", "destination"],
+                "snapshot-verify": ["snapshot", "expected_sha", "receipt_sha256"]}
+    if any(getattr(args, name) is None for name in required.get(args.action, [])):
+        parser.error("Missing required explicit workflow arguments")
     try:
+        if args.action in actions:
+            import repository_workflow
+            print(json.dumps(repository_workflow.run(args.action, args), indent=2))
+            return 0
         repo = Repository(ROOT)
         if args.action == "context":
             print(repo.context(args.stage), end="")
@@ -224,7 +241,8 @@ def main():
             print("Generated ROADMAP.md and docs/index.md")
     except (ValueError, KeyError, TypeError, OSError) as error:
         reason = str(error) if type(error) is ValueError else "Invalid registry/document input"
-        print(f"E_DOCS: {reason}", file=sys.stderr)
+        code = "E_WORKFLOW" if args.action in actions else "E_DOCS"
+        print(f"{code}: {reason}", file=sys.stderr)
         return 1
     return 0
 

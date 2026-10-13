@@ -6,12 +6,19 @@ Prerequisites: Rust 1.98 with rustfmt/clippy, Python 3.11+ and just 1.58.0. just
 
 Git/GitHub access was revalidated on 2026-10-06: local metadata is writable, origin HEAD resolves and authenticated issue access succeeds. Use focused working branches and record pushed commit/CI evidence in PRs. Historical read-only blockers remain in dated diagnostics only. Required PR checks: CI `check` and Security `review`.
 
-In this sandbox, one missing build crate (toml_writer 1.1.2) was checksum-verified into `/tmp/codex-smart-cargo`; local checks use `CARGO_HOME=/tmp/codex-smart-cargo just check` and the corresponding security/nextest commands. This is a session-specific workaround, not a repository config requirement or runtime cache. Global Cargo/auth stores were not copied or modified.
+Use the current host's verified Cargo cache for offline checks. The earlier temporary
+`/tmp/codex-smart-cargo` workaround is no longer present in the normalization audit
+environment; the default cache passes the Rust gates. Temporary cache paths are not
+portable setup instructions. Never copy global Cargo/auth stores. See the
+[normalization audit](diagnostics/2026-10-14-workflow-normalization.md) for its isolated
+public advisory-cache workaround and exact validation results.
 
 
 Requested command aliases: `just docs-sync` runs the existing deterministic docs-generate;
 `just deny` runs the existing security gate. `just status` explicitly reads local git
-state. They add no new workflow or automatic online action. The offline check/context
+state and cached divergence/worktrees through the existing workflow command surface;
+remote freshness stays unknown. Use the authoritative [workflow](workflow.md) for
+task isolation and pinned source snapshot commands. The offline check/context
 implementation from PR #19 is preserved.
 
 ## Main protection policy

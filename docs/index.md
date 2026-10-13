@@ -35,6 +35,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [External executable pin validation — 2026-10-06](../docs/diagnostics/2026-10-06-tools.md) | engineering | historical | tools |
 | [Bounded workflow validation — 2026-10-06](../docs/diagnostics/2026-10-06-workflow.md) | engineering | historical | workflow |
 | [Initial engineering diagnostic — 2026-10-06](../docs/diagnostics/2026-10-06.md) | engineering | historical | baseline |
+| [Repository workflow normalization audit](../docs/diagnostics/2026-10-14-workflow-normalization.md) | engineering | historical | workflow |
 | [Distribution and release lifecycle target](../docs/distribution.md) | release | contract | playbooks, adaptive, automation, distribution, hardening, stable |
 | [Offline Doctor contract](../docs/doctor.md) | engineering | current | doctor |
 | [Documentation index](../docs/index.md) | engineering | generated | workflow |
@@ -76,4 +77,4 @@ GitHub Issues own live state; local issue files preserve design references.
 | [Tooling and capability trust](../docs/tooling.md) | engineering | current | tools, doctor |
 | [Versioning](../docs/versioning.md) | release | current | stable |
 | [Workflow intelligence target](../docs/workflow-intelligence.md) | architecture | contract | playbooks, adaptive, automation, distribution, hardening, stable |
-| [Bounded development workflow](../docs/workflow.md) | engineering | current | workflow |
+| [Repository development workflow](../docs/workflow.md) | engineering | current | workflow |

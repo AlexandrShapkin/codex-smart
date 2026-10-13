@@ -561,7 +561,7 @@
     },
     {
       "path": "docs/workflow.md",
-      "title": "Bounded development workflow",
+      "title": "Repository development workflow",
       "owner": "engineering",
       "role": "current",
       "stages": [
@@ -653,6 +653,15 @@
       "role": "contract",
       "stages": [
         "benchmark"
+      ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-14-workflow-normalization.md",
+      "title": "Repository workflow normalization audit",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "workflow"
       ]
     }
   ]

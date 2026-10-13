@@ -2,7 +2,7 @@
 
 ## Workflow
 
-Start on clean, synchronized `main` with `just context [STAGE]` and `just issues`. Read the owning stage contract, relevant ADRs and [workflow](docs/workflow.md) before editing. Keep changes within one acceptance slice and preserve the thin launcher and safety contracts.
+Start from a verified GitHub `main` commit in a new task branch/worktree using the authoritative [workflow](docs/workflow.md#start-a-codex-task). Preserve existing dirty or outdated checkouts. Inside the isolated task, run `just context [STAGE]` and `just issues`; read the owning contract and relevant ADRs before editing. Keep changes within one acceptance slice and preserve the thin launcher and safety contracts.
 
 Use `feat/<scope>`, `fix/<scope>`, `docs/<scope>` or `chore/<scope>` branches and small Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`). Inspect all diffs, including new files. Push, merge, release and publish only with authorization; never auto-merge by default.
 
@@ -36,7 +36,7 @@ Update documentation at its canonical owner in `docs/documents.json`; update sta
 
 Use the PR template to connect the problem, scope, approach and validation to the owning issue/stage. Report safety/compatibility effects, risks, known limits and follow-ups. CI `check` and Security `review` must pass on the exact final SHA before owner acceptance; do not present a local pass as remote evidence.
 
-Close an issue only when its acceptance is satisfied and linked PR/commit/check evidence is recorded. Partial delivery needs explicit residual acceptance and an owning follow-up; stage transfers replace ownership labels. After authorized merge, return to clean `main` before the next slice.
+Close an issue only when its acceptance is satisfied and linked PR/commit/check evidence is recorded. Partial delivery needs explicit residual acceptance and an owning follow-up; stage transfers replace ownership labels. After authorized merge, verify GitHub `main` again and start the next slice in a new worktree.
 
 ## Security and privacy
 
