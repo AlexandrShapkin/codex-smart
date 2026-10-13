@@ -61,7 +61,9 @@
     }
   },
   "profile_smoke": {
-    "accepted_evidence_sha256": [],
+    "accepted_evidence_sha256": [
+      "908a97f105e1a29fbc5aafed15a3becbece6fa38311cde7d9f968b185f3814d0"
+    ],
     "authorization_required": true,
     "jobs": [
       {
@@ -152,5 +154,5 @@
   },
   "schema_version": 1,
   "split_host_topology_reference": "1a9e7a145e7271b872d2dfc54c92a6ac578cbd8859649f8c4c062a127f3aac43",
-  "status": "profile-smoke-recorded-review-required"
+  "status": "profile-mapping-verified-live-runner-required"
 }

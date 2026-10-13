@@ -88,9 +88,9 @@ reduce mapping confound. Local Codex model metadata advertises the required reas
 levels, but that metadata is not execution evidence. The distinct three-execution
 profile smoke has now passed the accepted production grader for Economy/Medium,
 Standard/High and Strong/High. Execution evidence `908a97f1...` binds the exact
-trace/submission hashes and is separately review-gated before the mapping becomes ready.
+trace/submission hashes and is accepted, so the profile mapping is execution-verified.
 The measured campaign still requires a separate explicit authorization and remains
-disabled until admission plus a reviewed live-runner boundary.
+disabled until a reviewed live-runner boundary is merged.
 
 The lifecycle report must measure quality, summed attempt tokens, total lifecycle latency,
 escalation count, failed-cheap attempts, strong-model-avoided and handoff count/overhead.

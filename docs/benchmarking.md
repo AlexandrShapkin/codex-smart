@@ -60,8 +60,8 @@ capability evidence (`baaab449...`). The separately authorized three-execution p
 smoke has now exercised Economy/Medium, Standard/High and Strong/High through the same
 ThinkPad-agent / accepted-`srv0`-grader boundary; all three agent runs exported a
 submission and all three passed production grading. Immutable execution evidence
-`908a97f1...` records the exact trace/submission hashes and remains separately
-review-gated in this change. The later adaptive campaign still requires its own explicit
+`908a97f1...` records the exact trace/submission hashes and is now accepted as the
+profile-mapping execution proof. The later adaptive campaign still requires its own explicit
 authorization. No adaptive winner or savings claim exists yet.
 
 ## Quality before cost
