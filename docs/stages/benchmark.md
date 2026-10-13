@@ -33,17 +33,20 @@ purpose-built representative synthetic coverage, not large real-world repository
 evidence. Coverage metadata is measurement-only. Review matrix acceptance independently of
 host qualification; no measured result, winner or savings exists.
 
-Current-host capability investigation is complete: systemd/cgroup-v2 present but
-user resource manager/delegation unavailable and aggregate memory/tasks unverified.
-Qualify a separate host with enforced aggregate limits, descendant cleanup, immutable
-runtime inventory and complete filesystem/network/environment isolation. Submitted
-code must not run on the authenticated host. One reviewed separate-host receipt is
-now accepted, together with exact agent-isolation evidence and the constrained grading
-backend. `representative_campaign_ready` remains false and public real execution stays
-disabled because production submission grading is still a refusal-only boundary. The
-matrix and representative runner adapter remain prepared with fake-only tests and
-pins. Next implement and independently verify the isolated production submission
-grader before any readiness promotion or separately authorized spending.
-The current development host is not a candidate for further qualification work unless
-its capabilities materially change. See [host/runner contract](../benchmark-host.md).
-Benchmark stays partial, #14 open and #15 separate. See docs/benchmarking.md.
+Current-host capability investigation is complete: the development host remains
+non-qualified and is not a submitted-code grading target. A separate host receipt is
+accepted together with exact agent-isolation evidence, the constrained grading backend,
+and production submission-grading evidence `199ec772...`. The production grader uses
+descriptor-relative no-follow reads into private tmpfs, a private verdict socket and
+cgroup-empty cleanup. The representative runner now requires and fully rehashes the
+reviewed staged runtime before the authorization gate.
+
+`representative_campaign_ready` is true for the frozen technical contract, supported by
+credential-free readiness evidence `1b5feee9...`, but this is not execution authorization:
+the offline plan still reports `model_execution_enabled=false` and the only real entry
+still requires explicit `--authorize-execution`, exact runtime and inventory paths,
+reviewed qualification evidence, exact Codex identity, exact toolchains from the staged
+runtime (never host `PATH`) and a fresh private artifact target. Neither campaign has been executed. The current
+development host is not a candidate for further qualification work unless its
+capabilities materially change. See [host/runner contract](../benchmark-host.md).
+Benchmark stays partial until measured evidence exists; #14 remains open and #15 separate.

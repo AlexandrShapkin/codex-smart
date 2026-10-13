@@ -1,0 +1,37 @@
+{
+  "candidate": {
+    "agent_execution_isolation_reference": "ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb",
+    "codex_executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "codex_shell_environment_config_parse": true,
+    "codex_version": "0.162.1",
+    "go_compile_run": true,
+    "grading_backend_reference": "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec",
+    "plan_model_execution_enabled": false,
+    "preauthorization_artifact_created": false,
+    "preauthorization_attempt_count": 0,
+    "preauthorization_model_calls": 0,
+    "preauthorization_refusal": "explicit representative execution authorization required",
+    "prepared_runtime_inventory_reference": "d8abc626e72bc7ef483ac408c085b638c807712a47f12342b31583ed4f108208",
+    "probe_sha256": "080894649c2c5a9a259f728d9b46f7da7547006b9870d7c0fb8cc5806e263586",
+    "production_grading_reference": "199ec7721ec56c57f1e09f19267e8888cc3f1ee31a8ccf754a4b0af0742bf602",
+    "python_run": true,
+    "qualification_reference": "d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265",
+    "qualified_runtime_inventory_component_reference": "d9c4670ff5414e77b0b807cfce2333ebfcf4788e99dafe0ce7ed116245ea82be",
+    "real_credentials_used": false,
+    "representative_campaign_ready": true,
+    "runner_sha256": "7d6b397f9981c3695166c9222ef4c1154c1a61eb986d54a4fd5d16d6ef42ae20",
+    "rust_compile_run": true,
+    "toolchain_versions": {
+      "cargo": "cargo 1.98.0 (797e8a9bc 2026-08-05)",
+      "go": "go version go1.27.2 linux/amd64",
+      "python3": "Python 3.14.8",
+      "rustc": "rustc 1.98.0 (88d9e12ae 2026-08-18)"
+    }
+  },
+  "contract_id": "benchmark-representative-readiness-v1",
+  "evidence_reference": "1b5feee9b507f3bee97560a1a619a300e44a1e5372b10a832e23ce85b35fff2c",
+  "model_calls": 0,
+  "probe_kind": "credential-free-preauthorization-readiness",
+  "real_credentials_used": false,
+  "schema_version": 1
+}

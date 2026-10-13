@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "campaign_id": "representative-development-v1",
-  "status": "frozen-plan-isolation-blocked",
+  "status": "frozen-plan-ready-authorization-required",
   "coverage_role": "representative",
   "provenance": {
     "preliminary_campaign": "initial-development-v1",
@@ -87,6 +87,37 @@
       "child_unreadable_paths": [
         "~/.local/share/keyrings"
       ]
+    },
+    "staged_toolchain_environment": {
+      "path_roles": [
+        "rust/bin",
+        "go/bin",
+        "python/bin",
+        "linker/bin",
+        "/usr/bin",
+        "/bin"
+      ],
+      "compiler_path_roles": [
+        "linker/libexec/gcc/x86_64-linux-gnu/15",
+        "linker/lib/gcc/x86_64-linux-gnu/15",
+        "linker/bin"
+      ],
+      "library_path_roles": [
+        "linker/lib/gcc/x86_64-linux-gnu/15",
+        "libraries/x86_64-linux-gnu"
+      ],
+      "fixed": {
+        "CARGO_NET_OFFLINE": "true",
+        "GOPROXY": "off",
+        "GOSUMDB": "off",
+        "GOTOOLCHAIN": "local",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "workspace_relative": {
+        "CARGO_HOME": ".cargo-home",
+        "CARGO_TARGET_DIR": "target",
+        "GOCACHE": ".go-cache"
+      }
     }
   },
   "codex": {
@@ -164,20 +195,22 @@
     "scope": "Codex startup/auth/JSONL only; not representative grading compatibility"
   },
   "readiness": {
-    "real_runner_contract": "prepared",
-    "agent_execution_isolation_contract": "required-not-verified",
-    "grading_isolation_contract": "required-not-verified",
-    "qualified_host_contract": "required-not-verified",
-    "representative_campaign_ready": false
+    "real_runner_contract": "verified",
+    "agent_execution_isolation_contract": "verified",
+    "grading_isolation_contract": "verified",
+    "production_grading_contract": "verified",
+    "qualified_host_contract": "verified",
+    "representative_campaign_ready": true
   },
   "execution_dependencies": {
     "agent_execution_isolation_contract": "verified",
     "grading_isolation_contract": "verified",
+    "production_grading_contract": "verified",
     "qualified_host_contract": "verified"
   },
   "measured_records": [],
   "runner_pins": {
-    "runner_sha256": "3848d4a293cad7a8e228f5e72a8246d7bde5dad494b6644f5e9b023d859e751c",
+    "runner_sha256": "7d6b397f9981c3695166c9222ef4c1154c1a61eb986d54a4fd5d16d6ef42ae20",
     "host_validator_sha256": "0ab4794ccb5dab1402b2b814d755830b24aba667a4dae66eb531114c298ee89a",
     "host_contract_sha256": "3adfc594513aee78e27eface98d820f6d7ec70be7625abd1dacff05f719e375e",
     "grading_backend_sha256": "07740ba2da71a354645416c245dbf689bb87570eda174a8a20321ac36c309240",
@@ -191,12 +224,20 @@
     "agent_candidate_evidence_sha256": "a61f16faaf3010c3e5ea9a0112962dfb65b4d2c9e08c873fbe083fd615a63fd2",
     "isolation_sha256": "f3dd341c0b55cec8d31f439e9fec2eb564e87c2b4c9fb2191ad7f37ec42c225c",
     "resource_contract_sha256": "63e2a13d36481e07194e781fc2c48f7bd73ff229d2751c3be88361c85a678b66",
+    "submission_grading_sha256": "b562a80469b9449c63555bd0da85afc2c9ce0b8cb6040af2746e6adf41e50e39",
+    "submission_grading_contract_sha256": "a404497216e40e94fff40d28e258f62f246d7d2d4f44ede1ea737d30f94b5d61",
+    "submission_grading_candidate_evidence_sha256": "c7b6f9ec2e58cca19bfa64b7f1272e592a75c894b7668fc717d74c2b6866ca9f",
+    "submission_grading_probe_sha256": "aa749bffecc049bdba73f56b1e4afcf650b25aa06bf0676e6041b7e05698f5dc",
+    "submission_grader_sha256": "2d9212462ea84ca94491169d5b6d97649cd49a4e5494a17983c8ca62a3e8a652",
+    "grading_supervisor_sha256": "002224942d0f061718af15ac4dc562e9e1cd64931fe394b8c2ffd74bea8e57f8",
+    "readiness_probe_sha256": "080894649c2c5a9a259f728d9b46f7da7547006b9870d7c0fb8cc5806e263586",
+    "readiness_candidate_evidence_sha256": "3b588071ee4d6aa73fc519cc942659d5355a06b0a0c9501464ca34a1ce09fe89",
     "harness_sha256": "0cc84b32d1418ddaed4ed620c122098adbb10bfe0f9061a694e8c2a9cd3af7b7"
   },
   "pins": {
     "manifest_sha256": "90feb15e92815b3b9d6269f33a2f85b76b52350cdad72eb72a3f61916ac1ee7e",
     "grader_sha256": "a6c29565533fcc7fac548f78bfa4c8a45561284a468e0398d923c0308cd4df6d",
-    "coverage_validator_sha256": "18d03c4587dfdfce638b15087ced5c4e1383cd6d5936d18db185ad69d21be902",
+    "coverage_validator_sha256": "da44d2f4a29dc2c5ffd118c8b2e295d8d001e04c154cf58894577ef138909908",
     "fixture_sha256": {
       "rust-ledger": "a1264d1c636814b10236bf3274955c8784ba36f6072b087c969494d9075f813c",
       "rust-duration": "efc103d011c309c4f7e42f82c399db717b912a7fad833e257ba930c16742713b",

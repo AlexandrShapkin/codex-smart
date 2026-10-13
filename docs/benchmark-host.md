@@ -1,14 +1,14 @@
 # Benchmark qualified-host and representative runner contract
 
-Status: prepared adapter and reviewed qualification semantics; one bounded
-qualified-host receipt (`d2af64ce...`) and agent-execution isolation evidence
-(`ae2840a9...`) are accepted. The constrained grading-backend candidate remains
-accepted by its own frozen backend contract. Representative campaign readiness is
-still false because the production submission-grading candidate is implemented and
-verified only as review evidence; its evidence reference is not yet accepted and the
-frozen readiness fields have not been promoted. Active work remains #14. The
-representative matrix was accepted in #39; #56 planned future stages separately.
-No benchmark model execution, campaign execution or telemetry is added here.
+Status: one bounded qualified-host receipt (`d2af64ce...`), agent-execution
+isolation evidence (`ae2840a9...`), the constrained grading backend (`af25f513...`) and
+production submission-grading evidence (`199ec772...`) are accepted. The representative
+runner is wired to require a fully rehashed reviewed grading runtime before its explicit
+authorization gate, and the frozen technical readiness flag is now true. This does not
+execute or authorize the campaign: both plans remain unexecuted, the offline plan reports
+`model_execution_enabled=false`, and the real entry still requires explicit operator
+authorization plus all runtime/identity gates. Active work remains #14 until measured
+evidence exists; #15 remains separate.
 
 ## Qualification boundary
 
@@ -139,26 +139,25 @@ retained non-qualified current-host evidence. `--real` and explicit
 
 Gate order:
 
-1. Frozen representative campaign, manifest, fixtures, graders, runner/harness,
-   qualification/isolation/resource code and host-contract pins.
-2. Fully verified, reviewed qualified-host result and frozen host-readiness state.
+1. Frozen representative campaign, manifest, fixtures, graders, runner/harness and all
+   qualification/isolation/production-grading pins.
+2. Fully verified reviewed qualified-host result and frozen host-readiness state.
 3. Verified agent-execution isolation state and accepted credential/child-execution evidence.
-4. Verified grading-isolation state and an accepted backend contract.
-5. Explicit absolute Codex executable, exact SHA/version and all exact toolchains.
-6. Runtime auth preflight: keyring-only contract, no parent `OPENAI_API_KEY`, no `auth.json`.
-7. Explicit operator execution authorization.
-8. Fresh private artifact target; existing identifiers and symlinks rejected.
-9. Only then model execution and isolated grading.
+4. Verified grading-isolation state and accepted constrained backend evidence.
+5. Verified accepted production submission-grading evidence.
+6. Frozen `representative_campaign_ready=true` technical-readiness state.
+7. Full topology/byte rehash of the staged grading runtime against the accepted inventory.
+8. Explicit absolute Codex executable plus exact SHA/version and exact Rust/Cargo/Go/Python versions from that prepared runtime; host `PATH` toolchains are not accepted substitutes.
+9. Runtime auth preflight: keyring-only contract, no parent `OPENAI_API_KEY`, no `auth.json`.
+10. Explicit operator execution authorization.
+11. Fresh private artifact target; existing identifiers and symlinks rejected.
+12. Only then model execution and isolated grading.
 
-The frozen representative campaign readiness fields remain
-`required-not-verified`, even though the underlying reviewed host receipt, agent
-evidence and constrained grading-backend evidence now exist. Consequently public
-execution remains unreachable, including with the accepted receipt and explicit
-authorization. Promotion requires a separately reviewed production submission-grading
-implementation plus an explicit readiness repin. The historical campaign remains
-immutably blocked by its own frozen loader;
-it cannot become an alternate representative path. Legacy harness real mode stays
-disabled. Private injection-only helpers have no direct process-launch behavior.
+Readiness is deliberately distinct from authorization. A technically ready campaign
+still performs zero model calls unless step 10 is explicitly satisfied. The historical
+campaign remains immutably blocked by its own frozen loader and cannot become an
+alternate representative path. Legacy harness real mode stays disabled. Private
+injection-only helpers have no direct process-launch behavior.
 
 The adapter reuses staging, seeded ordering, trace parsing, frozen auth/argv and
 quality-first aggregation. Ten tasks × vanilla/native × two repetitions = 40 primary
@@ -171,23 +170,24 @@ not once per job.
 ## Submission grading boundary
 
 Representative submissions go only through `grade_representative` in the isolation
-abstraction. That boundary currently refuses without reading/executing submitted files
-or probing this host. It never calls the direct trusted-control host grader. Its future
-accepted backend must use immutable pinned independent graders and return a typed
-quality result; failure/refusal does not silently fall back to host execution.
+abstraction. The accepted production implementation requires the reviewed host/backend
+receipt, accepted production-grading evidence and a prepared runtime object produced by
+a full inventory rehash. It never calls the direct trusted-control host grader and never
+falls back to host execution.
 
-For `explore-notification`, a typed submission policy requires original task files
-immutable and permits only `answer.json` as the answer artifact. The isolated grader
-must enforce preservation and reject other task changes; the policy conveys no oracle
-contents or relevant-file hints. This enforcement is **not yet security-verified**.
-Repository-authored reference/wrong controls may still use the explicitly named
-trusted-control path to verify correctness; those results do not qualify model grading.
+The sandbox-side controller opens only reviewed expected submission paths with
+descriptor-relative `O_NOFOLLOW`, rejects hardlinks/special nodes and copies bounded
+UTF-8 bytes into private tmpfs before the independent grader runs. Verdict transport is
+a private Unix socket established before untrusted code executes; the service is kept
+anchored until its cgroup is empty. For `explore-notification`, original task files are
+immutable and only `answer.json` is permitted. These controls passed the accepted
+positive/wrong and security-control suite on the qualified host.
 
 ## Normalized evidence and failure accounting
 
 Per completed attempt, schema version 1 records campaign/scenario/variant/repetition/
-seed, frozen references, host qualification, agent-execution isolation and grading-isolation references, terminal
-status, process exit, parser validity and bounded error categories, independent quality,
+seed, frozen references, host qualification, agent-execution isolation, grading-isolation,
+production-grading and grading-runtime-inventory references, terminal status, process exit, parser validity and bounded error categories, independent quality,
 failure category, duration, observed tokens and completed-tool lower bound. Include
 execution kind, attempt count and zero retry count. Internal model-request count is not
 reliably exposed by the current trace contract and remains null for executed jobs;
@@ -210,22 +210,22 @@ report 40 synthetic attempts and zero model calls, not comparative measurements.
 
 ## Readiness and next action
 
-Matrix accepted; representative runner contract **prepared** means pinned adapter
-implementation tested with fakes. One reviewed qualified-host receipt, exact agent
-isolation evidence and the constrained grading-backend contract are accepted, while
-representative readiness remains false because public `grade_representative()` still
-fails closed until production-grading evidence is separately admitted. The candidate
-implementation uses the accepted constrained mount plan, full immutable runtime rehash,
-transient systemd cgroup limits and a single final writable `/work` bind. A trusted
-controller copies only reviewed submission paths through descriptor-relative `O_NOFOLLOW`
-opens into private tmpfs; hardlinks and special nodes are rejected. Verdict transport is
-a private Unix socket rather than submission-visible stdout, and the service is not
-released until its cgroup is empty. Repository-owned controls on srv0 passed 10/10
-references, rejected 20/20 wrong controls, and passed expected-file symlink/hardlink/FIFO,
-exploration immutability/extra-artifact, trusted/runtime read-only, host/env/network/capability,
-detached-descendant and forged-verdict security controls with zero model calls. Candidate
-evidence reference `199ec772...` remains unaccepted by `submission-grading-v1.json`. Historical
-42 jobs and representative 40 primary executions remain unexecuted; successful IaC
-smoke and historical failed evidence remain unchanged. Next separately review and admit
-that evidence, repin readiness, and only then consider authorized live execution.
-#14 stays open; #15 stays separate.
+Matrix, host receipt, agent isolation, constrained grading backend and production
+submission-grading evidence `199ec772...` are accepted. The runner now passes a fully
+verified `PreparedRuntime` into every isolated grade and records both the production-
+grading evidence and runtime-inventory references. Host `PATH` is no longer used for
+representative toolchain identity: the runner verifies and injects the exact staged
+Rust/Cargo/Go/Python binaries and linker/library paths through the frozen Codex shell
+environment policy. Credential-free readiness probe `1b5feee9...` on srv0 verified the
+full runtime rehash, exact Codex/toolchains, Codex environment-config parsing, Rust/Go/
+Python compile/run and the final pre-authorization refusal with zero model calls, zero
+attempts and no artifact creation. Frozen technical readiness is true.
+
+No campaign execution occurred in this promotion. Repository-owned production controls
+remain 10/10 references, 20/20 wrong controls and 9/9 security controls with zero model
+calls and no real credentials. The offline plan remains non-executing; the real entry
+still refuses before artifacts/model execution unless exact Codex/toolchains, agent auth
+runtime, full grading-runtime rehash and explicit authorization all pass. Historical 42
+jobs and representative 40 primary executions remain unexecuted; successful IaC smoke
+and historical failed evidence remain unchanged. Next action is a separately authorized
+representative campaign run. #14 stays open until measured evidence exists; #15 separate.
