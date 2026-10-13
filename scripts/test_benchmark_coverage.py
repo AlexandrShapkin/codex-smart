@@ -85,6 +85,17 @@ class RepresentativeTests(unittest.TestCase):
         with self.assertRaises(ValueError): coverage.fixture(dict(self.m['scenarios'][0],fixture='../secret'))
         with self.assertRaises(ValueError): coverage.fixture(dict(self.m['scenarios'][0],snapshot='drift'))
 
+    def test_python_billing_prompt_matches_visible_contract_and_oracle(self):
+        scenario = next(s for s in self.m['scenarios'] if s['id'] == 'python-billing')
+        fixture = coverage.fixture(scenario)
+        prompt = scenario['prompt'].lower()
+        readme = fixture['files']['README.md'].lower()
+        self.assertIn('each unit', prompt)
+        self.assertIn('before applying quantity', prompt)
+        self.assertNotIn('each line down after multiplication', prompt)
+        self.assertIn('discount each unit before applying quantity', readme)
+        self.assertIn('(c*(100-p)//100)*q', fixture['oracle'])
+
     def test_campaign_bounds_and_isolation_drift_rejected(self):
         c=coverage.load_campaign()
         cases=[('variants',['vanilla','native','router-v2']),('retries',1),('repetitions',3),

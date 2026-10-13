@@ -564,7 +564,11 @@ grader, so hidden-control changes also require review/repinning.
 
 Correct references must pass; both wrong controls must fail. Behavioral oracles check
 refund signs and pending entries, caller units/invalid durations, pagination boundaries,
-exact expiry, integer rounding, and absent/falsy distinctions. The test task must pass
+exact expiry, integer rounding, and absent/falsy distinctions. The `python-billing`
+contract explicitly discounts each unit with integer-floor rounding **before** applying
+quantity; its prompt, staged README, reference and oracle are pinned to that same order.
+This wording is regression-tested because an authorized smoke exposed an earlier prompt
+that incorrectly said to round each line after multiplication. The test task must pass
 on the real parser and fail three independent mutants (truthiness, invalid acceptance,
 and case coercion); production parser/consumer files must remain unchanged. CI/security
 oracles validate the complete JSON contract and preserve unrelated policy. Exploration

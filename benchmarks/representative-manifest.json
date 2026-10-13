@@ -119,7 +119,7 @@
         "impact-analysis"
       ],
       "risk_dimension": "monetary-rounding",
-      "prompt": "Implement percentage discounts in integer cents, rounding each line down after multiplication. Reject percentages outside 0..100. Both checkout totals and receipt lines must use the discounted amounts consistently; preserve line ordering and add regression coverage.",
+      "prompt": "Implement percentage discounts in integer cents, rounding each unit down before applying quantity. Reject percentages outside 0..100. Both checkout totals and receipt lines must use the discounted unit amounts consistently; preserve line ordering and add regression coverage.",
       "fixture": "representative/python-billing.json",
       "snapshot": "62870c9d9425b0902ee4794fcf7db435b17f6c5c757866cd262470d689dbd71c"
     },

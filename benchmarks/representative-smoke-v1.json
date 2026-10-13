@@ -13,7 +13,7 @@
     "separate_from_primary_campaign": true
   },
   "campaign_id": "representative-development-v1",
-  "campaign_sha256": "bc62f9950b89fad81199de5d71a564eda539a6496276f977f7c9195c91f6ba0d",
+  "campaign_sha256": "902659ca56285a4731c3b0a6095f3c293c77246991e43bfecd8bb237f82e7efd",
   "grading_backend_reference": "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec",
   "maximum_codex_executions": 1,
   "production_grading_reference": "199ec7721ec56c57f1e09f19267e8888cc3f1ee31a8ccf754a4b0af0742bf602",
