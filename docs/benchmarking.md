@@ -1,7 +1,42 @@
 # Development benchmark protocol
 
-This is the first harness slice of #14, not a measured campaign. Router remains
-validated; benchmark progress is partial after the harness merge. No benefit or winner is claimed. #15 production telemetry is separate.
+The representative 40-run campaign has now completed and produced a frozen measured
+baseline candidate for #14. The historical 42-job campaign remains unexecuted. No
+overall winner or savings claim is accepted from this sample; #15 production telemetry
+remains separate.
+
+## Representative measured baseline — 2026-10-13
+
+The frozen `representative-development-v1` campaign completed all **40/40** primary
+jobs on the accepted split-host topology: ThinkPad agent execution and independent
+production grading on `srv0`, with zero retries. Each variant has 20 runs. Strict
+quality keeps every terminal execution failure in the denominator: `vanilla` passed
+19/20 (**95%**) and `native` passed 17/20 (**85%**). Median measured duration was
+60.13 s vs 61.53 s respectively. Median observed input tokens were 129,602 vs
+130,725.
+
+Those strict rates must not be interpreted as a demonstrated content-quality regression.
+Exactly 36 jobs exported submissions, and **all 36/36 passed** the independent
+production grader. The four non-submission executions were one timeout per variant and
+two `native` agent failures whose private traces report the provider response
+`Selected model is at capacity`. Provider-capacity failures remain failures in the
+strict result; the diagnostic classification only prevents misattributing them to the
+submitted solution or grader.
+
+Cost comparisons are restricted to the 16 matched scenario/repetition pairs where both
+variants passed quality and exposed the relevant counters. On those pairs, native had
+a median **-19.44% observed tool-call lower bound** and used fewer observed tool calls
+in 12 pairs, more in 2 and tied in 2. Median input-token delta was -1.32%; median
+duration delta was +3.71%. Output-token delta was -0.64%, while cached-input and
+reasoning medians increased by 4.29% and 11.86%. These are descriptive measurements,
+not a general savings claim. There is no accepted winner.
+
+The measured `native` variant still differs from `vanilla` only by the public
+native-first instruction. It is **not** the future `router-v2` production adapter and
+therefore cannot establish Router, Playbooks or Adaptive Execution benefits. The
+versioned candidate measurement is `representative-development-measurement-v1`; raw
+traces/stderr remain private and only normalized hashes/aggregates are eligible for
+repository evidence.
 
 ## Quality before cost
 
@@ -114,14 +149,14 @@ Export normalized records only after reviewing their metadata references; there 
 automatic commit/upload/export. This is benchmark-local instrumentation, not product
 prompt/source logging or telemetry.
 
-## Remaining acceptance campaign
+## Remaining acceptance work
 
-Design and verify grading isolation, finalize realistic task coverage,
-preserve the frozen toolchains and campaign model/settings, validate all graders within that boundary,
-and run repeated seeded quality-first measurements with cache/overhead evidence.
-Obtain exact legacy provenance or retain unavailable status. Implement and verify a
-separate decision-applying adapter before any Router v2 measurement. #14 stays open
-until those measured acceptance criteria are satisfied; #15 remains separate.
+The representative execution, independent grading and private evidence preservation are
+complete. The normalized measurement candidate is separately review-gated before it
+becomes the accepted baseline and before #14 can close. Legacy remains unavailable
+because exact provenance is absent, and the historical 42-job campaign remains
+unexecuted by design. A separate decision-applying adapter is still required before any
+Router v2 measurement. #15 remains separate and begins only after #14 acceptance.
 
 ## Historical initial campaign preflight
 

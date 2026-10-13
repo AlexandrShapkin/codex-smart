@@ -12,7 +12,7 @@ Read [workflow intelligence](../workflow-intelligence.md), [architecture](../arc
 
 ## Current state
 
-Router v2 and the single native-first Codex launch are delivered. Workflow playbooks, adaptive execution, reusable automation and install/update tooling are not implemented. Benchmark is active and partial; both campaigns are unexecuted, submitted-code isolation remains unverified and representative readiness is false.
+Router v2 and the single native-first Codex launch are delivered. Workflow playbooks, adaptive execution, reusable automation and install/update tooling are not implemented. The representative 40-run campaign has executed on the accepted split-host boundary and produced a review-gated measured baseline candidate; the historical 42-job campaign remains unexecuted. Submitted-code production grading and representative technical readiness are verified.
 
 ## Target state
 
