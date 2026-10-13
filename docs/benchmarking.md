@@ -64,6 +64,21 @@ submission and all three passed production grading. Immutable execution evidence
 profile-mapping execution proof. The later adaptive campaign still requires its own explicit
 authorization. No adaptive winner or savings claim exists yet.
 
+The first offline-testable live-runner slice in `scripts/benchmark_adaptive_campaign.py`
+records each attempt before launch, spends interrupted attempts, and permits a second
+attempt only after an independently graded failure and a strictly higher Rust-controller
+profile or reasoning decision. A failure already at Strong/High remains a failed job
+without a retry because no higher benchmark profile exists. The agent host retains raw
+trace/stderr locally. Its explicit grading-bundle export contains bounded attempt
+metadata and allowlisted
+submission files, never raw logs; the grading host accepts only this bundle and uses
+the qualified production grader. Grade rows are bound to job, attempt and agent
+artifact hashes when returned to the agent host. The retry/finalization commands require
+the grading summary SHA-256 received separately through a trusted handoff; without this
+pin they refuse the grade. The digest does not authenticate its own origin, so the
+handoff channel remains a review gap. The runner has no accepted campaign execution
+evidence or authorization yet.
+
 ## Quality before cost
 
 Correctness, requirement coverage, regressions and security qualify a result before
