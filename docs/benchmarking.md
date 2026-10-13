@@ -595,17 +595,17 @@ there is no winner logic or derived fresh-input counter.
 Vanilla/native use equivalent frozen executable/model/reasoning/auth settings and the
 same core-only child environment policy; only the native instruction differs. Legacy
 lacks provenance; Router-v2 lacks an
-adapter. Neither is fabricated. The representative adapter is now prepared and pinned,
-with no accepted host, agent-execution isolation evidence or grading backend; it is
-not enabled for real execution.
-It records a checksum/provenance link to the historical plan and inherits only applicable
-Codex startup/auth/JSONL evidence. It contains no smoke counters or comparative records.
-Any future representative smoke must have a separately approved budget; it is not
-included in these 40 primary executions. One `codex exec` can make multiple internal
-model requests while completing an agent turn, so the campaign does not claim a
-40-request model-call ceiling. Internal model-request count is unsupported by the
-current normalized trace and remains null for executed jobs. No smoke, preliminary
-campaign, or representative campaign execution was made in this design task.
+adapter. Neither is fabricated. The representative adapter, qualified-host receipt, agent-execution isolation, constrained
+grading backend and production submission grader are now accepted and technically ready.
+The separately frozen `representative-live-smoke-v1` uses `python-billing` / `vanilla`,
+seed 14, repetition 0, retries zero and at most one `codex exec`. It is not included in
+the 40 primary executions and cannot be counted as comparative evidence. Its offline path
+is non-executing; its real path first requires the complete 40-run entry to reach only
+the explicit authorization gate and then requires a distinct
+`--authorize-smoke-execution` flag. One `codex exec` can make multiple internal model
+requests while completing an agent turn, so neither the smoke nor campaign claims an
+internal model-request ceiling. Internal model-request count is unsupported by the
+normalized trace and remains null for executed jobs.
 
 ### Qualified host dependency and stopping current-host investigation
 
@@ -752,7 +752,9 @@ fixed failure categories and opaque host/isolation references; unsupported count
 remain null. Synthetic attempts never claim real model calls or comparative results.
 
 Historical preliminary campaign bytes, 42-job budget, smoke and failed evidence remain
-unchanged. The representative budget remains 40, two repetitions, vanilla/native,
-seed 14, retries zero, timeout 120 seconds. Technical readiness is verified, but neither
-campaign was executed and explicit authorization remains mandatory. #14 remains open
-and partial until measured evidence exists; #15 remains separate.
+unchanged. The representative budget remains 40, two repetitions, vanilla/native, seed
+14, retries zero, timeout 120 seconds. A separate one-execution representative smoke is
+now frozen outside that budget; it cannot execute without distinct operator authorization.
+Technical readiness is verified, but neither the representative smoke nor either campaign
+has been executed. #14 remains open and partial until measured evidence exists; #15
+remains separate.
