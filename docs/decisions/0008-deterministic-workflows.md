@@ -1,6 +1,6 @@
 # ADR 0008: Deterministic workflow playbooks and bounded adaptive execution
 
-Status: accepted planning direction; implementation and evidence remain future work.
+Status: accepted direction; playbook semantics and pure selection/resource planning are implemented, while validation/application/adaptive execution remain future work.
 
 ## Context
 
@@ -19,9 +19,10 @@ and observable escalation conditions over a second autonomous LLM planner. Keep
 current implemented behavior separate from this target. See the semantic contract
 in [workflow intelligence](../workflow-intelligence.md).
 
-Task assessment selects a playbook; resource planning prepares only verified needs;
-the execution controller chooses a minimally sufficient risk-constrained profile;
-Codex executes; deterministic validation supplies completion/escalation evidence.
+Task assessment now feeds a pure typed selector, and the resource planner produces only
+declarative actions from verified evidence; neither performs preparation or execution.
+The future execution controller will apply a minimally sufficient risk-constrained
+profile; Codex executes; deterministic validation supplies completion/escalation evidence.
 Cheap-first is not universal. Required quality is never intentionally reduced.
 Bounded delegation is a possible narrow mechanism, not a generic multi-agent platform.
 
