@@ -8,8 +8,8 @@ Router v2 currently assesses task/risk and composes a native-first Codex launch.
 The product objective spans completed development tasks: minimize expected total
 lifecycle cost subject to required quality, safety and verification. A lower-price
 model call can increase total cost through failed attempts, context duplication,
-handoffs or insufficient validation. Benchmark acceptance is still partial and no
-comparative savings have been demonstrated.
+handoffs or insufficient validation. The representative benchmark and privacy-preserving aggregate telemetry are accepted;
+no comparative savings have been demonstrated.
 
 ## Decision
 
@@ -39,9 +39,9 @@ inspectable, invalidatable and disposable. Unknown evidence fails closed.
 
 Add planned playbooks, adaptive, automation and distribution stages before hardening.
 Implementation needs bounded contracts, isolated negative controls and lifecycle
-benchmarks before savings claims. #14 remains the measurement foundation and #15
-remains separate optional aggregate telemetry; neither current campaign is changed
-or executed. Exact APIs, backend/model resolution and authenticity mechanisms await
+benchmarks before savings claims. #14 remains the accepted measurement foundation and
+#15 supplies optional local aggregate telemetry. Playbook implementation must not alter
+those historical campaign results. Exact APIs, backend/model resolution and authenticity mechanisms await
 reviewed stage work rather than being frozen in this roadmap decision.
 
 ## Alternatives
