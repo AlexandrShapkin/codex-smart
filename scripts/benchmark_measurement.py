@@ -56,7 +56,7 @@ def expected_contract():
             "paired_cost_analysis_requires_both_variants_quality_pass_and_observed_counter": True,
             "no_winner_claim_from_this_sample": True,
         },
-        "accepted_evidence_sha256": [],
+        "accepted_evidence_sha256": ["ffd8fbbc66934478e4591d65811daecc7b8012083157c9fabc97f4647c9bc347"],
     }
 
 

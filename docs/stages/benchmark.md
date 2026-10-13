@@ -32,7 +32,7 @@ dependency evidence, tier thresholds and pinned Cargo check/test controls. This 
 purpose-built representative synthetic coverage, not large real-world repository
 evidence. Coverage metadata is measurement-only. Review matrix acceptance independently of
 host qualification. The 40-run representative campaign is now measured; its normalized
-result is a review-gated baseline candidate and makes no winner or savings claim.
+result is the accepted measured baseline `ffd8fbbc...` and makes no winner or savings claim.
 
 Current-host capability investigation is complete: the development host remains
 non-qualified and is not a submitted-code grading target. A separate host receipt is
@@ -54,8 +54,7 @@ comparative metrics. The corrected split-host smoke and the authorized 40-run re
 executed. All 40 jobs reached a terminal record with zero retries; 36 submissions were
 exported and all 36 passed the accepted production grader. Strict pass rates remain
 95% vanilla and 85% native because failures stay in the denominator; two of the native
-agent failures were provider-capacity errors and each variant had one timeout. The
-normalized measurement candidate is separately review-gated, so there is no accepted
-winner or savings claim yet. The current development host is not a submitted-code
-grading target. See [host/runner contract](../benchmark-host.md). #14 remains open only
-for measured-baseline acceptance; #15 stays separate.
+agent failures were provider-capacity errors and each variant had one timeout. The normalized measurement evidence `ffd8fbbc...` is accepted; it deliberately records
+no winner or savings claim. The current development host is not a submitted-code
+grading target. See [host/runner contract](../benchmark-host.md). #14 benchmark
+acceptance is complete; #15 is the next separate telemetry task.

@@ -7,18 +7,20 @@ import benchmark_measurement as measurement
 
 
 class RepresentativeMeasurementTests(unittest.TestCase):
-    def test_candidate_is_frozen_but_not_yet_accepted(self):
+    def test_candidate_is_frozen_and_accepted(self):
         contract = measurement.load_contract()
         candidate = measurement.load_candidate()
         self.assertEqual(contract["planned_jobs"], 40)
         self.assertEqual(contract["completed_jobs"], 40)
         self.assertEqual(contract["retries"], 0)
-        self.assertEqual(contract["accepted_evidence_sha256"], [])
+        self.assertEqual(contract["accepted_evidence_sha256"], [
+            "ffd8fbbc66934478e4591d65811daecc7b8012083157c9fabc97f4647c9bc347",
+        ])
         self.assertEqual(
             candidate["evidence_reference"],
             "ffd8fbbc66934478e4591d65811daecc7b8012083157c9fabc97f4647c9bc347",
         )
-        self.assertFalse(measurement.measurement_verified())
+        self.assertTrue(measurement.measurement_verified())
 
     def test_strict_result_keeps_failures_in_denominator(self):
         result = measurement.load_candidate()["candidate"]
