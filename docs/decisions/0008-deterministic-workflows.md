@@ -1,6 +1,6 @@
 # ADR 0008: Deterministic workflow playbooks and bounded adaptive execution
 
-Status: accepted direction; Playbooks 0.4 semantics, pure selection/resource planning, bounded validation recipes and explainable preparation are implemented. Validation execution and adaptive execution remain future work.
+Status: accepted direction; Playbooks 0.4 semantics, pure selection/resource planning, bounded validation recipes and explainable preparation are implemented. Adaptive #43 now implements the pure bounded execution/escalation state-machine contract; provider/model application, validation execution and delegation remain future work.
 
 ## Context
 
@@ -19,7 +19,7 @@ and observable escalation conditions over a second autonomous LLM planner. Keep
 current implemented behavior separate from this target. See the semantic contract
 in [workflow intelligence](../workflow-intelligence.md).
 
-Task assessment now feeds a pure typed selector, and the resource planner produces only declarative actions from verified evidence; neither performs preparation or execution. A pure validation-recipe layer separately maps required checks to native readiness and remains fail-closed when evidence is unknown or unavailable. Enum-only explanation exposes the complete plan without carrying source/prompt/credential data or execution authority. The future execution controller will apply a minimally sufficient risk-constrained profile; Codex executes; deterministic validation results supply completion/escalation evidence.
+Task assessment now feeds a pure typed selector, and the resource planner produces only declarative actions from verified evidence; neither performs preparation or execution. A pure validation-recipe layer separately maps required checks to native readiness and remains fail-closed when evidence is unknown or unavailable. Enum-only explanation exposes the complete plan without carrying source/prompt/credential data or execution authority. The #43 adaptive controller is also pure: it accepts only ready workflow/validation contracts, preserves risk-constrained profile/reasoning floors, records attempts, consumes explicit attempt/retry budgets, waits for validation before completion and terminates visibly on block/exhaustion. It does not launch Codex, resolve provider/model identities, execute validation or delegate work.
 Cheap-first is not universal. Required quality is never intentionally reduced.
 Bounded delegation is a possible narrow mechanism, not a generic multi-agent platform.
 

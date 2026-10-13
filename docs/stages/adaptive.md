@@ -1,6 +1,6 @@
 # Adaptive model routing and runtime escalation
 
-Status: active 0.5 Adaptive Execution; not implemented. Playbooks 0.4 dependency is accepted.
+Status: active 0.5 Adaptive Execution. The #43 pure execution/escalation contract is implemented; #44–#46 remain.
 
 ## Goal
 
@@ -12,11 +12,11 @@ Read [workflow intelligence](../workflow-intelligence.md), [architecture](../arc
 
 ## Current state
 
-Router v2 and the single native-first Codex launch are delivered. Workflow playbooks, adaptive execution, reusable automation and install/update tooling are not implemented. The representative 40-run campaign has executed on the accepted split-host boundary and produced the accepted measured baseline `ffd8fbbc...`; the historical 42-job campaign remains unexecuted. Submitted-code production grading and representative technical readiness are verified.
+Router v2, the single native-first Codex launch and Playbooks 0.4 are delivered. #43 now adds a pure bounded adaptive controller contract on top of a ready workflow plus ready validation recipe. It preserves workflow profile/reasoning floors, starts high-risk/security work at `Strong/High`, records every attempt outcome, requires independent validation before completion, and exposes explicit `Ready`/`Running`/`AwaitingValidation`/`NeedsEvidence`/`Completed`/`Blocked`/`Exhausted` states. Runtime/model resolution, actual retry execution and delegation remain unimplemented. The accepted representative baseline remains `ffd8fbbc...`.
 
 ## Target state
 
-A bounded typed controller for initial profile selection, progressive reasoning/model escalation, retries, validation feedback, handoffs and completion.
+A bounded typed controller contract plus verified runtime adapters for progressive reasoning/model escalation, retries, validation feedback, handoffs and completion.
 
 ## Scope
 
@@ -40,7 +40,7 @@ Use the thin Rust control plane and existing argument/configuration safety contr
 
 ## Acceptance
 
-Risk floors and budgets enforced; every transition explainable; no lower-quality price optimization; bounded narrow delegation with authority/time/cost/context limits and independent validation.
+Risk floors and budgets enforced; every transition explainable; no lower-quality price optimization; #43 completion requires independent validation and retains failed attempts. #44–#45 must add verified provider/model application and bounded narrow delegation with authority/time/cost/context limits; #46 supplies measured lifecycle evidence.
 
 ## Validation
 
