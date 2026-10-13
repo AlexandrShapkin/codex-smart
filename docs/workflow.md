@@ -194,6 +194,107 @@ existing path; repeated verification is read-only. Snapshot directories and pare
 must be controlled by the operator with no concurrent writer; these checks are not
 a filesystem sandbox against racing adversaries.
 
+## Read-only consistency audit
+
+Run the bounded repository-owned audit from a trusted current task checkout. Keep
+the inventory and output outside Git: absolute paths and dirty filenames can be
+private. This audit does not fetch, update refs/index, execute SSH, synchronize,
+repair permissions or prune anything. It shares the existing Git and snapshot
+verification helpers. Explicitly declare the scope; an empty snapshot list means
+**no deployments audited**, not that every deployment agrees.
+
+Create an operator-owned, single-link inventory file with mode `0600`, for example:
+
+```json
+{
+  "schema": 1,
+  "repositories": ["/absolute/development/checkout"],
+  "snapshots": [
+    {
+      "name": "agent-historical-pin",
+      "host": "local",
+      "path": "/absolute/reviewed/source-snapshot",
+      "sha": "FULL_ACCEPTED_SHA",
+      "receipt_sha256": "INDEPENDENTLY_RECORDED_64_CHARACTER_DIGEST",
+      "pin": "historical",
+      "role": "agent"
+    },
+    {
+      "name": "independent-grader",
+      "host": "srv0",
+      "path": null,
+      "sha": null,
+      "receipt_sha256": null,
+      "pin": "unknown",
+      "role": "grader"
+    }
+  ]
+}
+```
+
+Replace placeholders with exact independently approved values; `null` explicitly
+records a missing reference. Other roles are `development-source`; pins are
+`current`, `historical`, `unknown`. A historical pin can legitimately differ from
+main. A current pin differing from the selected main is reported as an outdated
+reference, never replaced. Snapshot SHAs must also be in accepted main history;
+hash-consistent synthetic source cannot become an accepted deployment.
+
+```bash
+just consistency-audit /absolute/private/inventory.json FULL_MAIN_SHA
+python3 -B scripts/workflow.py consistency-audit --inventory /absolute/private/inventory.json --expected-sha FULL_MAIN_SHA --json
+```
+
+These commands are offline. `FULL_MAIN_SHA` is the operator's recorded reference;
+GitHub freshness remains unknown. Only an explicit `--github` performs canonical
+HTTPS `ls-remote` before and after the audit; it never fetches. A changed expected
+main, failed network observation or missing Git objects produces an incomplete
+report. Existing accepted objects from the trusted invoking repository may prove
+identity for an older clone without writing its Git metadata. Save JSON with a
+private umask and inspect the exit status, including when redirecting output:
+
+```bash
+umask 077
+python3 -B scripts/workflow.py consistency-audit --inventory /absolute/private/inventory.json --expected-sha FULL_MAIN_SHA --github --json > /absolute/private/new-audit.json
+```
+
+Exit `0` means complete declared local scope with no attention items; `1` means
+known dirty/divergent/stale work or snapshot drift; `2` means incomplete or unstable
+evidence. Invalid input is an explicit `E_WORKFLOW` refusal. The two repository
+observations compare HEAD, refs, registrations, dirty status and changed-path
+metadata; they read no uncommitted file contents. This catches repeated edits to an
+already dirty file, but is not an atomic snapshot or a lock against concurrent writers.
+Stop dependent work on an incomplete report and coordinate concurrent sessions.
+
+Optional caller-supplied `pull_requests` observations use
+`{"number": 84, "branch": "chore/workflow-normalization", "head": "FULL_PR_SHA", "state": "merged", "merge": "FULL_ACCEPTED_MERGE_SHA"}`;
+states are `open`, `merged`, `closed`, with `merge: null` for unmerged PRs.
+`remote_branches` entries use `{"branch": "main", "head": "FULL_MAIN_SHA"}`.
+Collect **all** GitHub pages explicitly when preparing these catalogs; their
+freshness remains caller supplied even with `--github`. Content-equivalent
+classification requires the exact PR head, an accepted merge ancestor, and equal
+source trees. Ancestry alone is not evidence that squash-merged work is redundant.
+Every branch has `cleanup_authorized: false`.
+
+Remote declarations always require a separate host-side check using the trusted
+`snapshot-verify` command above and the independently recorded SHA/digest. Record
+host identity, path, verification output, runtime/adapter qualification and observed
+time in the reviewed deployment record; branch names, filenames and a `CURRENT`
+pointer alone do not establish these facts. Independent ThinkPad-to-srv0 SSH access
+has succeeded. Codex's execution environment may reject system SSH configuration
+permissions before connecting; report that specific limitation rather than calling
+srv0 unavailable. Use already verified host access, keep host-key verification, and
+do not edit SSH configuration or transport credentials to make the diagnostic pass.
+
+Keep accepted source, uncommitted work, reviewed source snapshots, runtime
+dependencies, immutable evidence, temporary fixtures, regenerable caches and private
+credentials distinct. Inventory only public source identity and sanitized metadata;
+never read credential stores or raw benchmark traces for a consistency audit. Retain
+old benchmark pins. If references disagree, preserve the conflicting bytes, stop
+dependent operations, verify independently, and create a new owner-approved record
+or snapshot at a new path. Never rewrite historical evidence or attach an unverified
+SHA to an existing installation. Branch/worktree cleanup needs a separate owner
+decision after checking unique commits, dirty files, PRs and evidence references.
+
 ## Interruption, resumption and mismatches
 
 After a connection interruption, inspect status, HEAD, worktree registrations and

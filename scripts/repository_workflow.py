@@ -83,19 +83,25 @@ def changes(root):
                binary=True).decode("utf-8").split("\0")[:-1]
 
 
+def checkout_state(root):
+    """One reusable read-only observation; callers establish repository/origin trust."""
+    return {"branch": git(root, "branch", "--show-current"),
+            "head": git(root, "rev-parse", "HEAD"), "changes": changes(root)}
+
+
 def inspect(root):
     root = repository(root)
     validate_origin(root)
-    head = git(root, "rev-parse", "HEAD")
+    state = checkout_state(root)
+    head = state["head"]
     try:
         main = git(root, "rev-parse", "--verify", "refs/remotes/origin/main^{commit}")
         counts = [int(n) for n in git(root, "rev-list", "--left-right", "--count",
                                     f"{head}...{main}").split()]
     except ValueError:
         main, counts = None, None
-    return {"repository": str(root), "branch": git(root, "branch", "--show-current"),
-            "head": head, "origin": CANONICAL, "cached_main": main,
-            "local_only_main_only": counts, "changes": changes(root),
+    return {"repository": str(root), **state, "origin": CANONICAL, "cached_main": main,
+            "local_only_main_only": counts,
             "worktrees": worktrees(root), "remote_freshness": "unknown (offline)"}
 
 

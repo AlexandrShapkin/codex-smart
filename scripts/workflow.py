@@ -205,7 +205,7 @@ class Repository:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    actions = ["repo-inspect", "task-start", "source-verify", "snapshot-export", "snapshot-verify"]
+    actions = ["repo-inspect", "task-start", "source-verify", "snapshot-export", "snapshot-verify", "consistency-audit"]
     parser.add_argument("action", choices=["context", "check", "generate", *actions])
     parser.add_argument("stage", nargs="?")
     parser.add_argument("--root", default=str(ROOT))
@@ -214,9 +214,14 @@ def main():
     parser.add_argument("--expected-sha")
     parser.add_argument("--snapshot")
     parser.add_argument("--receipt-sha256")
+    parser.add_argument("--inventory")
+    parser.add_argument("--github", action="store_true")
+    parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     if args.stage is not None and args.action != "context":
         parser.error("Only context accepts a stage")
+    if args.action != "consistency-audit" and (args.inventory is not None or args.github or args.json):
+        parser.error("Inventory, GitHub observation and JSON selection apply only to consistency-audit")
     required = {"task-start": ["branch", "destination", "expected_sha"],
                 "source-verify": ["expected_sha"],
                 "snapshot-export": ["expected_sha", "destination"],
@@ -224,6 +229,13 @@ def main():
     if any(getattr(args, name) is None for name in required.get(args.action, [])):
         parser.error("Missing required explicit workflow arguments")
     try:
+        if args.action == "consistency-audit":
+            import repository_consistency
+            result = repository_consistency.audit(args.root,
+                repository_consistency.load(args.inventory) if args.inventory else None,
+                expected_main=args.expected_sha, github=args.github)
+            print(json.dumps(result, indent=2) if args.json else repository_consistency.render(result), end="\n" if args.json else "")
+            return result["exit_code"]
         if args.action in actions:
             import repository_workflow
             print(json.dumps(repository_workflow.run(args.action, args), indent=2))
