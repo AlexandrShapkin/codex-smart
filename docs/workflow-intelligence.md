@@ -119,7 +119,7 @@ routing. See [distribution](distribution.md) for its future transactional contra
 #14 remains the measurement foundation. Future comparisons may add playbook-enabled
 and adaptive codex-smart to vanilla and static/native codex-smart only after genuine
 implementations exist. No variants or results are fabricated. Historical preliminary
-42-job historical plan remains unchanged and unexecuted; the representative 40-primary-execution campaign has completed and produced a review-gated measured baseline; submitted-code
+42-job historical plan remains unchanged and unexecuted; the representative 40-primary-execution campaign has completed and produced the accepted measured baseline `ffd8fbbc...`; submitted-code
 grading still requires a separately qualified isolation host. Representative readiness
 remains false. No savings or winner claim exists.
 

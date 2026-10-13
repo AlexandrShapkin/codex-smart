@@ -1,7 +1,7 @@
 # Development benchmark protocol
 
-The representative 40-run campaign has now completed and produced a frozen measured
-baseline candidate for #14. The historical 42-job campaign remains unexecuted. No
+The representative 40-run campaign has now completed and its frozen measured baseline
+evidence `ffd8fbbc...` is accepted for #14. The historical 42-job campaign remains unexecuted. No
 overall winner or savings claim is accepted from this sample; #15 production telemetry
 remains separate.
 
@@ -151,9 +151,8 @@ prompt/source logging or telemetry.
 
 ## Remaining acceptance work
 
-The representative execution, independent grading and private evidence preservation are
-complete. The normalized measurement candidate is separately review-gated before it
-becomes the accepted baseline and before #14 can close. Legacy remains unavailable
+The representative execution, independent grading, private evidence preservation and
+normalized baseline acceptance are complete. #14 acceptance criteria are satisfied. Legacy remains unavailable
 because exact provenance is absent, and the historical 42-job campaign remains
 unexecuted by design. A separate decision-applying adapter is still required before any
 Router v2 measurement. #15 remains separate and begins only after #14 acceptance.

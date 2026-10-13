@@ -240,5 +240,6 @@ VPN topology: the agent process runs directly on the agent host, while `srv0` re
 the accepted trusted grading host. Credentials never cross between hosts. Only a bounded
 submission JSON envelope is transported, and the grading host independently validates
 and grades it. The topology has a 40-entry pre-launch ledger with no retry of any started
-job, preserving the frozen maximum of 40 Codex processes. Its candidate evidence `1a9e7a...` is accepted; explicit campaign authorization is
-still required before any Codex execution.
+job, preserving the frozen maximum of 40 Codex processes. Its evidence `1a9e7a...` is
+accepted. The explicitly authorized campaign has since completed all 40 jobs; normalized
+measurement evidence `ffd8fbbc...` is the accepted baseline.

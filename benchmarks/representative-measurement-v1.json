@@ -1,5 +1,7 @@
 {
-  "accepted_evidence_sha256": [],
+  "accepted_evidence_sha256": [
+    "ffd8fbbc66934478e4591d65811daecc7b8012083157c9fabc97f4647c9bc347"
+  ],
   "campaign_id": "representative-development-v1",
   "campaign_repository_commit": "08d255788562b03d0682ca92ee6141f26c5a1618",
   "campaign_sha256": "902659ca56285a4731c3b0a6095f3c293c77246991e43bfecd8bb237f82e7efd",
