@@ -1,5 +1,7 @@
 {
-  "accepted_evidence_sha256": [],
+  "accepted_evidence_sha256": [
+    "1a9e7a145e7271b872d2dfc54c92a6ac578cbd8859649f8c4c062a127f3aac43"
+  ],
   "agent_role": {
     "agent_execution_isolation_reference": "ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb",
     "code_mode_host_sha256": "a11665cbc33423c909d2df47f414b8a7eccb62234c50829fc310d879904f1c69",

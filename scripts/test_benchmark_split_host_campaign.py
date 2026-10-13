@@ -19,12 +19,14 @@ class SplitHostCampaignTests(unittest.TestCase):
         self.assertEqual(contract["retries"], 0)
         self.assertTrue(contract["interruption_policy"]["started_ledger_written_before_codex"])
         self.assertTrue(contract["interruption_policy"]["started_without_result_never_retried"])
-        self.assertEqual(contract["accepted_evidence_sha256"], [])
+        self.assertEqual(contract["accepted_evidence_sha256"], [
+            "1a9e7a145e7271b872d2dfc54c92a6ac578cbd8859649f8c4c062a127f3aac43",
+        ])
         self.assertEqual(
             candidate["evidence_reference"],
             "1a9e7a145e7271b872d2dfc54c92a6ac578cbd8859649f8c4c062a127f3aac43",
         )
-        self.assertFalse(split.contract_verified())
+        self.assertTrue(split.contract_verified())
 
     def test_offline_plan_never_enables_model_execution(self):
         plan = split.plan()
