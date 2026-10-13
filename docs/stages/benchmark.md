@@ -52,7 +52,7 @@ own `--authorize-smoke-execution`; it is excluded from the 40 primary executions
 comparative metrics. The corrected split-host smoke has executed successfully and passed
 the accepted production grader. The 40-run measured campaign remains unexecuted. A
 split-host campaign transport is staged with an agent-host no-retry execution ledger and
-separate accepted grading host; its candidate evidence remains review-gated before any
-campaign authorization. The current development host is not a submitted-code grading
+separate accepted grading host; its candidate evidence `1a9e7a...` is accepted, while explicit campaign authorization
+remains required. The current development host is not a submitted-code grading
 target. See [host/runner contract](../benchmark-host.md). Benchmark stays partial until
 measured campaign evidence exists; #14 remains open and #15 separate.

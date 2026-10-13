@@ -621,8 +621,8 @@ immutable `started` ledger immediately before Codex may launch. A started job is
 retried, including after interruption, so resume cannot exceed the 40-process budget.
 The grading host independently reparses raw traces, verifies transfer hashes/envelopes,
 reconstructs a private submission workspace and uses the accepted production grader.
-The split-host candidate remains fail-closed until its evidence reference is separately
-accepted.
+The split-host candidate evidence `1a9e7a...` is accepted; execution still remains
+fail-closed without explicit 40-run authorization.
 
 ### Qualified host dependency and stopping current-host investigation
 

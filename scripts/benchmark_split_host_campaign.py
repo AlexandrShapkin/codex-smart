@@ -117,7 +117,7 @@ def expected_contract():
             "production_grade_sha256": V4_GRADE_SHA256,
             "summary_sha256": V4_SUMMARY_SHA256,
         },
-        "accepted_evidence_sha256": [],
+        "accepted_evidence_sha256": ["1a9e7a145e7271b872d2dfc54c92a6ac578cbd8859649f8c4c062a127f3aac43"],
     }
 
 
