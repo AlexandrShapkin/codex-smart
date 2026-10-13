@@ -1,0 +1,26 @@
+{
+  "candidate": {
+    "agent_execution_isolation_reference": "ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb",
+    "campaign_sha256": "902659ca56285a4731c3b0a6095f3c293c77246991e43bfecd8bb237f82e7efd",
+    "grading_host_receipt": "d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265",
+    "live_smoke_agent_result_sha256": "8b429bc0400285557edd0ef7bb78ae1aa92acf197cbe210b6c4257c7709a8056",
+    "live_smoke_grade_sha256": "e8396065024b98e3b697abaf6bb054c8f0bb14490066e78529b8c7020faf00fa",
+    "live_smoke_quality_pass": true,
+    "live_smoke_submission_sha256": "0d8eb699a27655c58a2e9ebba2d8694db8aa3399b5d5040511c17e02dde9f653",
+    "live_smoke_summary_sha256": "5889da2814fed708242d5a4db95970bf531b0d49a3453657084d5aae3d59e080",
+    "live_smoke_trace_sha256": "e6b60c8d0ad162e0b9e4c9d298b595cdd81a1f8e2815e5d498766a26fc9e7824",
+    "max_codex_exec_processes": 40,
+    "no_retry_after_started": true,
+    "production_grading_reference": "199ec7721ec56c57f1e09f19267e8888cc3f1ee31a8ccf754a4b0af0742bf602",
+    "reference_transport_quality_pass": true,
+    "retries": 0,
+    "runtime_inventory_reference": "d8abc626e72bc7ef483ac408c085b638c807712a47f12342b31583ed4f108208",
+    "started_ledger_before_codex": true,
+    "wrong_transport_quality_pass": false
+  },
+  "contract_id": "benchmark-representative-split-host-v1",
+  "evidence_reference": "1a9e7a145e7271b872d2dfc54c92a6ac578cbd8859649f8c4c062a127f3aac43",
+  "model_calls_during_probe": 0,
+  "probe_kind": "reviewed-live-smoke-plus-offline-boundary",
+  "schema_version": 1
+}

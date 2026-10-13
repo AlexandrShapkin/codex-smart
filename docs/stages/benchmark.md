@@ -49,7 +49,10 @@ reviewed qualification evidence, exact Codex identity, exact toolchains from the
 runtime (never host `PATH`) and a fresh private artifact target. A separate frozen
 one-execution representative smoke uses `python-billing`/`vanilla`, retries zero and its
 own `--authorize-smoke-execution`; it is excluded from the 40 primary executions and
-comparative metrics. Neither the smoke nor either campaign has been executed. The current
-development host is not a candidate for further qualification work unless its
-capabilities materially change. See [host/runner contract](../benchmark-host.md).
-Benchmark stays partial until measured evidence exists; #14 remains open and #15 separate.
+comparative metrics. The corrected split-host smoke has executed successfully and passed
+the accepted production grader. The 40-run measured campaign remains unexecuted. A
+split-host campaign transport is staged with an agent-host no-retry execution ledger and
+separate accepted grading host; its candidate evidence remains review-gated before any
+campaign authorization. The current development host is not a submitted-code grading
+target. See [host/runner contract](../benchmark-host.md). Benchmark stays partial until
+measured campaign evidence exists; #14 remains open and #15 separate.

@@ -233,3 +233,12 @@ representative budget, `representative-smoke-v1.json` freezes a separate one-exe
 excluded from comparative metrics, has retries zero and requires its own explicit
 `--authorize-smoke-execution` flag. #14 stays open until measured evidence exists; #15
 separate.
+
+A split-host representative topology is also staged for the measured campaign because
+`srv0` cannot reach the model endpoint from its current egress. This is not a proxy or
+VPN topology: the agent process runs directly on the agent host, while `srv0` remains
+the accepted trusted grading host. Credentials never cross between hosts. Only a bounded
+submission JSON envelope is transported, and the grading host independently validates
+and grades it. The topology has a 40-entry pre-launch ledger with no retry of any started
+job, preserving the frozen maximum of 40 Codex processes. Its candidate evidence must be
+separately accepted before campaign authorization is possible.

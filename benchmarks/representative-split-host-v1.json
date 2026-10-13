@@ -1,0 +1,57 @@
+{
+  "accepted_evidence_sha256": [],
+  "agent_role": {
+    "agent_execution_isolation_reference": "ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb",
+    "code_mode_host_sha256": "a11665cbc33423c909d2df47f414b8a7eccb62234c50829fc310d879904f1c69",
+    "codex_executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "credentials_transport": "forbidden",
+    "runtime_inventory_reference": "d8abc626e72bc7ef483ac408c085b638c807712a47f12342b31583ed4f108208",
+    "workspace_sandbox": "codex-workspace-write-reviewed"
+  },
+  "authorization": {
+    "authorization_overrides_security": false,
+    "flag": "--authorize-execution",
+    "required": true
+  },
+  "campaign_id": "representative-development-v1",
+  "campaign_sha256": "902659ca56285a4731c3b0a6095f3c293c77246991e43bfecd8bb237f82e7efd",
+  "contract_id": "benchmark-representative-split-host-v1",
+  "grading_role": {
+    "grader_location": "separate-accepted-grading-host",
+    "production_grading_reference": "199ec7721ec56c57f1e09f19267e8888cc3f1ee31a8ccf754a4b0af0742bf602",
+    "qualified_host_receipt": "d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265",
+    "runtime_inventory_reference": "d8abc626e72bc7ef483ac408c085b638c807712a47f12342b31583ed4f108208"
+  },
+  "interruption_policy": {
+    "completed_jobs_never_reexecuted": true,
+    "resume_may_only_launch_never_started_jobs": true,
+    "started_ledger_written_before_codex": true,
+    "started_without_result_never_retried": true
+  },
+  "live_topology_evidence": {
+    "agent_result_sha256": "8b429bc0400285557edd0ef7bb78ae1aa92acf197cbe210b6c4257c7709a8056",
+    "production_grade_sha256": "e8396065024b98e3b697abaf6bb054c8f0bb14490066e78529b8c7020faf00fa",
+    "quality_pass": true,
+    "scenario_id": "python-billing",
+    "submission_sha256": "0d8eb699a27655c58a2e9ebba2d8694db8aa3399b5d5040511c17e02dde9f653",
+    "summary_sha256": "5889da2814fed708242d5a4db95970bf531b0d49a3453657084d5aae3d59e080",
+    "trace_sha256": "e6b60c8d0ad162e0b9e4c9d298b595cdd81a1f8e2815e5d498766a26fc9e7824",
+    "variant": "vanilla"
+  },
+  "maximum_codex_exec_processes": 40,
+  "planned_primary_runs": 40,
+  "retries": 0,
+  "schema_version": 1,
+  "transport": {
+    "descriptor_relative": true,
+    "exploration_extra_artifacts_rejected_before_export": true,
+    "format": "bounded-json-utf8-expected-paths-only",
+    "hardlinks_rejected": true,
+    "max_file_bytes": 8388608,
+    "max_total_bytes": 33554432,
+    "no_follow": true,
+    "schema_version": 1,
+    "special_nodes_rejected": true,
+    "ssh_or_equivalent_authenticated_transport_required": true
+  }
+}
