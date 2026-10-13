@@ -42,7 +42,8 @@ slices are [#27](https://github.com/AlexandrShapkin/codex-smart/pull/27),
 
 Production run remains passthrough. No automatic backend activation or production
 Verified capability producer is delivered; reasoning argv planning stays separate
-from launch. Independent benchmark evidence is next, with quality gates that can
-reject the policy; no benchmark success or Rhai variant is assumed. Future
-activation/hardening depends on measured evidence. Reconsidering Rhai requires the
-evidence and safety gates in ADR-0004.
+from launch. The representative vanilla/native-instruction campaign has now produced a
+review-gated measured baseline, but it is not a Router v2 adapter measurement and does
+not authorize production Router activation. A real decision-applying Router variant
+still requires separate benchmark evidence. Reconsidering Rhai requires the evidence
+and safety gates in ADR-0004.

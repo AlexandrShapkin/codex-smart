@@ -1,0 +1,151 @@
+{
+  "candidate": {
+    "campaign_sha256": "902659ca56285a4731c3b0a6095f3c293c77246991e43bfecd8bb237f82e7efd",
+    "completed_jobs": 40,
+    "diagnostic": {
+      "exported_submissions": 36,
+      "paired_native_vs_vanilla": {
+        "cached_input_tokens": {
+          "mean_percent_delta": 7.186859,
+          "median_percent_delta": 4.288858,
+          "native_higher": 11,
+          "native_lower": 5,
+          "ties": 0
+        },
+        "duration": {
+          "mean_percent_delta": 0.804644,
+          "median_percent_delta": 3.712106,
+          "native_higher": 8,
+          "native_lower": 8,
+          "ties": 0
+        },
+        "input_tokens": {
+          "mean_percent_delta": 0.429739,
+          "median_percent_delta": -1.316043,
+          "native_higher": 7,
+          "native_lower": 9,
+          "ties": 0
+        },
+        "observed_tool_calls_lower_bound": {
+          "mean_percent_delta": -14.077089,
+          "median_percent_delta": -19.444444,
+          "native_higher": 2,
+          "native_lower": 12,
+          "ties": 2
+        },
+        "output_tokens": {
+          "mean_percent_delta": 3.055669,
+          "median_percent_delta": -0.641315,
+          "native_higher": 8,
+          "native_lower": 8,
+          "ties": 0
+        },
+        "reasoning_tokens": {
+          "mean_percent_delta": 27.828131,
+          "median_percent_delta": 11.859838,
+          "native_higher": 9,
+          "native_lower": 7,
+          "ties": 0
+        }
+      },
+      "production_graded_submissions": 36,
+      "production_quality_failures": 0,
+      "production_quality_passes": 36,
+      "provider_capacity_failures": [
+        "infra-service-policy-native-0-14",
+        "infra-service-policy-native-1-14"
+      ],
+      "successful_token_observed_matched_pairs": 16,
+      "timeout_failures": [
+        "explore-notification-native-1-14",
+        "python-config-tests-vanilla-0-14"
+      ]
+    },
+    "interpretation": {
+      "cost_diagnosis": "matched successful pairs show no latency or input-token win; native shows a descriptive reduction in observed tool-call lower bound",
+      "failure_diagnosis": "native strict deficit includes two provider-capacity failures; each variant also had one timeout",
+      "savings_claim": null,
+      "strict_headline": "vanilla 95% quality pass; native 85% quality pass",
+      "submission_quality": "all 36 exported submissions passed independent production grading",
+      "winner": null
+    },
+    "scenario_quality_passes": {
+      "explore-notification": {
+        "native": 1,
+        "vanilla": 2
+      },
+      "go-pagination": {
+        "native": 2,
+        "vanilla": 2
+      },
+      "go-reservations": {
+        "native": 2,
+        "vanilla": 2
+      },
+      "infra-service-policy": {
+        "native": 0,
+        "vanilla": 2
+      },
+      "python-billing": {
+        "native": 2,
+        "vanilla": 2
+      },
+      "python-config-tests": {
+        "native": 2,
+        "vanilla": 1
+      },
+      "python-result-api": {
+        "native": 2,
+        "vanilla": 2
+      },
+      "repo-ci-gates": {
+        "native": 2,
+        "vanilla": 2
+      },
+      "rust-duration": {
+        "native": 2,
+        "vanilla": 2
+      },
+      "rust-ledger": {
+        "native": 2,
+        "vanilla": 2
+      }
+    },
+    "strict": {
+      "native": {
+        "agent_failures": 2,
+        "cached_input_tokens_median": 121216.0,
+        "cost_samples": 16,
+        "duration_median_seconds": 61.52577563600062,
+        "failure_rate": 0.15,
+        "failures": 3,
+        "input_tokens_median": 130725.0,
+        "output_tokens_median": 1668.5,
+        "quality_pass_rate": 0.85,
+        "quality_passes": 17,
+        "reasoning_tokens_median": 123.5,
+        "runs": 20,
+        "timeout_failures": 1
+      },
+      "vanilla": {
+        "agent_failures": 0,
+        "cached_input_tokens_median": 111104.0,
+        "cost_samples": 16,
+        "duration_median_seconds": 60.132829870501155,
+        "failure_rate": 0.05,
+        "failures": 1,
+        "input_tokens_median": 129602.0,
+        "output_tokens_median": 1755.5,
+        "quality_pass_rate": 0.95,
+        "quality_passes": 19,
+        "reasoning_tokens_median": 137.5,
+        "runs": 20,
+        "timeout_failures": 1
+      }
+    }
+  },
+  "evidence_reference": "ffd8fbbc66934478e4591d65811daecc7b8012083157c9fabc97f4647c9bc347",
+  "measurement_id": "representative-development-measurement-v1",
+  "model_calls_during_analysis": 0,
+  "schema_version": 1
+}

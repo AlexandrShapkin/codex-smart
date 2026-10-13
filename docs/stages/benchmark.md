@@ -31,7 +31,8 @@ Structural realism is strengthened with functional supporting context, hidden
 dependency evidence, tier thresholds and pinned Cargo check/test controls. This is
 purpose-built representative synthetic coverage, not large real-world repository
 evidence. Coverage metadata is measurement-only. Review matrix acceptance independently of
-host qualification; no measured result, winner or savings exists.
+host qualification. The 40-run representative campaign is now measured; its normalized
+result is a review-gated baseline candidate and makes no winner or savings claim.
 
 Current-host capability investigation is complete: the development host remains
 non-qualified and is not a submitted-code grading target. A separate host receipt is
@@ -49,10 +50,12 @@ reviewed qualification evidence, exact Codex identity, exact toolchains from the
 runtime (never host `PATH`) and a fresh private artifact target. A separate frozen
 one-execution representative smoke uses `python-billing`/`vanilla`, retries zero and its
 own `--authorize-smoke-execution`; it is excluded from the 40 primary executions and
-comparative metrics. The corrected split-host smoke has executed successfully and passed
-the accepted production grader. The 40-run measured campaign remains unexecuted. A
-split-host campaign transport is staged with an agent-host no-retry execution ledger and
-separate accepted grading host; its candidate evidence `1a9e7a...` is accepted, while explicit campaign authorization
-remains required. The current development host is not a submitted-code grading
-target. See [host/runner contract](../benchmark-host.md). Benchmark stays partial until
-measured campaign evidence exists; #14 remains open and #15 separate.
+comparative metrics. The corrected split-host smoke and the authorized 40-run representative campaign have
+executed. All 40 jobs reached a terminal record with zero retries; 36 submissions were
+exported and all 36 passed the accepted production grader. Strict pass rates remain
+95% vanilla and 85% native because failures stay in the denominator; two of the native
+agent failures were provider-capacity errors and each variant had one timeout. The
+normalized measurement candidate is separately review-gated, so there is no accepted
+winner or savings claim yet. The current development host is not a submitted-code
+grading target. See [host/runner contract](../benchmark-host.md). #14 remains open only
+for measured-baseline acceptance; #15 stays separate.
