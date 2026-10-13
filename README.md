@@ -52,7 +52,7 @@ Diagnostics are offline/read-only by default and never execute discovered binari
 
 ## Routing model
 
-`explain` previews the reference Rust policy using explicit task hints and conservative capability evidence. `run` currently preserves exact Codex arguments and injects no profile or reasoning override. Router v2 composition, fallback and escalation remain planned; see [routing](docs/routing.md) and [architecture](docs/architecture.md).
+`explain` previews the reference Rust policy using explicit task hints and conservative capability evidence. `run` preserves exact Codex arguments and injects no profile or reasoning override. Router v2 composition, fallback, Playbooks and Adaptive policies are implemented and tested as pure contracts; their application to production execution remains unimplemented. See [routing](docs/routing.md) and [architecture](docs/architecture.md).
 
 ## Development
 

@@ -35,6 +35,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [External executable pin validation — 2026-10-06](../docs/diagnostics/2026-10-06-tools.md) | engineering | historical | tools |
 | [Bounded workflow validation — 2026-10-06](../docs/diagnostics/2026-10-06-workflow.md) | engineering | historical | workflow |
 | [Initial engineering diagnostic — 2026-10-06](../docs/diagnostics/2026-10-06.md) | engineering | historical | baseline |
+| [Infrastructure and governance reconciliation — 2026-10-14](../docs/diagnostics/2026-10-14-infrastructure-reconciliation.md) | engineering | historical | workflow |
 | [Repository workflow normalization audit](../docs/diagnostics/2026-10-14-workflow-normalization.md) | engineering | historical | workflow |
 | [Distribution and release lifecycle target](../docs/distribution.md) | release | contract | playbooks, adaptive, automation, distribution, hardening, stable |
 | [Offline Doctor contract](../docs/doctor.md) | engineering | current | doctor |

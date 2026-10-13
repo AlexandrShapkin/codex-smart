@@ -663,6 +663,15 @@
       "stages": [
         "workflow"
       ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-14-infrastructure-reconciliation.md",
+      "title": "Infrastructure and governance reconciliation — 2026-10-14",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "workflow"
+      ]
     }
   ]
 }
