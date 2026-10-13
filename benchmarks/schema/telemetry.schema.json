@@ -1,0 +1,237 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Codex Smart privacy-preserving benchmark aggregate telemetry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "telemetry_kind",
+    "campaign_id",
+    "record_count",
+    "records_manifest_sha256",
+    "privacy",
+    "overall",
+    "variants"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "telemetry_kind": {
+      "const": "benchmark-aggregate-v1"
+    },
+    "campaign_id": {
+      "type": "string"
+    },
+    "record_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "records_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_contract",
+        "raw_trace_ingested",
+        "prompt_ingested",
+        "source_ingested",
+        "stderr_ingested",
+        "credential_data_ingested",
+        "network_export",
+        "scenario_breakdown_included"
+      ],
+      "properties": {
+        "input_contract": {
+          "const": "normalized-records-only"
+        },
+        "raw_trace_ingested": {
+          "const": false
+        },
+        "prompt_ingested": {
+          "const": false
+        },
+        "source_ingested": {
+          "const": false
+        },
+        "stderr_ingested": {
+          "const": false
+        },
+        "credential_data_ingested": {
+          "const": false
+        },
+        "network_export": {
+          "const": false
+        },
+        "scenario_breakdown_included": {
+          "type": "boolean"
+        }
+      }
+    },
+    "overall": {
+      "$ref": "#/$defs/aggregate"
+    },
+    "variants": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/aggregate"
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/aggregate"
+      }
+    }
+  },
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "samples",
+        "sum",
+        "median",
+        "range"
+      ],
+      "properties": {
+        "samples": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sum": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "median": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "range": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "items": false
+            }
+          ]
+        }
+      }
+    },
+    "aggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runs",
+        "quality_passes",
+        "quality_failures",
+        "failure_counts",
+        "cold_warm",
+        "retry_count",
+        "attempt_count",
+        "duration_seconds",
+        "setup_seconds",
+        "index_seconds",
+        "bootstrap_seconds",
+        "tokens",
+        "observed_tool_calls_lower_bound",
+        "full_tool_calls",
+        "model_calls"
+      ],
+      "properties": {
+        "runs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "quality_passes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "quality_failures": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failure_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "cold_warm": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cold",
+            "warm",
+            "unknown"
+          ],
+          "properties": {
+            "cold": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "warm": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unknown": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "retry_count": {
+          "$ref": "#/$defs/metric"
+        },
+        "attempt_count": {
+          "$ref": "#/$defs/metric"
+        },
+        "duration_seconds": {
+          "$ref": "#/$defs/metric"
+        },
+        "setup_seconds": {
+          "$ref": "#/$defs/metric"
+        },
+        "index_seconds": {
+          "$ref": "#/$defs/metric"
+        },
+        "bootstrap_seconds": {
+          "$ref": "#/$defs/metric"
+        },
+        "tokens": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/metric"
+          }
+        },
+        "observed_tool_calls_lower_bound": {
+          "$ref": "#/$defs/metric"
+        },
+        "full_tool_calls": {
+          "$ref": "#/$defs/metric"
+        },
+        "model_calls": {
+          "$ref": "#/$defs/metric"
+        }
+      }
+    }
+  }
+}
