@@ -63,10 +63,14 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Invalid stage"):
             Repository(self.root).validate()
 
-    def test_planned_milestones_preserve_active_stage_and_bounded_context(self):
+    def test_stage_transition_preserves_bounded_context(self):
         repo = Repository(self.root)
         repo.validate()
-        self.assertEqual(repo.stages["active"], "benchmark")
+        self.assertEqual(repo.stages["active"], "adaptive")
+        progress = {stage["id"]: stage["progress"] for stage in repo.stages["stages"]}
+        self.assertEqual(progress["benchmark"], "validated")
+        self.assertEqual(progress["playbooks"], "validated")
+        self.assertEqual(progress["adaptive"], "active")
         for stage in ["playbooks", "adaptive", "automation", "distribution", "hardening", "stable"]:
             self.assertLessEqual(len(repo.context(stage).encode()), CONTEXT_BYTES)
         self.edit("docs/stages.json", lambda d: d["stages"][-2].update(milestone="0.4 Hardening"))

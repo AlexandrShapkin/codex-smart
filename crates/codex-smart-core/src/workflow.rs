@@ -6,7 +6,8 @@
 //! inspectable plan.
 
 use crate::playbook::{
-    Archetype, FallbackPolicy, NativeCapability, PlaybookContract, ProfileClass, builtin,
+    Archetype, CleanupObligation, ContextObligation, EscalationTrigger, FallbackPolicy,
+    NativeCapability, PlaybookContract, ProfileClass, ValidationObligation, builtin,
 };
 use crate::routing::Reasoning;
 use crate::routing::assessment::{
@@ -375,6 +376,81 @@ pub enum PlanStatus {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ValidationReadiness {
+    Ready,
+    NeedsEvidence,
+    Blocked,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlannedValidation {
+    pub obligation: ValidationObligation,
+    pub required_native: BTreeSet<NativeCapability>,
+    pub readiness: ValidationReadiness,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ValidationRecipe {
+    pub status: ValidationReadiness,
+    pub checks: Vec<PlannedValidation>,
+}
+
+const READ_ONLY_NATIVE: &[NativeCapability] = &[NativeCapability::ReadFiles, NativeCapability::Git];
+const TEST_NATIVE: &[NativeCapability] = &[NativeCapability::Tests];
+const BUILD_NATIVE: &[NativeCapability] = &[NativeCapability::Build];
+const SEARCH_NATIVE: &[NativeCapability] = &[NativeCapability::ReadFiles, NativeCapability::Search];
+const CI_NATIVE: &[NativeCapability] = &[
+    NativeCapability::ReadFiles,
+    NativeCapability::Search,
+    NativeCapability::Build,
+    NativeCapability::Tests,
+];
+const DEPENDENCY_NATIVE: &[NativeCapability] = &[
+    NativeCapability::ReadFiles,
+    NativeCapability::Build,
+    NativeCapability::Tests,
+];
+const DOC_NATIVE: &[NativeCapability] = &[NativeCapability::ReadFiles, NativeCapability::Search];
+const RELEASE_NATIVE: &[NativeCapability] = &[
+    NativeCapability::ReadFiles,
+    NativeCapability::Git,
+    NativeCapability::Build,
+    NativeCapability::Tests,
+];
+
+fn validation_native_requirements(obligation: ValidationObligation) -> &'static [NativeCapability] {
+    match obligation {
+        ValidationObligation::ReadOnlyInvariant => READ_ONLY_NATIVE,
+        ValidationObligation::RelevantTests => TEST_NATIVE,
+        ValidationObligation::BuildOrStaticCheck => BUILD_NATIVE,
+        ValidationObligation::CallerCompatibility
+        | ValidationObligation::ImpactReview
+        | ValidationObligation::SecurityReview => SEARCH_NATIVE,
+        ValidationObligation::CiConfigurationCheck => CI_NATIVE,
+        ValidationObligation::DependencyValidation => DEPENDENCY_NATIVE,
+        ValidationObligation::DocumentationCheck => DOC_NATIVE,
+        ValidationObligation::ReleaseRehearsal => RELEASE_NATIVE,
+    }
+}
+
+fn validation_readiness(
+    requirements: &[NativeCapability],
+    native: &NativeSurface,
+) -> ValidationReadiness {
+    let mut readiness = ValidationReadiness::Ready;
+    for capability in requirements {
+        match native.state(*capability) {
+            NativeState::Verified => {}
+            NativeState::Unknown => readiness = readiness.max(ValidationReadiness::NeedsEvidence),
+            NativeState::Unavailable | NativeState::Blocked => {
+                return ValidationReadiness::Blocked;
+            }
+        }
+    }
+    readiness
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum WorkflowPlanReason {
     Selection(SelectionReason),
     NativeUnknown(NativeCapability),
@@ -661,17 +737,59 @@ pub fn plan_workflow(
 }
 
 impl WorkflowPlan {
-    /// Enum/version-only output. It deliberately excludes prompt/source, paths,
-    /// credentials, tool output and arbitrary resource labels.
+    /// Build a bounded native validation recipe. External capability state and prepared
+    /// resources never satisfy these checks: validation remains native-first and
+    /// fail-closed when required native evidence is missing.
+    pub fn validation_recipe(&self, native: &NativeSurface) -> Option<ValidationRecipe> {
+        let contract = builtin(self.selection.archetype?);
+        let mut status = match self.status {
+            PlanStatus::Ready => ValidationReadiness::Ready,
+            PlanStatus::NeedsEvidence => ValidationReadiness::NeedsEvidence,
+            PlanStatus::Blocked => ValidationReadiness::Blocked,
+        };
+        let checks = contract
+            .validation
+            .iter()
+            .copied()
+            .map(|obligation| {
+                let requirements = validation_native_requirements(obligation);
+                let readiness = validation_readiness(requirements, native);
+                status = status.max(readiness);
+                PlannedValidation {
+                    obligation,
+                    required_native: requirements.iter().copied().collect(),
+                    readiness,
+                }
+            })
+            .collect();
+        Some(ValidationRecipe { status, checks })
+    }
+
+    /// Enum/version-only explanation. It deliberately excludes prompt/source, paths,
+    /// credentials, dynamic tool output and arbitrary resource labels. It describes
+    /// semantic obligations only and grants no execution or preparation authority.
     pub fn render(&self) -> String {
+        let contract = self.selection.archetype.map(builtin);
+        let context: &[ContextObligation] = contract.map_or(&[], |value| value.context);
+        let tools: &[NativeCapability] = contract.map_or(&[], |value| value.required_native);
+        let validation: &[ValidationObligation] = contract.map_or(&[], |value| value.validation);
+        let escalation: &[EscalationTrigger] = contract.map_or(&[], |value| value.escalation);
+        let cleanup: &[CleanupObligation] = contract.map_or(&[], |value| value.cleanup);
+        let fallback = contract.map(|value| value.fallback);
         format!(
-            "Workflow plan (no execution)\nStatus: {:?}\nArchetype: {:?}\nRisk: {:?}\nProfile: {:?}\nReasoning: {:?}\nResources: {:?}\nReasons: {:?}\n",
+            "Workflow plan (no execution)\nStatus: {:?}\nWorkflow: {:?}\nRisk: {:?}\nProfile: {:?}\nReasoning: {:?}\nContext: {:?}\nTools (required native): {:?}\nPreparation: {:?}\nValidation: {:?}\nEscalation: {:?}\nCleanup: {:?}\nFallback: {:?}\nReasons: {:?}\n",
             self.status,
             self.selection.archetype,
             self.selection.effective_risk,
             self.selection.profile,
             self.selection.reasoning,
+            context,
+            tools,
             self.resources,
+            validation,
+            escalation,
+            cleanup,
+            fallback,
             self.reasons,
         )
     }
@@ -1032,6 +1150,85 @@ mod tests {
     }
 
     #[test]
+    fn validation_recipe_is_native_only_and_can_require_more_evidence_than_planning() {
+        let native = NativeSurface::new([
+            (NativeCapability::ReadFiles, NativeState::Verified),
+            (NativeCapability::Search, NativeState::Verified),
+            (NativeCapability::Edit, NativeState::Verified),
+            (NativeCapability::Tests, NativeState::Verified),
+        ]);
+        let plan = plan_workflow(
+            &assessed(TaskKind::Edit, None),
+            Some(Archetype::FailingTestRepair),
+            &native,
+            &CapabilitySurface::new([(Backend::Serena, CapabilityState::Verified)]),
+            &ResourceCatalog::default(),
+        );
+        assert_eq!(plan.status, PlanStatus::Ready);
+
+        let recipe = plan.validation_recipe(&native).unwrap();
+        assert_eq!(recipe.status, ValidationReadiness::NeedsEvidence);
+        let tests = recipe
+            .checks
+            .iter()
+            .find(|check| check.obligation == ValidationObligation::RelevantTests)
+            .unwrap();
+        assert_eq!(tests.readiness, ValidationReadiness::Ready);
+        assert_eq!(
+            tests.required_native,
+            BTreeSet::from([NativeCapability::Tests])
+        );
+        let build = recipe
+            .checks
+            .iter()
+            .find(|check| check.obligation == ValidationObligation::BuildOrStaticCheck)
+            .unwrap();
+        assert_eq!(build.readiness, ValidationReadiness::NeedsEvidence);
+        assert_eq!(
+            build.required_native,
+            BTreeSet::from([NativeCapability::Build])
+        );
+    }
+
+    #[test]
+    fn validation_recipe_blocks_on_unavailable_native_check() {
+        let native = NativeSurface::new([
+            (NativeCapability::ReadFiles, NativeState::Verified),
+            (NativeCapability::Search, NativeState::Verified),
+            (NativeCapability::Edit, NativeState::Verified),
+            (NativeCapability::Tests, NativeState::Verified),
+            (NativeCapability::Build, NativeState::Unavailable),
+        ]);
+        let plan = plan_workflow(
+            &assessed(TaskKind::Edit, None),
+            Some(Archetype::FailingTestRepair),
+            &native,
+            &CapabilitySurface::default(),
+            &ResourceCatalog::default(),
+        );
+        assert_eq!(plan.status, PlanStatus::Ready);
+        let recipe = plan.validation_recipe(&native).unwrap();
+        assert_eq!(recipe.status, ValidationReadiness::Blocked);
+        assert!(recipe.checks.iter().any(|check| {
+            check.obligation == ValidationObligation::BuildOrStaticCheck
+                && check.readiness == ValidationReadiness::Blocked
+        }));
+    }
+
+    #[test]
+    fn builtin_validation_requirements_are_bounded_native_contracts() {
+        for contract in crate::playbook::BUILTIN_PLAYBOOKS {
+            for obligation in contract.validation {
+                let required = validation_native_requirements(*obligation);
+                assert!(!required.is_empty(), "{:?}", obligation);
+                assert!(required.len() <= 4, "{:?}", obligation);
+                let unique: BTreeSet<_> = required.iter().copied().collect();
+                assert_eq!(unique.len(), required.len(), "{:?}", obligation);
+            }
+        }
+    }
+
+    #[test]
     fn render_is_bounded_and_contains_no_runtime_identity_strings() {
         let plan = plan_workflow(
             &assessed(TaskKind::Inspect, None),
@@ -1059,5 +1256,19 @@ mod tests {
             );
         }
         assert!(rendered.contains("no execution"));
+        for section in [
+            "Workflow:",
+            "Profile:",
+            "Reasoning:",
+            "Context:",
+            "Tools (required native):",
+            "Preparation:",
+            "Validation:",
+            "Escalation:",
+            "Cleanup:",
+            "Fallback:",
+        ] {
+            assert!(rendered.contains(section), "missing {section}");
+        }
     }
 }

@@ -1,6 +1,6 @@
 # Adaptive model routing and runtime escalation
 
-Status: planned 0.5 Adaptive Execution; not implemented. Dependencies: playbooks.
+Status: active 0.5 Adaptive Execution; not implemented. Playbooks 0.4 dependency is accepted.
 
 ## Goal
 

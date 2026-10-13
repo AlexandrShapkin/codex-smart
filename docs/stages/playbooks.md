@@ -1,6 +1,6 @@
 # Workflow playbooks and resource planning
 
-Status: active 0.4 Workflow Intelligence. Benchmark dependencies are accepted; the task-archetype semantic contract is the first implementation slice.
+Status: validated 0.4 Workflow Intelligence. Benchmark dependencies and all three Playbooks slices (#40–#42) are accepted; Adaptive Execution is the next active stage.
 
 ## Goal
 
@@ -12,7 +12,7 @@ Read [workflow intelligence](../workflow-intelligence.md), [architecture](../arc
 
 ## Current state
 
-Router v2, accepted representative baseline `ffd8fbbc...`, privacy-preserving aggregate telemetry and #40 typed archetype semantics are delivered. #41 adds a pure deterministic selector/resource planner: generic edits do not get guessed into an archetype; required native unknown/unavailable state fails closed; optional external state can only become a typed reusable/preparable resource from complete verified evidence. The planner performs no preparation or production activation. #42 validation/explain remains; adaptive execution, automation and distribution are future stages.
+Router v2, accepted representative baseline `ffd8fbbc...`, privacy-preserving aggregate telemetry and all 0.4 Playbooks slices are delivered. #40 defines the typed archetype semantics; #41 adds the pure deterministic selector/resource planner; #42 adds bounded native validation recipes plus the complete enum-only explain surface. Generic edits are not guessed into an archetype, required native state fails closed, optional external state cannot substitute for native validation, and preparation remains declarative. No playbook code executes tools, prepares resources, changes production launch behavior or authorizes model calls. Adaptive execution, automation and distribution remain later stages.
 
 ## Target state
 
@@ -40,7 +40,7 @@ Use the thin Rust control plane and existing argument/configuration safety contr
 
 ## Acceptance
 
-The stage has three separately reviewable slices: #40 typed archetype semantics is accepted; #41 implements the deterministic selector/resource planner; #42 remains validation recipes and explainable preparation. #41 acceptance requires typed-only selection, conservative ambiguity handling, monotonic risk floors, required-native fail-closed behavior, optional-external native fallback, and complete resource identity/version/scope/owner/validity/invalidation/privacy/cleanup. Full stage acceptance additionally requires validation recipes and explain output for workflow/profile/reasoning/context/tools/validation/escalation/fallback.
+The stage has three separately reviewable accepted slices: #40 typed archetype semantics, #41 deterministic selector/resource planning and #42 validation recipes/explainable preparation. Selection is typed-only with conservative ambiguity handling and monotonic risk floors. Required native capability state fails closed; optional external resources use native fallback and preserve complete identity/version/scope/owner/validity/invalidation/privacy/cleanup metadata. Validation is a separate native-only readiness recipe and can remain `NeedsEvidence` or `Blocked` even when preparation planning is ready. Explain output covers workflow/profile/reasoning/context/tools/preparation/validation/escalation/cleanup/fallback without source, prompt, credentials, runtime paths or execution authority.
 
 ## Validation
 
@@ -60,4 +60,4 @@ Reconcile each issue against concrete implementation and independent evidence. R
 
 ## Follow-ups
 
-Next dependent stage begins after explicit acceptance. Unresolved quality, security, compatibility or measurement gaps stay visible and fail closed.
+Playbooks 0.4 is accepted. Adaptive Execution 0.5 begins with #43; unresolved quality, security, compatibility or measurement gaps stay visible and fail closed.

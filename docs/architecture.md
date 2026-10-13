@@ -69,11 +69,4 @@ are `PrepareOwned` and `RefreshOwned`, both restricted to Codex-Smart-owned reso
 user/provider-owned absent or stale resources fall back to native. No planner function
 installs, authenticates, changes configuration or invokes a tool/model.
 
-The adaptive controller remains future work and will respond to independent validation
-evidence with bounded escalation. Lifecycle operations never become model-routing
-decisions. Minimize expected total lifecycle cost subject to required quality, safety
-and verification, rather than single-call token count. Validation application,
-explainability, telemetry boundaries and replaceable profile/model mapping are in
-[workflow intelligence](workflow-intelligence.md),
-[distribution](distribution.md) and [ADR 0008](decisions/0008-deterministic-workflows.md).
-Production launch behavior is unchanged; #42 remains the validation/explain slice.
+Validation recipe planning and explainable preparation are now pure core contracts. Each validation obligation has bounded native readiness (`Ready`, `NeedsEvidence` or `Blocked`); optional external state cannot substitute for those checks. The rendered workflow explanation covers workflow/profile/reasoning/context/tools/preparation/validation/escalation/cleanup/fallback and contains no source/prompt/credential/runtime-path payload. Validation command execution and the adaptive controller remain future work and will respond to independent validation evidence with bounded escalation. Lifecycle operations never become model-routing decisions. Minimize expected total lifecycle cost subject to required quality, safety and verification, rather than single-call token count. See [workflow intelligence](workflow-intelligence.md), [distribution](distribution.md) and [ADR 0008](decisions/0008-deterministic-workflows.md). Production launch behavior remains unchanged.

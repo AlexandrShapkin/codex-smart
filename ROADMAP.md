@@ -6,7 +6,7 @@ Version: 0.1.0 unreleased; see [versioning](docs/versioning.md).
 Recorded progress describes implementation evidence, not live issue closure or milestone completion.
 GitHub Issues own actionable state; use `just issues`. No legacy archive or benchmark quality is assumed.
 
-Active stage: **benchmark**. Start with `just context`.
+Active stage: **adaptive**. Start with `just context`.
 
 ## baseline — Recover trustworthy repository baseline
 
@@ -45,20 +45,21 @@ Evidence: [docs/routing.md](docs/routing.md), [docs/decisions/0004-rhai-deferred
 
 ## benchmark — Full development benchmark and aggregate telemetry
 
-Milestone: 0.3 Development Benchmark; recorded progress: **partial**.
+Milestone: 0.3 Development Benchmark; recorded progress: **validated**.
 Dependencies: router.
 [Stage contract](docs/stages/benchmark.md); issues: [#14](https://github.com/AlexandrShapkin/codex-smart/issues/14), [#15](https://github.com/AlexandrShapkin/codex-smart/issues/15).
 Evidence: [docs/benchmarking.md](docs/benchmarking.md).
 
 ## playbooks — Workflow playbooks and resource planning
 
-Milestone: 0.4 Workflow Intelligence; recorded progress: **planned**.
+Milestone: 0.4 Workflow Intelligence; recorded progress: **validated**.
 Dependencies: benchmark.
 [Stage contract](docs/stages/playbooks.md); issues: [#40](https://github.com/AlexandrShapkin/codex-smart/issues/40), [#41](https://github.com/AlexandrShapkin/codex-smart/issues/41), [#42](https://github.com/AlexandrShapkin/codex-smart/issues/42).
+Evidence: [docs/workflow-intelligence.md](docs/workflow-intelligence.md).
 
 ## adaptive — Adaptive model routing and runtime escalation
 
-Milestone: 0.5 Adaptive Execution; recorded progress: **planned**.
+Milestone: 0.5 Adaptive Execution; recorded progress: **active**.
 Dependencies: playbooks.
 [Stage contract](docs/stages/adaptive.md); issues: [#43](https://github.com/AlexandrShapkin/codex-smart/issues/43), [#44](https://github.com/AlexandrShapkin/codex-smart/issues/44), [#45](https://github.com/AlexandrShapkin/codex-smart/issues/45), [#46](https://github.com/AlexandrShapkin/codex-smart/issues/46).
 

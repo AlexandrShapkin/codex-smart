@@ -9,8 +9,8 @@ use codex_smart_core::version::Version;
 use codex_smart_core::workflow::{
     InvalidationTrigger, NativeState, NativeSurface, PlanStatus, REQUIRED_INVALIDATION_TRIGGERS,
     ResourceCatalog, ResourceCleanup, ResourceDescriptor, ResourceDisposition, ResourceIdentity,
-    ResourceOwner, ResourcePrivacy, ResourceScope, ResourceValidity, WorkflowPlanReason,
-    plan_workflow,
+    ResourceOwner, ResourcePrivacy, ResourceScope, ResourceValidity, ValidationReadiness,
+    WorkflowPlanReason, plan_workflow,
 };
 
 fn native_ready() -> NativeSurface {
@@ -150,5 +150,80 @@ fn security_floor_blocks_when_required_native_evidence_is_not_verified() {
     assert!(
         plan.reasons
             .contains(&WorkflowPlanReason::HighRiskNativeBlockingFallback)
+    );
+}
+
+#[test]
+fn validation_recipe_and_explain_surface_are_bounded_and_inspectable() {
+    let assessment = assess(&RoutingFacts {
+        known_operations: vec![TaskKind::Edit],
+        ..Default::default()
+    });
+    let plan = plan_workflow(
+        &assessment,
+        Some(Archetype::FeatureImplementation),
+        &native_ready(),
+        &CapabilitySurface::new([(Backend::CodeGraph, CapabilityState::Verified)]),
+        &ResourceCatalog::new([metadata(
+            CapabilityNeed::StructuralImpact,
+            ResourceValidity::Absent,
+            ResourceOwner::CodexSmart,
+        )]),
+    );
+    let recipe = plan.validation_recipe(&native_ready()).unwrap();
+    assert_eq!(recipe.status, ValidationReadiness::Ready);
+    assert!(!recipe.checks.is_empty());
+
+    let rendered = plan.render();
+    for section in [
+        "Workflow: Some(FeatureImplementation)",
+        "Profile: Some(Standard)",
+        "Reasoning: Some(Medium)",
+        "Context:",
+        "Tools (required native):",
+        "Preparation:",
+        "Validation:",
+        "Escalation:",
+        "Cleanup:",
+        "Fallback:",
+    ] {
+        assert!(rendered.contains(section), "missing {section}");
+    }
+    assert!(rendered.contains("PrepareOwned"));
+    for forbidden in ["/home/", "Bearer ", "api_key", "prompt", "source text"] {
+        assert!(
+            !rendered
+                .to_ascii_lowercase()
+                .contains(&forbidden.to_ascii_lowercase())
+        );
+    }
+}
+
+#[test]
+fn validation_does_not_treat_external_readiness_as_native_verification() {
+    let assessment = assess(&RoutingFacts {
+        known_operations: vec![TaskKind::Edit],
+        ..Default::default()
+    });
+    let native = NativeSurface::new([
+        (NativeCapability::ReadFiles, NativeState::Verified),
+        (NativeCapability::Search, NativeState::Verified),
+        (NativeCapability::Edit, NativeState::Verified),
+        (NativeCapability::Tests, NativeState::Verified),
+    ]);
+    let plan = plan_workflow(
+        &assessment,
+        Some(Archetype::FailingTestRepair),
+        &native,
+        &CapabilitySurface::new([
+            (Backend::CodeGraph, CapabilityState::Verified),
+            (Backend::Serena, CapabilityState::Verified),
+        ]),
+        &ResourceCatalog::default(),
+    );
+    assert_eq!(plan.status, PlanStatus::Ready);
+    assert_eq!(
+        plan.validation_recipe(&native).unwrap().status,
+        ValidationReadiness::NeedsEvidence
     );
 }
