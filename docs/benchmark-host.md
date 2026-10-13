@@ -4,8 +4,9 @@ Status: prepared adapter and reviewed qualification semantics; one bounded
 qualified-host receipt (`d2af64ce...`) and agent-execution isolation evidence
 (`ae2840a9...`) are accepted. The constrained grading-backend candidate remains
 accepted by its own frozen backend contract. Representative campaign readiness is
-still false because production submission grading is intentionally unimplemented and
-the frozen readiness fields have not been promoted. Active work remains #14. The
+still false because the production submission-grading candidate is implemented and
+verified only as review evidence; its evidence reference is not yet accepted and the
+frozen readiness fields have not been promoted. Active work remains #14. The
 representative matrix was accepted in #39; #56 planned future stages separately.
 No benchmark model execution, campaign execution or telemetry is added here.
 
@@ -212,10 +213,15 @@ report 40 synthetic attempts and zero model calls, not comparative measurements.
 Matrix accepted; representative runner contract **prepared** means pinned adapter
 implementation tested with fakes. One reviewed qualified-host receipt, exact agent
 isolation evidence and the constrained grading-backend contract are accepted, while
-representative readiness remains false because `grade_representative()` still refuses
-all submissions and performs no isolated production grading. Historical 42 jobs and
-representative 40 primary executions remain unexecuted; successful IaC smoke and
-historical failed evidence remain unchanged. Next implement the production submission
-grader using the accepted mount-plan/runtime inventory, rerun its positive/negative
-controls, then separately review a readiness repin before any authorized spending.
+representative readiness remains false because public `grade_representative()` still
+fails closed until production-grading evidence is separately admitted. The candidate
+implementation uses the accepted constrained mount plan, full immutable runtime rehash,
+transient systemd cgroup limits and a single final writable `/work` bind. Repository-owned
+controls on srv0 passed 10/10 references, rejected 20/20 wrong controls, and passed
+symlink, hardlink, special-node, exploration immutability, host/env/network/capability
+and descendant-cleanup security controls with zero model calls. Candidate evidence
+reference `b2126d54...` remains unaccepted by `submission-grading-v1.json`. Historical
+42 jobs and representative 40 primary executions remain unexecuted; successful IaC
+smoke and historical failed evidence remain unchanged. Next separately review and admit
+that evidence, repin readiness, and only then consider authorized live execution.
 #14 stays open; #15 stays separate.

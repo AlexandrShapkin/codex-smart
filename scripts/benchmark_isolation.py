@@ -1,8 +1,9 @@
 """Explicit Linux namespace probes, never a submitted-code grading fallback.
 
-The constrained Ubuntu Bubblewrap candidate is accepted only by its dedicated backend
-contract. No qualified host receipt or production grading implementation exists yet,
-so representative submission grading still fails closed.
+The constrained Ubuntu Bubblewrap backend and qualified-host receipt are reviewed.
+A production submission-grading implementation now exists as a review candidate, but
+its evidence is not yet admitted, so representative submission grading still fails
+closed before reading untrusted workspace content.
 """
 import argparse
 from dataclasses import asdict, dataclass
@@ -19,6 +20,7 @@ from typing import Literal
 
 import benchmark_grading_backend as grading_backend
 import benchmark_resource_contract as resource_contract
+import benchmark_submission_grading as submission_grading
 
 BWRAP = Path('/usr/bin/bwrap')
 BACKEND_ID = grading_backend.expected_contract()['backend_id']
@@ -70,11 +72,12 @@ def representative_contract_verified(qualification):
     return grading_backend.representative_contract_verified(qualification)
 
 
-def grade_representative(scenario, workspace, qualification, *, policy=SubmissionPolicy()):
-    """Submission boundary; qualification is required, never a host-grader fallback.
+def grade_representative(scenario, workspace, qualification, *, policy=SubmissionPolicy(), runtime=None):
+    """Production submission boundary with separate evidence acceptance.
 
-    The accepted isolated backend is not implemented/verified yet. This refusal
-    reads no submitted file and performs no host capability investigation.
+    Until the production-grading evidence reference is separately reviewed and
+    admitted, the delegated implementation fails closed before reading the
+    submitted workspace. There is never a direct-host grader fallback.
     """
     import benchmark_host as host
     if type(qualification) is not host.QualifiedHostContract or qualification.status != 'verified':
@@ -83,7 +86,9 @@ def grade_representative(scenario, workspace, qualification, *, policy=Submissio
                 else SubmissionPolicy())
     if policy != expected:
         return GradeResult('blocked', 'submission-policy-mismatch')
-    return GradeResult('blocked', 'grading-isolation-contract-not-verified')
+    result = submission_grading.grade_representative(
+        scenario, workspace, qualification, runtime, policy)
+    return GradeResult(result.status, result.reason, result.quality_pass)
 
 
 def _probe(script, workspace, timeout=5):

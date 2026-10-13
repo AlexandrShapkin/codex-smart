@@ -1,0 +1,47 @@
+{
+  "accepted_evidence_sha256": [],
+  "authorization_overrides_security": false,
+  "contract_id": "benchmark-production-submission-grading-v1",
+  "entrypoint_sha256": "2b17f1f1af62772654565f3a2c29a3516d868637c1bcd207316368fb9ef130a5",
+  "grading_backend_reference": "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec",
+  "mount_policy": {
+    "cap_drop_all": true,
+    "clear_environment": true,
+    "host_usr_mounted": false,
+    "network_namespace": true,
+    "runtime_read_only": true,
+    "untrusted_bind_count": 1,
+    "untrusted_bind_last": true,
+    "untrusted_destination": "/work"
+  },
+  "qualified_host_receipt": "d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265",
+  "required_evidence": [
+    "runtime-full-inventory-rehash",
+    "all-reference-controls-pass",
+    "all-wrong-controls-rejected",
+    "symlink-and-special-node-rejected",
+    "hardlink-rejected",
+    "host-filesystem-write-blocked",
+    "credential-and-environment-isolation",
+    "network-isolation",
+    "descendant-cleanup",
+    "resource-limit-launch-shape"
+  ],
+  "resource_limits": {
+    "kill_mode": "control-group",
+    "memory_max": "3G",
+    "memory_swap_max": "0",
+    "runtime_max_seconds": 120,
+    "tasks_max": 256
+  },
+  "runtime_inventory": {
+    "directory_count": 2469,
+    "dirs_manifest_sha256": "663c3335fe7586f5372615c65d71b88f098b5673990a65a6659809eaef83c78d",
+    "files_manifest_sha256": "50c3b03c2bf1ae30ecb6d910c8e6d5b422d8bf839597f1de6dce55b355ab82df",
+    "regular_file_count": 26885,
+    "symlink_count": 495,
+    "symlinks_manifest_sha256": "e6831ba698554b772a1b7627833ad518cf43fe6eba451ddbdb02419d8fd1102d"
+  },
+  "runtime_repository_head": "dc2befe8d143d670c7a0ac47c5c3141a964c0a7c",
+  "schema_version": 1
+}
