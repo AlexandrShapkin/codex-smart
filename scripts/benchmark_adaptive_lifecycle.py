@@ -17,6 +17,7 @@ import subprocess
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACT = ROOT / "benchmarks/adaptive-lifecycle-v1.json"
 PROFILE_CANDIDATE = ROOT / "benchmarks/adaptive-profile-candidate-v1.json"
+PROFILE_EXECUTION_CANDIDATE = ROOT / "benchmarks/adaptive-profile-execution-candidate-v1.json"
 REPRESENTATIVE_CAMPAIGN = ROOT / "benchmarks/representative-campaign-v1.json"
 REPRESENTATIVE_MANIFEST = ROOT / "benchmarks/representative-manifest.json"
 ADAPTER_SOURCE = (
@@ -164,7 +165,7 @@ def expected_contract():
     return {
         "schema_version": 1,
         "measurement_id": "adaptive-lifecycle-v1",
-        "status": "prepared-profile-smoke-required",
+        "status": "profile-smoke-recorded-review-required",
         "baseline": {
             "measurement_evidence_reference": BASELINE_EVIDENCE,
             "variant": "native",
@@ -284,12 +285,102 @@ def load_profile_candidate(path=PROFILE_CANDIDATE):
     return record
 
 
+def expected_profile_execution_candidate():
+    return {
+        "repository_commit": "0c846addbb313524910ec9891482f0eddbfd2f3e",
+        "measurement_id": "adaptive-lifecycle-v1",
+        "profile_candidate_evidence_reference": (
+            "baaab449793e0856b0d476732d6e1a547e6230bec0983c1d4f5b7452e210a0c1"
+        ),
+        "planned_jobs": 3,
+        "codex_exec_processes_started": 3,
+        "retries": 0,
+        "all_profiles_execution_and_quality_verified": True,
+        "private_agent_archive_sha256": (
+            "a12cfedf7bea3f83c09c0f5b5547ee3f785bde5161d72fde5d4fb6d151d84ed8"
+        ),
+        "graded_summary_sha256": (
+            "69366d056d86a59d80e1efa1b17c7cedd065c28b165628b2b90cd624eed62c3b"
+        ),
+        "rows": [
+            {
+                "profile": "economy",
+                "model_key": 10,
+                "model": "gpt-6-luna",
+                "reasoning": "medium",
+                "scenario_id": "explore-notification",
+                "agent_success": True,
+                "quality_pass": True,
+                "failure_reason": None,
+                "trace_sha256": (
+                    "2ad97c991b132274eda6f874dd526f9e59207673468f5a56eb41cd3ae71d4eee"
+                ),
+                "submission_sha256": (
+                    "f81d8d1b6fb6bdfa575d5b5141780170be0648bc40c0371b772d3995e98b4b65"
+                ),
+            },
+            {
+                "profile": "standard",
+                "model_key": 20,
+                "model": "gpt-6-sol",
+                "reasoning": "high",
+                "scenario_id": "python-result-api",
+                "agent_success": True,
+                "quality_pass": True,
+                "failure_reason": None,
+                "trace_sha256": (
+                    "48f307bc5e994ad543c670a2da5955fad61ebb6fd59454cba3f35147367ccd7c"
+                ),
+                "submission_sha256": (
+                    "cb018655c861d4786526ee9c18566a76adba439e648d1c9a4cf6a2339d8f2f94"
+                ),
+            },
+            {
+                "profile": "strong",
+                "model_key": 30,
+                "model": "gpt-6-astra",
+                "reasoning": "high",
+                "scenario_id": "infra-service-policy",
+                "agent_success": True,
+                "quality_pass": True,
+                "failure_reason": None,
+                "trace_sha256": (
+                    "1ae826835960666fea33d0e282539e3d8df20fc4d94be42d2550d74cf99f9c79"
+                ),
+                "submission_sha256": (
+                    "2aac769a897341b46416f537c17793e1ec6f6f2e565790c6c4aa3624e372107d"
+                ),
+            },
+        ],
+    }
+
+
+def load_profile_execution_candidate(path=PROFILE_EXECUTION_CANDIDATE):
+    record = json.loads(Path(path).read_text())
+    if type(record) is not dict or set(record) != {
+        "schema_version", "evidence_id", "candidate", "evidence_reference",
+        "model_calls_during_analysis",
+    }:
+        raise AdaptiveMeasurementRefusal("invalid adaptive profile execution evidence")
+    expected = expected_profile_execution_candidate()
+    if (
+        record["schema_version"] != 1
+        or record["evidence_id"] != "adaptive-profile-smoke-v1-live"
+        or record["candidate"] != expected
+        or record["model_calls_during_analysis"] != 0
+        or record["evidence_reference"] != _json_hash(expected)
+    ):
+        raise AdaptiveMeasurementRefusal("adaptive profile execution evidence mismatch")
+    return record
+
+
 def profile_mapping_verified():
     contract = load_contract()
-    candidate = load_profile_candidate()
+    load_profile_candidate()
+    execution = load_profile_execution_candidate()
     return (
-        candidate["candidate"]["execution_verified"] is True
-        and candidate["evidence_reference"]
+        execution["candidate"]["all_profiles_execution_and_quality_verified"] is True
+        and execution["evidence_reference"]
         in contract["profile_smoke"]["accepted_evidence_sha256"]
     )
 
@@ -354,6 +445,9 @@ def offline_plan(adapter=None):
         "status": contract["status"],
         "baseline_evidence_reference": BASELINE_EVIDENCE,
         "profile_candidate_evidence_reference": candidate["evidence_reference"],
+        "profile_execution_evidence_reference": (
+            load_profile_execution_candidate()["evidence_reference"]
+        ),
         "profile_mapping_verified": profile_mapping_verified(),
         "profile_smoke_codex_executions": 3,
         "adaptive_jobs": 20,
