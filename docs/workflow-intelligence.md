@@ -85,10 +85,12 @@ at most two attempts per job bound the adaptive campaign to 20 jobs / 40 Codex e
 The proposed benchmark profile map is Economy → `gpt-6-luna`, Standard → `gpt-6-sol` and
 Strong → `gpt-6-astra`; Standard deliberately retains the accepted baseline workhorse to
 reduce mapping confound. Local Codex model metadata advertises the required reasoning
-levels, but that is not execution evidence. A distinct three-execution profile smoke
-(Economy/Medium, Standard/High, Strong/High) must pass the accepted production grader
-before the mapping can be admitted, and the measured campaign still requires a separate
-explicit authorization. Until then model execution stays disabled.
+levels, but that metadata is not execution evidence. The distinct three-execution
+profile smoke has now passed the accepted production grader for Economy/Medium,
+Standard/High and Strong/High. Execution evidence `908a97f1...` binds the exact
+trace/submission hashes and is separately review-gated before the mapping becomes ready.
+The measured campaign still requires a separate explicit authorization and remains
+disabled until admission plus a reviewed live-runner boundary.
 
 The lifecycle report must measure quality, summed attempt tokens, total lifecycle latency,
 escalation count, failed-cheap attempts, strong-model-avoided and handoff count/overhead.

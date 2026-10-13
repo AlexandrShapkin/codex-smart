@@ -1,0 +1,55 @@
+{
+  "candidate": {
+    "all_profiles_execution_and_quality_verified": true,
+    "codex_exec_processes_started": 3,
+    "graded_summary_sha256": "69366d056d86a59d80e1efa1b17c7cedd065c28b165628b2b90cd624eed62c3b",
+    "measurement_id": "adaptive-lifecycle-v1",
+    "planned_jobs": 3,
+    "private_agent_archive_sha256": "a12cfedf7bea3f83c09c0f5b5547ee3f785bde5161d72fde5d4fb6d151d84ed8",
+    "profile_candidate_evidence_reference": "baaab449793e0856b0d476732d6e1a547e6230bec0983c1d4f5b7452e210a0c1",
+    "repository_commit": "0c846addbb313524910ec9891482f0eddbfd2f3e",
+    "retries": 0,
+    "rows": [
+      {
+        "agent_success": true,
+        "failure_reason": null,
+        "model": "gpt-6-luna",
+        "model_key": 10,
+        "profile": "economy",
+        "quality_pass": true,
+        "reasoning": "medium",
+        "scenario_id": "explore-notification",
+        "submission_sha256": "f81d8d1b6fb6bdfa575d5b5141780170be0648bc40c0371b772d3995e98b4b65",
+        "trace_sha256": "2ad97c991b132274eda6f874dd526f9e59207673468f5a56eb41cd3ae71d4eee"
+      },
+      {
+        "agent_success": true,
+        "failure_reason": null,
+        "model": "gpt-6-sol",
+        "model_key": 20,
+        "profile": "standard",
+        "quality_pass": true,
+        "reasoning": "high",
+        "scenario_id": "python-result-api",
+        "submission_sha256": "cb018655c861d4786526ee9c18566a76adba439e648d1c9a4cf6a2339d8f2f94",
+        "trace_sha256": "48f307bc5e994ad543c670a2da5955fad61ebb6fd59454cba3f35147367ccd7c"
+      },
+      {
+        "agent_success": true,
+        "failure_reason": null,
+        "model": "gpt-6-astra",
+        "model_key": 30,
+        "profile": "strong",
+        "quality_pass": true,
+        "reasoning": "high",
+        "scenario_id": "infra-service-policy",
+        "submission_sha256": "2aac769a897341b46416f537c17793e1ec6f6f2e565790c6c4aa3624e372107d",
+        "trace_sha256": "1ae826835960666fea33d0e282539e3d8df20fc4d94be42d2550d74cf99f9c79"
+      }
+    ]
+  },
+  "evidence_id": "adaptive-profile-smoke-v1-live",
+  "evidence_reference": "908a97f105e1a29fbc5aafed15a3becbece6fa38311cde7d9f968b185f3814d0",
+  "model_calls_during_analysis": 0,
+  "schema_version": 1
+}

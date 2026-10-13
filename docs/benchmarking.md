@@ -54,14 +54,15 @@ policy-only contract; lifecycle output must therefore report handoff count/overh
 zero for this variant rather than fabricate child work. Failed initial attempts remain in
 total token/latency denominators. Missing model-request and price counters remain unknown.
 
-The proposed benchmark-only profile mapping is Economy → `gpt-6-luna`, Standard →
-`gpt-6-sol`, Strong → `gpt-6-astra`. A sanitized local Codex model cache advertises the
-required Medium/High reasoning support, candidate reference `baaab449...`, but execution
-verification is deliberately false. Before any adaptive campaign can run, a separate
-three-execution smoke must validate Economy/Medium, Standard/High and Strong/High through
-the same ThinkPad-agent / accepted-`srv0`-grader boundary. The smoke and later adaptive
-campaign each require their own explicit authorization. No adaptive winner or savings
-claim exists yet.
+The benchmark-only profile mapping is Economy → `gpt-6-luna`, Standard →
+`gpt-6-sol`, Strong → `gpt-6-astra`. Sanitized Codex model metadata remains separate
+capability evidence (`baaab449...`). The separately authorized three-execution profile
+smoke has now exercised Economy/Medium, Standard/High and Strong/High through the same
+ThinkPad-agent / accepted-`srv0`-grader boundary; all three agent runs exported a
+submission and all three passed production grading. Immutable execution evidence
+`908a97f1...` records the exact trace/submission hashes and remains separately
+review-gated in this change. The later adaptive campaign still requires its own explicit
+authorization. No adaptive winner or savings claim exists yet.
 
 ## Quality before cost
 

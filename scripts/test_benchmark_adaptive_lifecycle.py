@@ -24,7 +24,19 @@ class AdaptiveLifecycleTests(unittest.TestCase):
         )
         self.assertEqual(contract["profile_smoke"]["accepted_evidence_sha256"], [])
         self.assertFalse(adaptive.profile_mapping_verified())
+        execution = adaptive.load_profile_execution_candidate()
+        self.assertEqual(
+            execution["evidence_reference"],
+            "908a97f105e1a29fbc5aafed15a3becbece6fa38311cde7d9f968b185f3814d0",
+        )
+        self.assertTrue(
+            execution["candidate"]["all_profiles_execution_and_quality_verified"]
+        )
         plan = adaptive.offline_plan()
+        self.assertEqual(
+            plan["profile_execution_evidence_reference"],
+            "908a97f105e1a29fbc5aafed15a3becbece6fa38311cde7d9f968b185f3814d0",
+        )
         self.assertFalse(plan["model_execution_enabled"])
         self.assertTrue(plan["profile_smoke_authorization_required"])
         self.assertTrue(plan["adaptive_campaign_authorization_required"])
@@ -114,6 +126,16 @@ class AdaptiveLifecycleTests(unittest.TestCase):
             path.write_text(json.dumps(record))
             with self.assertRaises(adaptive.AdaptiveMeasurementRefusal):
                 adaptive.load_profile_candidate(path)
+
+    def test_profile_execution_evidence_tamper_is_rejected(self):
+        record = json.loads(adaptive.PROFILE_EXECUTION_CANDIDATE.read_text())
+        record["candidate"]["rows"][0]["quality_pass"] = False
+        record["evidence_reference"] = adaptive._json_hash(record["candidate"])
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "execution.json"
+            path.write_text(json.dumps(record))
+            with self.assertRaises(adaptive.AdaptiveMeasurementRefusal):
+                adaptive.load_profile_execution_candidate(path)
 
     def test_profile_smoke_plan_is_bounded_and_authorization_precedes_preflight(self):
         plan = profile_smoke.plan()

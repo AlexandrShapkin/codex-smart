@@ -152,5 +152,5 @@
   },
   "schema_version": 1,
   "split_host_topology_reference": "1a9e7a145e7271b872d2dfc54c92a6ac578cbd8859649f8c4c062a127f3aac43",
-  "status": "prepared-profile-smoke-required"
+  "status": "profile-smoke-recorded-review-required"
 }
