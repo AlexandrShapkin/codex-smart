@@ -53,20 +53,27 @@ Installer · Updater · Migration · Rollback · Release metadata
 Compatibility verification · Doctor
 ```
 
-Router assessment feeds typed playbook selection. The v1 playbook semantic contract is
-implemented in `codex-smart-core::playbook`: eleven bounded archetypes define
-applicability, native requirements, optional external needs, context obligations,
-prepared-state metadata, profile/reasoning floors, validation, escalation, cleanup and
-fallback. This contract grants no execution authority and performs no selection or
-resource preparation.
+Router assessment feeds the implemented pure workflow planner. The v1 playbook semantic
+contract in `codex-smart-core::playbook` defines eleven bounded archetypes. The planner
+in `codex-smart-core::workflow` selects only from typed Router evidence plus optional
+explicit archetype intent: generic edits remain `NeedsEvidence`, while inspection,
+refactor and explicit security-safety cases have deterministic mappings. Risk floors
+can only raise profile/reasoning requirements.
 
-The resource planner will prepare verified context/capabilities lazily; the adaptive
-controller will select risk-constrained profiles and respond to independent validation
+Resource planning is also pure and lazy. Required native capability state must be
+verified before a plan is ready. External capabilities are optional augmentations and
+unknown/unavailable/blocked state can never become prepared state by assumption. A
+planned external resource carries typed identity, exact version, scope, owner, validity,
+invalidation, privacy and cleanup metadata. The only mutation-like plan dispositions
+are `PrepareOwned` and `RefreshOwned`, both restricted to Codex-Smart-owned resources;
+user/provider-owned absent or stale resources fall back to native. No planner function
+installs, authenticates, changes configuration or invokes a tool/model.
+
+The adaptive controller remains future work and will respond to independent validation
 evidence with bounded escalation. Lifecycle operations never become model-routing
 decisions. Minimize expected total lifecycle cost subject to required quality, safety
-and verification, rather than single-call token count. Preparation invalidation,
+and verification, rather than single-call token count. Validation application,
 explainability, telemetry boundaries and replaceable profile/model mapping are in
 [workflow intelligence](workflow-intelligence.md),
 [distribution](distribution.md) and [ADR 0008](decisions/0008-deterministic-workflows.md).
-Selector/planner/controller behavior remains separate reviewed work; the semantic
-contract alone does not change production launch behavior.
+Production launch behavior is unchanged; #42 remains the validation/explain slice.

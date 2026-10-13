@@ -8,4 +8,5 @@ pub mod process;
 pub mod routing;
 pub mod tool_lock;
 pub mod version;
+pub mod workflow;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

@@ -22,7 +22,7 @@ pub enum Backend {
     CodeGraphWrapper,
 }
 impl CapabilityNeed {
-    fn backend(self) -> Backend {
+    pub const fn backend(self) -> Backend {
         match self {
             Self::StructuralImpact => Backend::CodeGraph,
             Self::SymbolNavigation => Backend::Serena,

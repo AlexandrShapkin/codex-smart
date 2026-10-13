@@ -12,7 +12,7 @@ Read [workflow intelligence](../workflow-intelligence.md), [architecture](../arc
 
 ## Current state
 
-Router v2, the accepted representative baseline `ffd8fbbc...`, and privacy-preserving aggregate telemetry are delivered. The first Playbooks slice defines a versioned typed semantic contract for eleven bounded archetypes, but no selector, resource preparation, production activation or additional model execution is delivered yet. Adaptive execution, reusable automation and install/update tooling remain future stages.
+Router v2, accepted representative baseline `ffd8fbbc...`, privacy-preserving aggregate telemetry and #40 typed archetype semantics are delivered. #41 adds a pure deterministic selector/resource planner: generic edits do not get guessed into an archetype; required native unknown/unavailable state fails closed; optional external state can only become a typed reusable/preparable resource from complete verified evidence. The planner performs no preparation or production activation. #42 validation/explain remains; adaptive execution, automation and distribution are future stages.
 
 ## Target state
 
@@ -40,7 +40,7 @@ Use the thin Rust control plane and existing argument/configuration safety contr
 
 ## Acceptance
 
-The stage requires three separately reviewable slices: #40 typed archetype semantics; #41 deterministic selector/resource planner; #42 validation recipes and explainable preparation. #40 acceptance requires a bounded versioned contract, native-first fallback, risk floors, complete prepared-state attributes and model/provider-independent explanations. Full stage acceptance additionally requires positive/negative selection controls, unknown-capability refusal and explain output for workflow/profile/reasoning/context/tools/validation/escalation/fallback.
+The stage has three separately reviewable slices: #40 typed archetype semantics is accepted; #41 implements the deterministic selector/resource planner; #42 remains validation recipes and explainable preparation. #41 acceptance requires typed-only selection, conservative ambiguity handling, monotonic risk floors, required-native fail-closed behavior, optional-external native fallback, and complete resource identity/version/scope/owner/validity/invalidation/privacy/cleanup. Full stage acceptance additionally requires validation recipes and explain output for workflow/profile/reasoning/context/tools/validation/escalation/fallback.
 
 ## Validation
 

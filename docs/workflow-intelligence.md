@@ -1,10 +1,9 @@
 # Workflow intelligence target
 
 Status: active 0.4 Playbooks work. #14 measured benchmark and #15 aggregate telemetry
-are accepted. Router v2 and the single Codex launch remain implemented behavior. The
-first Playbooks slice defines typed workflow semantics only; it does not select a
-playbook, prepare resources, enable adaptive execution/delegation or authorize model
-calls.
+are accepted. Router v2 and the single Codex launch remain implemented behavior. The first two Playbooks slices define typed workflow semantics plus a pure deterministic
+selector/resource planner. They do not prepare resources, execute tools, enable adaptive
+execution/delegation or authorize model calls.
 
 ## Objective and boundaries
 
@@ -27,9 +26,18 @@ Task assessment → playbook selector → resource planner → execution control
 Codex → validator → escalation or completion.
 
 Task/risk assessment precedes workflow selection and context/capability/tool
-preparation. The initial profile must be minimally sufficient for the workflow,
-then deterministic validation supplies evidence for bounded escalation or
-completion. Selection is not a heuristic based on LOC, language or repository size.
+preparation. The implemented selector consumes only typed assessment plus optional
+explicit archetype intent. It does not inspect prompt text, LOC, language or repository
+size. Ambiguous assessment and generic edits without sufficient intent remain
+`NeedsEvidence`. Contract and high-risk floors can raise, never lower, the planned
+profile/reasoning requirements.
+
+The implemented resource planner consumes caller-supplied native/external readiness and
+prepared-resource metadata. It emits only declarative reuse/owned-prepare/owned-refresh
+or native-fallback dispositions. It performs no discovery or side effect. Unknown native
+requirements need evidence; unavailable/blocked required native capability blocks. An
+unknown external augmentation is never treated as ready and falls back to native.
+Deterministic validation will later supply evidence for bounded escalation or completion.
 
 A future explain contract exposes the chosen workflow, initial model/profile,
 reasoning effort, context sources, capabilities/tools, preparation, validation
@@ -39,9 +47,9 @@ doctor retain their existing side-effect boundaries.
 
 ## Playbook semantics
 
-The first reviewed Rust contract implements these semantics as bounded enums and
-versioned built-in archetypes. Selection and resource preparation remain separate
-follow-up work (#41), and validation/explain application remains #42.
+The reviewed Rust contract implements these semantics as bounded enums and versioned
+built-in archetypes. #41 adds the pure selector/resource-plan composition; it still does
+not execute preparation. Validation/explain application remains #42.
 
 | Field | Meaning |
 | --- | --- |
@@ -94,10 +102,13 @@ alone cannot select a policy that compromises required quality.
 Recurring workflows may reuse repository facts, verified toolchain availability
 and executable pins, dependency metadata, selected indexes, local caches, known
 validation commands and explicit workflow profiles. Prepare only what the selected
-workflow requires. Prepared state needs identity/version, scope, owner, validity,
-invalidation, privacy and cleanup. Invalidate on repository identity, relevant
-HEAD/config changes, tool/playbook/capability/schema version changes and explicit
-reset. Inspect and reset must be possible; stale state cannot silently remain ready.
+workflow requires. The #41 planner now preserves typed identity/version, scope, owner,
+validity, invalidation, privacy and cleanup in every reusable resource plan. Its minimum
+invalidation set covers repository identity, relevant HEAD/config, capability version,
+playbook schema and explicit reset. Duplicate, incomplete, unknown or mismatched metadata
+never becomes reusable state. Only Codex-Smart-owned absent/stale resources can receive
+a declarative prepare/refresh disposition; other ownership falls back without mutation.
+Inspect/reset execution remains later work; stale state cannot silently remain ready.
 
 Versioned repository profiles support recurring dependency updates, generated-client
 refreshes, CI repair, regression tests, release preparation and issue → implementation
