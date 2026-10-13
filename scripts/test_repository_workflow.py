@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import stat
 import subprocess
 import tempfile
 import unittest
@@ -56,6 +57,12 @@ class RepositoryWorkflowTests(unittest.TestCase):
 
     def verify_snapshot(self, result, sha=None):
         return workflow.verify_snapshot(self.snapshot, sha or self.sha, result["receipt_sha256"])
+
+    def snapshot_state(self):
+        return {p.relative_to(self.snapshot).as_posix():
+                (stat.S_IMODE(p.stat().st_mode), p.stat().st_mtime_ns, p.stat().st_ctime_ns,
+                 p.read_bytes() if p.is_file() else None)
+                for p in [self.snapshot, *self.snapshot.rglob("*")]}
 
     def test_inspection_read_only_and_offline(self):
         before = {p: (p.read_bytes(), p.stat().st_mtime_ns)
@@ -304,6 +311,108 @@ class RepositoryWorkflowTests(unittest.TestCase):
         (self.base / "receipt-link").hardlink_to(self.snapshot / workflow.RECEIPT)
         with self.assertRaisesRegex(ValueError, "Invalid snapshot receipt"):
             self.verify_snapshot(result)
+
+    def test_snapshot_exact_file_permissions_rejected_without_repair(self):
+        result = self.export()
+        for name, expected, modes in [
+                ("file.txt", 0o644, [0o666, 0o640, 0o600, 0o2644, 0o4644]),
+                ("bin/tool", 0o755, [0o777, 0o750, 0o711, 0o4755])]:
+            for mode in modes:
+                with self.subTest(name=name, mode=oct(mode)):
+                    (self.snapshot / name).chmod(mode)
+                    before = self.snapshot_state()
+                    with patch.object(Path, "chmod", side_effect=AssertionError("permission repair")), \
+                            patch.object(subprocess, "run", side_effect=AssertionError("subprocess")):
+                        with self.assertRaisesRegex(ValueError, "mode"):
+                            self.verify_snapshot(result)
+                    self.assertEqual(before, self.snapshot_state())
+                    (self.snapshot / name).chmod(expected)
+        self.verify_snapshot(result)
+
+    def test_unsafe_snapshot_root_and_subdirectories_refused_read_only(self):
+        result = self.export()
+        for directory in [self.snapshot, self.snapshot / "bin"]:
+            expected = stat.S_IMODE(directory.stat().st_mode)
+            for mode in [0o777, 0o770, 0o707]:
+                with self.subTest(directory=directory.name, mode=oct(mode)):
+                    directory.chmod(mode)
+                    before = self.snapshot_state()
+                    with patch.object(Path, "chmod", side_effect=AssertionError("permission repair")):
+                        with self.assertRaisesRegex(ValueError, "directory permissions"):
+                            self.verify_snapshot(result)
+                    self.assertEqual(before, self.snapshot_state())
+                    directory.chmod(expected)
+        self.verify_snapshot(result)
+
+    def test_safe_directory_permission_differences_are_read_only(self):
+        result = self.export()
+        for mode in [0o700, 0o750, 0o755]:
+            self.snapshot.chmod(mode)
+            (self.snapshot / "bin").chmod(mode)
+            before = self.snapshot_state()
+            with patch.object(Path, "chmod", side_effect=AssertionError("permission repair")), \
+                    patch.object(subprocess, "run", side_effect=AssertionError("subprocess")):
+                self.verify_snapshot(result)
+            self.assertEqual(before, self.snapshot_state())
+
+    def test_snapshot_receipt_permissions_exact_and_read_only(self):
+        result = self.export()
+        path = self.snapshot / workflow.RECEIPT
+        for mode in [0o666, 0o600, 0o640, 0o4644]:
+            with self.subTest(mode=oct(mode)):
+                path.chmod(mode)
+                before = self.snapshot_state()
+                with patch.object(Path, "chmod", side_effect=AssertionError("permission repair")):
+                    with self.assertRaisesRegex(ValueError, "Invalid snapshot receipt"):
+                        self.verify_snapshot(result)
+                self.assertEqual(before, self.snapshot_state())
+                path.chmod(0o644)
+
+    def test_export_modes_match_verifier_under_permissive_and_restrictive_umasks(self):
+        nested = self.root / "nested/deep/file.txt"
+        nested.parent.mkdir(parents=True)
+        nested.write_text("nested fixture\n")
+        self.commit("nested fixture")
+        self.sha = self.git("rev-parse", "HEAD")
+        self.git("update-ref", "refs/remotes/origin/main", self.sha)
+        for mask in [0o000, 0o022, 0o077, 0o777]:
+            with self.subTest(umask=oct(mask)):
+                self.snapshot = self.base / f"snapshot-{mask:o}"
+                previous = os.umask(mask)
+                try:
+                    result = self.export()
+                    self.verify_snapshot(result)
+                finally:
+                    os.umask(previous)
+                for path in [self.snapshot, self.snapshot / "bin", self.snapshot / "nested",
+                             self.snapshot / "nested/deep"]:
+                    self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o700)
+                for name, mode in [("file.txt", 0o644), ("bin/tool", 0o755),
+                                   ("nested/deep/file.txt", 0o644), (workflow.RECEIPT, 0o644)]:
+                    self.assertEqual(stat.S_IMODE((self.snapshot / name).stat().st_mode), mode)
+
+    def test_interrupted_receipt_permission_normalization_preserved(self):
+        original = Path.chmod
+
+        def interrupted(path, *args, **kwargs):
+            if path.name == workflow.RECEIPT:
+                raise OSError("interrupted receipt permissions")
+            return original(path, *args, **kwargs)
+
+        previous = os.umask(0o077)
+        try:
+            with patch.object(Path, "chmod", interrupted), self.assertRaises(OSError):
+                self.export()
+        finally:
+            os.umask(previous)
+        raw = (self.snapshot / workflow.RECEIPT).read_bytes()
+        result = {"receipt_sha256": hashlib.sha256(raw).hexdigest()}
+        before = self.snapshot_state()
+        with self.assertRaisesRegex(ValueError, "Invalid snapshot receipt"):
+            self.verify_snapshot(result)
+        with self.assertRaisesRegex(ValueError, "Destination"):
+            self.export()
+        self.assertEqual(before, self.snapshot_state())
 
     def test_interrupted_export_never_overwritten(self):
         original = Path.open

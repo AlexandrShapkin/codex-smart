@@ -180,17 +180,24 @@ reported and preserved. Ignored benchmark evidence was not read or modified.
 
 ## Host limitations and manual decisions
 
-An ordinary noninteractive `ssh` connection to srv0 was attempted. SSH refused
+An ordinary noninteractive `ssh` connection to srv0 was attempted **from the Codex
+execution environment**. Its SSH client refused
 before connecting: `Bad owner or permissions on /etc/ssh/ssh_config.d/20-systemd-ssh-proxy.conf`.
-No system/SSH security settings were changed or bypassed. srv0 source SHA, snapshot
-path, file integrity and runtime state remain **unknown**; no filesystem equivalence
-with GitHub is assumed. The historical local path exists, but physical ThinkPad
-identity/remote reachability is not independently established by this sandbox.
+No system/SSH security settings were changed or bypassed. This is an
+execution-environment-specific failure, not evidence that srv0 is generally
+unreachable. The [independent PR review](https://github.com/AlexandrShapkin/codex-smart/pull/84#issuecomment-6152378136)
+reports that ordinary pinned SSH directly from the authorized ThinkPad succeeds
+and the existing srv0 runner SHA-256 matches the previously accepted snapshot.
+That observation does not establish a complete deployed source receipt, runtime
+qualification or production campaign readiness. Those remain unverified by this
+Codex environment; no filesystem equivalence with GitHub is assumed.
 
 Keep all old worktrees, dirty files and evidence. Owners must decide whether to
 resume/reconcile local-only branches and the stale registration; this task does not
-merge or repair them. A host operator must restore normal approved connectivity
-and inspect/verify the existing srv0 snapshot. Only a separately approved new source
+merge or repair them. Host operators can use the independently working ThinkPad
+access to inspect/verify the existing srv0 snapshot; any Codex-environment access
+problem requires separate diagnosis without bypassing SSH security checks.
+Only a separately approved new source
 snapshot may be selected for future execution/grading. Runtime qualification,
 compiled adapter hashes and campaign authorizations remain independent gates.
 
@@ -247,3 +254,36 @@ acceptance. Active roadmap stages and historical acceptance remain unchanged.
 
 No real Codex/model call, adaptive campaign, authorization-limit change, historical
 evidence mutation, host snapshot replacement or system security change was made.
+
+## Independent permission review correction
+
+The [review at head 439781b](https://github.com/AlexandrShapkin/codex-smart/pull/84#issuecomment-6152378136)
+reproduced false verification of `0666` data files, `0777` executables and a `0777`
+snapshot root. Fake-only regressions reproduced the defect before correction.
+Verification now requires exact `0644`/`0755` tracked-file modes, receipt mode `0644`,
+and no group/world write bits on roots or subdirectories. Special file permission
+bits are rejected. Safe directory mode differences remain accepted. The verifier
+performs no repairs or writes; symlink, hardlink, identity, receipt and inventory
+checks remain in place.
+
+Export explicitly sets permissions only on its exclusively created snapshot:
+directories `0700`, tracked files `0644`/`0755`, receipt `0644`. Offline regressions
+cover umasks `000`, `022`, `077` and `777`, unchanged contents/modes/mtime/ctime on
+verification or refusal, and interruption before receipt permission normalization.
+Partial destinations remain preserved and cannot be overwritten by rerunning export.
+
+Correction validation and exact-head CI/Security results are recorded in PR #84;
+the PR remains draft for independent review. The original and unrelated worktrees
+were not accessed or changed during this correction.
+
+- Focused offline permission/workflow tests: **28 passed**.
+- `just docs-check` and `git diff --check`: **passed**.
+- `CARGO_NET_OFFLINE=true just check`: **passed**, **234 Python tests** in
+  **182.159 seconds**, formatting, clippy with warnings denied, **162 Rust tests**
+  and locked workspace build.
+- `CARGO_NET_OFFLINE=true just nextest`: **162 passed, 0 skipped**.
+- Default `just security`: **exit 1**, because the Codex environment cannot acquire
+  an exclusive advisory-cache lock on the read-only path. Dependency provenance:
+  **30 registry packages passed**. Explicit advisory refresh and cargo-deny with the
+  existing isolated public database/config (only `db-path` changed): **advisories,
+  bans, licenses and sources passed**. No security policy or SSH setting changed.

@@ -157,8 +157,10 @@ just snapshot-verify /absolute/new/source-snapshot FULL_ACCEPTED_SHA RECORDED_RE
 Export accepts only an exact commit in cached origin/main history, rejects symlinks
 and submodules, and never copies uncommitted/untracked/ignored files, credentials,
 Git metadata or benchmark artifact directories. It records every tracked file's
-SHA-256 and executable mode in `.codex-smart-source.json`, written last as completion
-evidence. Save the returned receipt SHA-256 and source SHA in the reviewed host
+SHA-256 and Git mode in `.codex-smart-source.json`, written last as completion
+evidence. Export explicitly sets every snapshot directory to `0700`, tracked files
+to `0644` or `0755` according to their Git mode, and the receipt to `0644`, regardless
+of umask. Save the returned receipt SHA-256 and source SHA in the reviewed host
 deployment record, independently of the transferred directory. A checksum proves
 integrity relative to that record; GitHub/PR review supplies source trust.
 
@@ -173,8 +175,12 @@ python3 -B /trusted/checkout/scripts/workflow.py snapshot-verify --snapshot /abs
 
 This works without `.git` and performs no subprocess, network or writes. It checks
 the external receipt digest, expected SHA, complete file inventory, file hashes,
-executable modes, symlinks and hardlinks. Missing snapshots, receipts, extra files
-(including build/cache files) or mismatches fail closed. Keep builds, runtime caches
+exact file permission modes (including refusal of special permission bits), receipt
+mode `0644`, and symlinks/hardlinks. Snapshot roots and all subdirectories must have
+no group/world write bits; harmless directory differences such as `0700` versus
+`0755` are accepted. Verification never repairs permissions. Missing snapshots,
+receipts, extra files (including build/cache files) or mismatches fail closed.
+Keep builds, runtime caches
 and evidence outside source snapshots. Snapshot verification reports source/config
 drift only; it does not inspect Codex auth/config or machine secrets. Inspect a
 legacy deployment read-only, retain it, and document unknown identity until a reviewed

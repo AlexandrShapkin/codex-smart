@@ -195,26 +195,41 @@ def export(root, expected, destination):
     files = source_files(root, expected)
     manifest = encode(receipt(expected, files))
     path.mkdir(mode=0o700)  # Exclusive; never overwrite even a partial prior export.
+    path.chmod(0o700)
+    directories = {parent for name in files for parent in Path(name).parents
+                   if parent != Path(".")}
+    for relative in sorted(directories, key=lambda p: (len(p.parts), str(p))):
+        directory = path / relative
+        directory.mkdir(mode=0o700)
+        directory.chmod(0o700)
     for name, (mode, data) in files.items():
         target = path / name
-        target.parent.mkdir(parents=True, exist_ok=True)
         with target.open("xb") as stream:
             stream.write(data)
         target.chmod(0o755 if mode == "100755" else 0o644)
     # Completion receipt comes last. Interrupted directories are preserved/refused.
     with (path / RECEIPT).open("xb") as stream:
         stream.write(manifest)
+    (path / RECEIPT).chmod(0o644)
     return {"snapshot": str(path), "source_sha": expected,
             "receipt_sha256": hashlib.sha256(manifest).hexdigest(), "files": len(files)}
 
 
+def snapshot_directory(path):
+    mode = path.stat().st_mode
+    if not stat.S_ISDIR(mode) or mode & 0o022:
+        raise ValueError("Unsafe snapshot directory permissions")
+
+
 def verify_snapshot(snapshot, expected, trusted_receipt):
     path = safe_path(snapshot)
+    snapshot_directory(path)
     expected = full_sha(expected)
     if not re.fullmatch(r"[0-9a-f]{64}", trusted_receipt):
         raise ValueError("Expected independently recorded receipt SHA-256")
     manifest_path = safe_path(path / RECEIPT)
     if (not path.is_dir() or not manifest_path.is_file() or manifest_path.stat().st_nlink != 1
+            or stat.S_IMODE(manifest_path.stat().st_mode) != 0o644
             or manifest_path.stat().st_size > 4 * 1024 * 1024):
         raise ValueError("Invalid snapshot receipt")
     raw = manifest_path.read_bytes()
@@ -233,11 +248,14 @@ def verify_snapshot(snapshot, expected, trusted_receipt):
                 or RECEIPT in relative.parts or relative.as_posix() != name
                 or set(record) != {"sha256", "mode"} or record["mode"] not in {"100644", "100755"}):
             raise ValueError("Unsafe snapshot entry")
+        for parent in relative.parents:
+            if parent != Path("."):
+                snapshot_directory(safe_path(path / parent))
         target = safe_path(path / relative)
         mode = target.stat().st_mode
         if (not stat.S_ISREG(mode) or target.stat().st_nlink != 1
                 or hashlib.sha256(target.read_bytes()).hexdigest() != record["sha256"]
-                or bool(mode & 0o111) != (record["mode"] == "100755")):
+                or stat.S_IMODE(mode) != (0o755 if record["mode"] == "100755" else 0o644)):
             raise ValueError("Snapshot file integrity/mode mismatch")
         wanted_dirs.update(p.as_posix() for p in relative.parents if p != Path("."))
     actual_files, actual_dirs = set(), set()
@@ -246,6 +264,7 @@ def verify_snapshot(snapshot, expected, trusted_receipt):
             entry = safe_path(Path(current) / name)
             relative = entry.relative_to(path).as_posix()
             if entry.is_dir():
+                snapshot_directory(entry)
                 actual_dirs.add(relative)
             else:
                 actual_files.add(relative)
