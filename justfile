@@ -3,9 +3,22 @@ default:
 
 # Explicit repository state; never invoked by offline context/docs checks.
 status:
-    git status --short
-    git branch --show-current
-    git rev-parse HEAD
+    @python3 -B scripts/workflow.py repo-inspect
+
+# Explicit network fetch + new worktree; source checkout may be dirty/diverged.
+task-start branch destination sha:
+    @python3 -B scripts/workflow.py task-start --branch {{quote(branch)}} --destination {{quote(destination)}} --expected-sha {{quote(sha)}}
+
+source-verify sha:
+    @python3 -B scripts/workflow.py source-verify --expected-sha {{quote(sha)}}
+
+# Writes only a NEW directory; no installation, activation or remote transfer.
+snapshot-export sha destination:
+    @python3 -B scripts/workflow.py snapshot-export --expected-sha {{quote(sha)}} --destination {{quote(destination)}}
+
+# Works on deployment directories without .git; digest must come from trusted export.
+snapshot-verify snapshot sha receipt_sha256:
+    @python3 -B scripts/workflow.py snapshot-verify --snapshot {{quote(snapshot)}} --expected-sha {{quote(sha)}} --receipt-sha256 {{quote(receipt_sha256)}}
 
 # Offline bounded contract and source pointers; defaults to the active stage.
 context stage="":

@@ -401,6 +401,12 @@ fn migration_rejects_symlinks_public_permissions_and_codex_config() {
         "home/original.toml",
         "kind = 'codex-smart'\nschema_version = 0\n",
     );
+    // This case must be public regardless of the developer/CI shell's umask.
+    fs::set_permissions(
+        f.0.join("home/original.toml"),
+        fs::Permissions::from_mode(0o644),
+    )
+    .unwrap();
     symlink(f.0.join("home/original.toml"), f.0.join("home/link.toml")).unwrap();
     symlink(f.0.join("home"), f.0.join("redirect")).unwrap();
     f.write(
