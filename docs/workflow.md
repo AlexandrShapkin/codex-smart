@@ -49,6 +49,21 @@ just context
 just issues
 ```
 
+An outdated checkout may not yet contain `task-start`. After the same native GitHub
+verification above, confirm the task branch and destination do not exist, the
+destination's existing parent chain contains no symlinks, and the destination is
+outside all registered worktrees. Bootstrap with native Git:
+
+```bash
+git worktree add -b chore/my-task /absolute/new/task-worktree FULL_MAIN_SHA
+cd /absolute/new/task-worktree
+just source-verify FULL_MAIN_SHA
+just context
+```
+
+Use an accepted main commit containing the normalized tooling. Do not copy scripts
+into, synchronize or overwrite the older checkout to obtain the new commands.
+
 Replace placeholders with literal values. `task-start` uses the canonical public
 HTTPS endpoint, validates origin, checks GitHub main before and after an explicit
 fetch, and requires the fetched SHA to match the selected SHA. It creates a new
