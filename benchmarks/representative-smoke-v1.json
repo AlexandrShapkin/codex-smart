@@ -1,0 +1,38 @@
+{
+  "agent_execution_isolation_reference": "ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb",
+  "authorization": {
+    "authorization_overrides_security": false,
+    "flag": "--authorize-smoke-execution",
+    "required": true
+  },
+  "budget": {
+    "counts_toward_40_primary_executions": false,
+    "internal_model_request_count": "unsupported",
+    "maximum_codex_exec_processes": 1,
+    "retries": 0,
+    "separate_from_primary_campaign": true
+  },
+  "campaign_id": "representative-development-v1",
+  "campaign_sha256": "bc62f9950b89fad81199de5d71a564eda539a6496276f977f7c9195c91f6ba0d",
+  "grading_backend_reference": "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec",
+  "maximum_codex_executions": 1,
+  "production_grading_reference": "199ec7721ec56c57f1e09f19267e8888cc3f1ee31a8ccf754a4b0af0742bf602",
+  "qualified_host_receipt": "d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265",
+  "repetition": 0,
+  "retries": 0,
+  "scenario_id": "python-billing",
+  "scenario_snapshot": "62870c9d9425b0902ee4794fcf7db435b17f6c5c757866cd262470d689dbd71c",
+  "schema_version": 1,
+  "seed": 14,
+  "settings": {
+    "codex_executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "codex_version": "0.162.1",
+    "model": "gpt-6-sol",
+    "reasoning_effort": "low"
+  },
+  "smoke_id": "representative-live-smoke-v1",
+  "status": "ready-authorization-required",
+  "technical_readiness_reference": "ea86c70fafd9c74625816122bb63abf63279685eb0f65d2cd30f71a311002bc7",
+  "timeout_seconds": 120,
+  "variant": "vanilla"
+}

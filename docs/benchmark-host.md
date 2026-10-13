@@ -227,5 +227,9 @@ calls and no real credentials. The offline plan remains non-executing; the real 
 still refuses before artifacts/model execution unless exact Codex/toolchains, agent auth
 runtime, full grading-runtime rehash and explicit authorization all pass. Historical 42
 jobs and representative 40 primary executions remain unexecuted; successful IaC smoke
-and historical failed evidence remain unchanged. Next action is a separately authorized
-representative campaign run. #14 stays open until measured evidence exists; #15 separate.
+and historical failed evidence remain unchanged. Before spending the 40-execution
+representative budget, `representative-smoke-v1.json` freezes a separate one-execution
+`python-billing`/`vanilla` smoke. The smoke reuses the complete production preflight, is
+excluded from comparative metrics, has retries zero and requires its own explicit
+`--authorize-smoke-execution` flag. #14 stays open until measured evidence exists; #15
+separate.

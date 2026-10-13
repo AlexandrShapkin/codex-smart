@@ -46,7 +46,10 @@ credential-free readiness evidence `ea86c70f...`, but this is not execution auth
 the offline plan still reports `model_execution_enabled=false` and the only real entry
 still requires explicit `--authorize-execution`, exact runtime and inventory paths,
 reviewed qualification evidence, exact Codex identity, exact toolchains from the staged
-runtime (never host `PATH`) and a fresh private artifact target. Neither campaign has been executed. The current
+runtime (never host `PATH`) and a fresh private artifact target. A separate frozen
+one-execution representative smoke uses `python-billing`/`vanilla`, retries zero and its
+own `--authorize-smoke-execution`; it is excluded from the 40 primary executions and
+comparative metrics. Neither the smoke nor either campaign has been executed. The current
 development host is not a candidate for further qualification work unless its
 capabilities materially change. See [host/runner contract](../benchmark-host.md).
 Benchmark stays partial until measured evidence exists; #14 remains open and #15 separate.
