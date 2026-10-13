@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "active": "benchmark",
+  "active": "adaptive",
   "stages": [
     {
       "id": "baseline",
@@ -161,7 +161,7 @@
       "id": "benchmark",
       "title": "Full development benchmark and aggregate telemetry",
       "milestone": "0.3 Development Benchmark",
-      "progress": "partial",
+      "progress": "validated",
       "depends_on": [
         "router"
       ],
@@ -204,7 +204,7 @@
       "id": "playbooks",
       "title": "Workflow playbooks and resource planning",
       "milestone": "0.4 Workflow Intelligence",
-      "progress": "planned",
+      "progress": "validated",
       "depends_on": [
         "benchmark"
       ],
@@ -221,16 +221,20 @@
         "docs/distribution.md"
       ],
       "sources": [
-        "docs/stages.json",
-        "docs/documents.json"
+        "crates/codex-smart-core/src/playbook.rs",
+        "crates/codex-smart-core/src/workflow.rs",
+        "crates/codex-smart-core/tests/workflow_sessions.rs",
+        "docs/workflow-intelligence.md"
       ],
-      "evidence": []
+      "evidence": [
+        "docs/workflow-intelligence.md"
+      ]
     },
     {
       "id": "adaptive",
       "title": "Adaptive model routing and runtime escalation",
       "milestone": "0.5 Adaptive Execution",
-      "progress": "planned",
+      "progress": "active",
       "depends_on": [
         "playbooks"
       ],

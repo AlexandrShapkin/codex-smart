@@ -1,9 +1,6 @@
 # Workflow intelligence target
 
-Status: active 0.4 Playbooks work. #14 measured benchmark and #15 aggregate telemetry
-are accepted. Router v2 and the single Codex launch remain implemented behavior. The first two Playbooks slices define typed workflow semantics plus a pure deterministic
-selector/resource planner. They do not prepare resources, execute tools, enable adaptive
-execution/delegation or authorize model calls.
+Status: Playbooks 0.4 is implemented and accepted; Adaptive Execution 0.5 is the next active stage. #14 measured benchmark and #15 aggregate telemetry are accepted. Router v2 and the single Codex launch remain production behavior. Playbooks now provides typed workflow semantics, pure deterministic selection/resource planning, bounded native validation recipes and enum-only explanation. These contracts do not prepare resources, execute tools, enable adaptive execution/delegation or authorize model calls.
 
 ## Objective and boundaries
 
@@ -37,19 +34,13 @@ prepared-resource metadata. It emits only declarative reuse/owned-prepare/owned-
 or native-fallback dispositions. It performs no discovery or side effect. Unknown native
 requirements need evidence; unavailable/blocked required native capability blocks. An
 unknown external augmentation is never treated as ready and falls back to native.
-Deterministic validation will later supply evidence for bounded escalation or completion.
+The #42 validation recipe maps each workflow-specific validation obligation to a bounded set of native capabilities and reports `Ready`, `NeedsEvidence` or `Blocked`. Optional external readiness and prepared resources never satisfy these native checks. Validation can therefore remain unresolved even when selection/resource planning is ready. Execution of the checks remains future controller work.
 
-A future explain contract exposes the chosen workflow, initial model/profile,
-reasoning effort, context sources, capabilities/tools, preparation, validation
-obligations, escalation conditions and fallback. Unknown, incompatible or
-unavailable capabilities never become ready by assumption. Read-only explain and
-doctor retain their existing side-effect boundaries.
+The implemented enum-only explain surface exposes workflow, profile, reasoning, context obligations, required native tools, declarative preparation, validation obligations, escalation conditions, cleanup and fallback. It carries no prompt/source text, credentials, arbitrary resource labels, runtime paths or execution authority. Unknown, incompatible or unavailable capabilities never become ready by assumption. Existing read-only explain/doctor side-effect boundaries remain unchanged.
 
 ## Playbook semantics
 
-The reviewed Rust contract implements these semantics as bounded enums and versioned
-built-in archetypes. #41 adds the pure selector/resource-plan composition; it still does
-not execute preparation. Validation/explain application remains #42.
+The reviewed Rust contract implements these semantics as bounded enums and versioned built-in archetypes. #41 adds pure selector/resource-plan composition and #42 adds pure validation-recipe planning plus complete explainable preparation. None of these functions executes preparation, validation commands or Codex.
 
 | Field | Meaning |
 | --- | --- |
