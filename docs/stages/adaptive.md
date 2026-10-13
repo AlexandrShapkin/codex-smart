@@ -1,6 +1,6 @@
 # Adaptive model routing and runtime escalation
 
-Status: active 0.5 Adaptive Execution. #43 bounded execution state is implemented; #44 adds pure replaceable model/profile resolution; #45–#46 remain.
+Status: active 0.5 Adaptive Execution. #43 bounded execution state, #44 pure replaceable model/profile resolution and #45 bounded delegation/handoff policy are implemented; #46 lifecycle measurement remains.
 
 ## Goal
 
@@ -12,7 +12,7 @@ Read [workflow intelligence](../workflow-intelligence.md), [architecture](../arc
 
 ## Current state
 
-Router v2, the single native-first Codex launch and Playbooks 0.4 are delivered. #43 now adds a pure bounded adaptive controller contract on top of a ready workflow plus ready validation recipe. It preserves workflow profile/reasoning floors, starts high-risk/security work at `Strong/High`, records every attempt outcome, requires independent validation before completion, and exposes explicit `Ready`/`Running`/`AwaitingValidation`/`NeedsEvidence`/`Completed`/`Blocked`/`Exhausted` states. #44 now adds a pure replaceable compatibility resolver: product policy keeps opaque `Economy`/`Standard`/`Strong` classes separate from provider/model identity; caller-supplied model descriptors must independently verify availability and Medium/High reasoning support. Resolution chooses the minimally sufficient verified class, may use a verified stronger class as a quality-safe fallback, and never treats Unknown as ready. Re-running resolution after a #43 transition supplies progressive routing without embedding commercial model names. Production argv/runtime application, actual retry execution and delegation remain unimplemented pending evidence. The accepted representative baseline remains `ffd8fbbc...`.
+Router v2, the single native-first Codex launch and Playbooks 0.4 are delivered. #43 now adds a pure bounded adaptive controller contract on top of a ready workflow plus ready validation recipe. It preserves workflow profile/reasoning floors, starts high-risk/security work at `Strong/High`, records every attempt outcome, requires independent validation before completion, and exposes explicit `Ready`/`Running`/`AwaitingValidation`/`NeedsEvidence`/`Completed`/`Blocked`/`Exhausted` states. #44 now adds a pure replaceable compatibility resolver: product policy keeps opaque `Economy`/`Standard`/`Strong` classes separate from provider/model identity; caller-supplied model descriptors must independently verify availability and Medium/High reasoning support. Resolution chooses the minimally sufficient verified class, may use a verified stronger class as a quality-safe fallback, and never treats Unknown as ready. Re-running resolution after a #43 transition supplies progressive routing without embedding commercial model names. #45 adds a separate policy-only single-child ledger for bounded read-only evidence or mechanical workspace subtasks: opaque context/scope handles, explicit time/cost/output ceilings, no nesting, fail-closed high-risk/hazard checks, retained failures/protocol violations and advisory handoffs that require parent review. Production argv/runtime application, actual retry execution and child-process execution remain unimplemented pending evidence. The accepted representative baseline remains `ffd8fbbc...`.
 
 ## Target state
 
@@ -40,7 +40,7 @@ Use the thin Rust control plane and existing argument/configuration safety contr
 
 ## Acceptance
 
-Risk floors and budgets enforced; every transition explainable; no lower-quality price optimization; #43 completion requires independent validation and retains failed attempts. #44–#45 must add verified provider/model application and bounded narrow delegation with authority/time/cost/context limits; #46 supplies measured lifecycle evidence.
+Risk floors and budgets enforced; every transition explainable; no lower-quality price optimization; #43 completion requires independent validation and retains failed attempts. #44 policy resolution and #45 bounded narrow delegation now preserve provider independence, authority/time/cost/context limits and parent validation boundaries; concrete runtime execution remains fail-closed. #46 supplies measured lifecycle evidence before any savings claim.
 
 ## Validation
 
