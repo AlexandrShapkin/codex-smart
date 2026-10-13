@@ -235,7 +235,7 @@
     "harness_sha256": "0cc84b32d1418ddaed4ed620c122098adbb10bfe0f9061a694e8c2a9cd3af7b7"
   },
   "pins": {
-    "manifest_sha256": "90feb15e92815b3b9d6269f33a2f85b76b52350cdad72eb72a3f61916ac1ee7e",
+    "manifest_sha256": "56ce0de31ac4b1c070b8e1e1911d7f396f754c3fefdf4bf675a4aa2b894ac486",
     "grader_sha256": "a6c29565533fcc7fac548f78bfa4c8a45561284a468e0398d923c0308cd4df6d",
     "coverage_validator_sha256": "da44d2f4a29dc2c5ffd118c8b2e295d8d001e04c154cf58894577ef138909908",
     "fixture_sha256": {
