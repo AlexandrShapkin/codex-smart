@@ -22,8 +22,10 @@ class AdaptiveLifecycleTests(unittest.TestCase):
         self.assertEqual(
             contract["profile_smoke"]["maximum_codex_executions"], 3
         )
-        self.assertEqual(contract["profile_smoke"]["accepted_evidence_sha256"], [])
-        self.assertFalse(adaptive.profile_mapping_verified())
+        self.assertEqual(contract["profile_smoke"]["accepted_evidence_sha256"], [
+            "908a97f105e1a29fbc5aafed15a3becbece6fa38311cde7d9f968b185f3814d0",
+        ])
+        self.assertTrue(adaptive.profile_mapping_verified())
         execution = adaptive.load_profile_execution_candidate()
         self.assertEqual(
             execution["evidence_reference"],

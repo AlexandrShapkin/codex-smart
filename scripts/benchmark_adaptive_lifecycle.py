@@ -165,7 +165,7 @@ def expected_contract():
     return {
         "schema_version": 1,
         "measurement_id": "adaptive-lifecycle-v1",
-        "status": "profile-smoke-recorded-review-required",
+        "status": "profile-mapping-verified-live-runner-required",
         "baseline": {
             "measurement_evidence_reference": BASELINE_EVIDENCE,
             "variant": "native",
@@ -184,7 +184,7 @@ def expected_contract():
             "maximum_codex_executions": 3,
             "retries": 0,
             "authorization_required": True,
-            "accepted_evidence_sha256": [],
+            "accepted_evidence_sha256": ["908a97f105e1a29fbc5aafed15a3becbece6fa38311cde7d9f968b185f3814d0"],
         },
         "adaptive_campaign": {
             "repetitions": 2,
