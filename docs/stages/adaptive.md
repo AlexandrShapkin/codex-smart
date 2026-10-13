@@ -22,6 +22,12 @@ A bounded typed controller contract plus verified runtime adapters for progressi
 
 Explicit failure/ambiguity/risk/validation triggers; bounded retries and delegation; compressed evidence-preserving handoff; strong-model final review where required; measured lifecycle economics.
 
+The benchmark-only [split-host operator workflow](../adaptive-operations.md) composes
+the existing runner and qualified grader with pinned source/SSH receipts, explicit
+stage authority, non-replaying recovery and immutable archives. It does not implement
+production retries/delegation, change frozen budgets, authorize a live campaign or
+advance measured acceptance.
+
 ## Invariants
 
 Minimize expected total lifecycle cost subject to required quality, safety and verification. Never intentionally reduce required quality. Typed deterministic plans, bounded state machines and observable conditions; Codex remains the reasoning engine. Cheap-first is not universal: high-risk, architecture/security-sensitive or ambiguous work may start strong. Profile classes are separate from replaceable verified provider mapping and concrete benchmark pins. Failed cheap attempts remain evidence.

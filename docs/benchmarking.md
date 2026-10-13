@@ -64,6 +64,12 @@ submission and all three passed production grading. Immutable execution evidence
 profile-mapping execution proof. The later adaptive campaign still requires its own explicit
 authorization. No adaptive winner or savings claim exists yet.
 
+The [split-host operator runbook](adaptive-operations.md) provides the explicit
+plan/preflight, execution, transfer, independent grading, authenticated escalation,
+finalization and archive commands. Its benchmark-only orchestrator requires reviewed
+source/plan digests, preserves spent attempt ledgers, and never launches a model from
+default/offline diagnostics. It introduces no campaign authorization or savings claim.
+
 The first offline-testable live-runner slice in `scripts/benchmark_adaptive_campaign.py`
 records each attempt before launch, spends interrupted attempts, and permits a second
 attempt only after an independently graded failure and a strictly higher Rust-controller

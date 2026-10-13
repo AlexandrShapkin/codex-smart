@@ -15,6 +15,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [Roadmap](../ROADMAP.md) | engineering | generated | workflow |
 | [Security](../SECURITY.md) | security | current | hardening |
 | [Codex Smart — project brief and engineering backlog](../codex-smart-project-brief.md) | provenance | input | baseline |
+| [Adaptive split-host operator runbook](../docs/adaptive-operations.md) | benchmark | current | adaptive, benchmark |
 | [Architecture](../docs/architecture.md) | architecture | current | baseline, router, playbooks, adaptive, automation, distribution |
 | [Benchmark qualified-host and representative runner contract](../docs/benchmark-host.md) | benchmark | contract | benchmark |
 | [Development benchmark protocol](../docs/benchmarking.md) | benchmark | current | benchmark |

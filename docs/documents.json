@@ -663,6 +663,16 @@
       "stages": [
         "workflow"
       ]
+    },
+    {
+      "path": "docs/adaptive-operations.md",
+      "title": "Adaptive split-host operator runbook",
+      "owner": "benchmark",
+      "role": "current",
+      "stages": [
+        "adaptive",
+        "benchmark"
+      ]
     }
   ]
 }
