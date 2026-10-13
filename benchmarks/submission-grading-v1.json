@@ -1,5 +1,7 @@
 {
-  "accepted_evidence_sha256": [],
+  "accepted_evidence_sha256": [
+    "199ec7721ec56c57f1e09f19267e8888cc3f1ee31a8ccf754a4b0af0742bf602"
+  ],
   "authorization_overrides_security": false,
   "contract_id": "benchmark-production-submission-grading-v1",
   "grading_backend_reference": "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec",

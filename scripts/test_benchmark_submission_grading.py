@@ -24,9 +24,10 @@ class SubmissionGradingTests(unittest.TestCase):
         receipt.start()
         self.addCleanup(receipt.stop)
 
-    def test_contract_is_review_required_and_pins_trusted_code(self):
+    def test_contract_accepts_reviewed_evidence_and_pins_trusted_code(self):
         contract = grading.load_contract()
-        self.assertEqual(contract["accepted_evidence_sha256"], [])
+        self.assertEqual(contract["accepted_evidence_sha256"],
+                         ["199ec7721ec56c57f1e09f19267e8888cc3f1ee31a8ccf754a4b0af0742bf602"])
         self.assertEqual(contract["qualified_host_receipt"], grading.QUALIFIED_HOST_RECEIPT)
         self.assertEqual(contract["grading_backend_reference"], grading.GRADING_BACKEND_REFERENCE)
         self.assertEqual(contract["trusted_controller_sha256"], grading._sha256(grading.CONTROLLER))
@@ -36,7 +37,7 @@ class SubmissionGradingTests(unittest.TestCase):
         self.assertTrue(contract["submission_copy_policy"]["no_follow"])
         self.assertTrue(contract["submission_copy_policy"]["hardlinks_rejected"])
 
-    def test_public_contract_cannot_verify_before_separate_review(self):
+    def test_self_asserted_host_cannot_use_accepted_grading_evidence(self):
         q = verified_host()
         with patch.object(backend, "representative_contract_verified", return_value=True):
             self.assertFalse(grading.contract_verified(q))
@@ -54,19 +55,14 @@ class SubmissionGradingTests(unittest.TestCase):
         self.assertEqual(candidate["candidate"]["contract_sha256"],
                          __import__("hashlib").sha256(grading._review_contract_bytes()).hexdigest())
 
-    def test_hypothetical_acceptance_verifies_contract_but_not_unprepared_runtime(self):
+    def test_accepted_contract_verifies_reviewed_host_but_not_unprepared_runtime(self):
         receipt = Path(__file__).resolve().parent.parent / "benchmarks/qualified-host-receipt-v1.json"
         q = host.load_evidence(receipt)
-        candidate = grading.load_candidate_evidence()
-        accepted = grading.load_contract()
-        accepted = dict(accepted)
-        accepted["accepted_evidence_sha256"] = [candidate["evidence_reference"]]
-        with patch.object(grading, "load_contract", return_value=accepted):
-            self.assertTrue(grading.contract_verified(q))
-            result = grading.grade_representative(
-                "python-billing", Path("/tmp"), q, None,
-                SimpleNamespace(task_files_immutable=False, allowed_answer_artifacts=()),
-            )
+        self.assertTrue(grading.contract_verified(q))
+        result = grading.grade_representative(
+            "python-billing", Path("/tmp"), q, None,
+            SimpleNamespace(task_files_immutable=False, allowed_answer_artifacts=()),
+        )
         self.assertEqual(result.reason, "grading-runtime-not-prepared")
 
     def test_production_mount_plan_has_one_untrusted_final_bind_and_private_channel(self):

@@ -626,15 +626,17 @@ A separately qualified host must demonstrate all of:
 - verified agent-execution credential boundary: keyring-only auth, absent auth file, core-only child environment, blocked child credential IPC and reviewed model-reachable command paths;
 - complete escape probes and positive/wrong grader compatibility inside that same boundary.
 
-No distribution is prescribed. The eventual frozen execution contract must review its
-specific backend/version and evidence. No campaign flag can override isolation. The
-new plan explicitly depends on verified agent-execution isolation, verified grading
-isolation and a verified qualified host; current readiness remains false and both
-isolation contracts are required-not-verified. Coverage
-can be reviewed independently of host qualification. The matrix is accepted and the
-runner adapter prepared. Next: qualify a separate host and verify both the whole-agent
-credential/child-execution boundary and runtime grading boundary before any separately
-authorized model spending. Benchmark stays partial, #14 open, #15 separate.
+The reviewed execution contract now has a qualified separate host, accepted agent-
+execution isolation, accepted constrained grading-backend evidence and accepted
+production submission-grading evidence. No campaign flag can override those contracts.
+The representative runner additionally requires a full rehash of the reviewed staged
+runtime before checking exact Codex and staged Rust/Cargo/Go/Python identities; host
+`PATH` toolchains are not accepted. It injects those staged paths through the frozen
+Codex shell-environment policy. Credential-free readiness evidence `ea86c70f...` verifies
+config parsing, Rust/Go/Python compile/run both directly and inside the exact Codex `:workspace` sandbox and the final no-authorization refusal with
+zero model calls. Technical readiness is true; execution authorization is still separate. Coverage remains reviewable independently, both
+campaigns remain unexecuted, and benchmark status stays partial until measured evidence
+exists. #14 stays open; #15 separate.
 
 ### Structural workload realism amendment
 
@@ -721,26 +723,24 @@ offline locked builds and no registry dependencies. A qualified host must demons
 that precise Cargo workflow within the final isolation boundary. This documentation
 adds an inventory requirement, not a verified runtime or a host fallback.
 
-Campaign identity/status and readiness are unchanged:
-`representative_campaign_ready` remains false and both campaigns are unexecuted. A
-separate-host receipt, exact agent-isolation evidence and the constrained grading
-backend are now reviewed. Production submission grading now has a bounded candidate implementation with
-descriptor-relative no-follow submission copying, private tmpfs grading input, a private
-verdict channel and cgroup-empty cleanup evidence, but that evidence is not yet accepted
-by its frozen contract and therefore cannot promote readiness. The historical seven-component
-manifest/preliminary 42-job plan and smoke evidence remain byte-identical. #14 stays
-open, #15 separate and benchmark partial.
+Campaign execution history is unchanged: both campaigns remain unexecuted. Technical representative readiness is now true after accepting production submission-
+grading evidence `199ec772...`, wiring mandatory staged-runtime verification into the
+runner and pinning credential-free readiness evidence `ea86c70f...`.
+Readiness is not authorization: the plan path remains non-executing and the real path
+still requires explicit authorization after all identity/auth/runtime gates. The
+historical seven-component manifest/preliminary 42-job plan and smoke evidence remain
+byte-identical. #14 stays open until measured evidence exists; #15 separate.
 
 ### Representative runner contract preparation
 
 #56 merged as `707c5f080af279cd99f54bfab564c3fe92798709`; active stage stays benchmark.
-The matrix is accepted and the representative runner contract prepared (fake-tested
-adapter). A separate-host receipt plus agent-isolation and constrained grading-backend
-evidence are reviewed. The production submission grader has a tested candidate path,
-but the public boundary remains refusal-only until its evidence is separately accepted;
-therefore the representative campaign is still not ready and measured comparative
-evidence remains absent. See [the typed qualification and execution
-contract](benchmark-host.md). The historical development host remains non-qualified.
+The matrix and representative runner contract are accepted. A separate-host receipt,
+agent isolation, constrained grading backend and production submission grader are all
+reviewed and accepted; the runner requires a prepared fully rehashed grading runtime.
+Technical readiness is true, while measured comparative evidence remains absent because
+no campaign execution has been authorized or performed. See [the typed qualification
+and execution contract](benchmark-host.md). The historical development host remains
+non-qualified.
 
 `python3 -B scripts/benchmark_representative.py` prints an offline credential-free
 40-job plan with zero model calls and no artifacts or tool execution. One guarded
@@ -753,6 +753,6 @@ remain null. Synthetic attempts never claim real model calls or comparative resu
 
 Historical preliminary campaign bytes, 42-job budget, smoke and failed evidence remain
 unchanged. The representative budget remains 40, two repetitions, vanilla/native,
-seed 14, retries zero, timeout 120 seconds. Host/isolation readiness remains
-required-not-verified, representative readiness false; neither campaign was executed.
-#14 remains open and partial; #15 remains separate.
+seed 14, retries zero, timeout 120 seconds. Technical readiness is verified, but neither
+campaign was executed and explicit authorization remains mandatory. #14 remains open
+and partial until measured evidence exists; #15 remains separate.

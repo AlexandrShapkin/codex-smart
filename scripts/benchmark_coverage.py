@@ -211,8 +211,32 @@ def expected_campaign(m):
         'filesystem': {'~/.local/share/keyrings': 'deny'},
     }
     settings['credential_backing_store'] = agent_contract['credential_backing_store']
+    settings['staged_toolchain_environment'] = {
+        'path_roles': ['rust/bin', 'go/bin', 'python/bin', 'linker/bin', '/usr/bin', '/bin'],
+        'compiler_path_roles': [
+            'linker/libexec/gcc/x86_64-linux-gnu/15',
+            'linker/lib/gcc/x86_64-linux-gnu/15',
+            'linker/bin',
+        ],
+        'library_path_roles': [
+            'linker/lib/gcc/x86_64-linux-gnu/15',
+            'libraries/x86_64-linux-gnu',
+        ],
+        'fixed': {
+            'CARGO_NET_OFFLINE': 'true',
+            'GOPROXY': 'off',
+            'GOSUMDB': 'off',
+            'GOTOOLCHAIN': 'local',
+            'PYTHONDONTWRITEBYTECODE': '1',
+        },
+        'workspace_relative': {
+            'CARGO_HOME': '.cargo-home',
+            'CARGO_TARGET_DIR': 'target',
+            'GOCACHE': '.go-cache',
+        },
+    }
     return {'schema_version':1, 'campaign_id':'representative-development-v1',
-            'status':'frozen-plan-isolation-blocked', 'coverage_role':'representative',
+            'status':'frozen-plan-ready-authorization-required', 'coverage_role':'representative',
             'provenance':{'preliminary_campaign':'initial-development-v1',
                           'preliminary_sha256':hashlib.sha256((b.ROOT/'campaign-v1.json').read_bytes()).hexdigest()},
             'scenario_ids':[s['id'] for s in m['scenarios']], 'variants':['vanilla','native'],
@@ -225,13 +249,15 @@ def expected_campaign(m):
             'cold_warm':historical['cold_warm'],
             'live_contract':{'status':'inherited-execution-contract-only','source_campaign':'initial-development-v1',
                              'scope':'Codex startup/auth/JSONL only; not representative grading compatibility'},
-            'readiness':{'real_runner_contract':'prepared',
-                         'agent_execution_isolation_contract':'required-not-verified',
-                         'grading_isolation_contract':'required-not-verified',
-                         'qualified_host_contract':'required-not-verified',
-                         'representative_campaign_ready':False},
+            'readiness':{'real_runner_contract':'verified',
+                         'agent_execution_isolation_contract':'verified',
+                         'grading_isolation_contract':'verified',
+                         'production_grading_contract':'verified',
+                         'qualified_host_contract':'verified',
+                         'representative_campaign_ready':True},
             'execution_dependencies':{'agent_execution_isolation_contract':'verified',
                                       'grading_isolation_contract':'verified',
+                                      'production_grading_contract':'verified',
                                       'qualified_host_contract':'verified'},
             'measured_records':[],
             'runner_pins': {key: hashlib.sha256(path.read_bytes()).hexdigest() for key, path in {
@@ -249,6 +275,14 @@ def expected_campaign(m):
                 'agent_candidate_evidence_sha256': b.ROOT/'agent-execution-isolation-candidate-v1.json',
                 'isolation_sha256': Path(__file__).with_name('benchmark_isolation.py'),
                 'resource_contract_sha256': Path(__file__).with_name('benchmark_resource_contract.py'),
+                'submission_grading_sha256': Path(__file__).with_name('benchmark_submission_grading.py'),
+                'submission_grading_contract_sha256': b.ROOT/'submission-grading-v1.json',
+                'submission_grading_candidate_evidence_sha256': b.ROOT/'submission-grading-candidate-v1.json',
+                'submission_grading_probe_sha256': Path(__file__).with_name('benchmark_submission_grading_probe.py'),
+                'submission_grader_sha256': Path(__file__).with_name('benchmark_submission_grader.py'),
+                'grading_supervisor_sha256': Path(__file__).with_name('benchmark_grading_supervisor.py'),
+                'readiness_probe_sha256': Path(__file__).with_name('benchmark_readiness_probe.py'),
+                'readiness_candidate_evidence_sha256': b.ROOT/'representative-readiness-candidate-v1.json',
                 'harness_sha256': Path(b.__file__)}.items()},
             'pins':{'manifest_sha256':hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
                     'grader_sha256':hashlib.sha256(Path(graders.__file__).read_bytes()).hexdigest(),
@@ -289,7 +323,7 @@ def main():
     args = parser.parse_args()
     c = load_campaign()
     output = {'campaign_id':c['campaign_id'], 'planned_jobs':c['planned_primary_runs'],
-              'model_execution_enabled':False, 'representative_campaign_ready':False,
+              'model_execution_enabled':False, 'representative_campaign_ready':c['readiness']['representative_campaign_ready'],
               'coverage_report':coverage_report()}
     if args.trusted_controls:
         output['controls']=trusted_controls()
