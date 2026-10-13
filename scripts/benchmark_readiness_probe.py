@@ -88,11 +88,26 @@ def smoke_staged_environment(campaign, runtime, codex):
         run_checked(["python3", "main.py"], cwd=python, env=env,
                     expected_stdout="python-ok", timeout=10)
 
+        sandbox_base = [codex, *agent_isolation.command_overrides(), "sandbox",
+                        "-P", "benchmark"]
+        run_checked(
+            [*sandbox_base, "-C", str(rust), "cargo", "run", "--quiet", "--offline"],
+            cwd=rust, env=env, expected_stdout="rust-ok", timeout=30)
+        run_checked(
+            [*sandbox_base, "-C", str(go), "go", "run", "main.go"],
+            cwd=go, env=env, expected_stdout="go-ok", timeout=30)
+        run_checked(
+            [*sandbox_base, "-C", str(python), "python3", "main.py"],
+            cwd=python, env=env, expected_stdout="python-ok", timeout=10)
+
     return {
         "codex_shell_environment_config_parse": True,
         "rust_compile_run": True,
         "go_compile_run": True,
         "python_run": True,
+        "codex_workspace_sandbox_rust_compile_run": True,
+        "codex_workspace_sandbox_go_compile_run": True,
+        "codex_workspace_sandbox_python_run": True,
     }
 
 
@@ -126,6 +141,9 @@ def load_candidate_evidence(path=CANDIDATE_EVIDENCE):
         "preauthorization_attempt_count", "preauthorization_artifact_created",
         "real_credentials_used", "codex_shell_environment_config_parse",
         "rust_compile_run", "go_compile_run", "python_run",
+        "codex_workspace_sandbox_rust_compile_run",
+        "codex_workspace_sandbox_go_compile_run",
+        "codex_workspace_sandbox_python_run",
     }
     if type(candidate) is not dict or set(candidate) != required:
         raise ValueError("invalid representative readiness candidate")
@@ -161,6 +179,9 @@ def load_candidate_evidence(path=CANDIDATE_EVIDENCE):
         "rust_compile_run": True,
         "go_compile_run": True,
         "python_run": True,
+        "codex_workspace_sandbox_rust_compile_run": True,
+        "codex_workspace_sandbox_go_compile_run": True,
+        "codex_workspace_sandbox_python_run": True,
     }
     if candidate != required_values:
         raise ValueError("representative readiness candidate values mismatch")

@@ -13,7 +13,7 @@ class RepresentativeReadinessEvidenceTests(unittest.TestCase):
         record = readiness.load_candidate_evidence()
         self.assertEqual(
             record["evidence_reference"],
-            "1b5feee9b507f3bee97560a1a619a300e44a1e5372b10a832e23ce85b35fff2c",
+            "ea86c70fafd9c74625816122bb63abf63279685eb0f65d2cd30f71a311002bc7",
         )
         self.assertEqual(record["model_calls"], 0)
         self.assertFalse(record["real_credentials_used"])
@@ -23,6 +23,9 @@ class RepresentativeReadinessEvidenceTests(unittest.TestCase):
             "rust_compile_run",
             "go_compile_run",
             "python_run",
+            "codex_workspace_sandbox_rust_compile_run",
+            "codex_workspace_sandbox_go_compile_run",
+            "codex_workspace_sandbox_python_run",
             "representative_campaign_ready",
         ):
             self.assertIs(candidate[key], True)

@@ -216,7 +216,7 @@ verified `PreparedRuntime` into every isolated grade and records both the produc
 grading evidence and runtime-inventory references. Host `PATH` is no longer used for
 representative toolchain identity: the runner verifies and injects the exact staged
 Rust/Cargo/Go/Python binaries and linker/library paths through the frozen Codex shell
-environment policy. Credential-free readiness probe `1b5feee9...` on srv0 verified the
+environment policy. Credential-free readiness probe `ea86c70f...` on srv0 verified the
 full runtime rehash, exact Codex/toolchains, Codex environment-config parsing, Rust/Go/
 Python compile/run and the final pre-authorization refusal with zero model calls, zero
 attempts and no artifact creation. Frozen technical readiness is true.

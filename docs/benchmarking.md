@@ -632,8 +632,8 @@ production submission-grading evidence. No campaign flag can override those cont
 The representative runner additionally requires a full rehash of the reviewed staged
 runtime before checking exact Codex and staged Rust/Cargo/Go/Python identities; host
 `PATH` toolchains are not accepted. It injects those staged paths through the frozen
-Codex shell-environment policy. Credential-free readiness evidence `1b5feee9...` verifies
-config parsing, Rust/Go/Python compile/run and the final no-authorization refusal with
+Codex shell-environment policy. Credential-free readiness evidence `ea86c70f...` verifies
+config parsing, Rust/Go/Python compile/run both directly and inside the exact Codex `:workspace` sandbox and the final no-authorization refusal with
 zero model calls. Technical readiness is true; execution authorization is still separate. Coverage remains reviewable independently, both
 campaigns remain unexecuted, and benchmark status stays partial until measured evidence
 exists. #14 stays open; #15 separate.
@@ -725,7 +725,7 @@ adds an inventory requirement, not a verified runtime or a host fallback.
 
 Campaign execution history is unchanged: both campaigns remain unexecuted. Technical representative readiness is now true after accepting production submission-
 grading evidence `199ec772...`, wiring mandatory staged-runtime verification into the
-runner and pinning credential-free readiness evidence `1b5feee9...`.
+runner and pinning credential-free readiness evidence `ea86c70f...`.
 Readiness is not authorization: the plan path remains non-executing and the real path
 still requires explicit authorization after all identity/auth/runtime gates. The
 historical seven-component manifest/preliminary 42-job plan and smoke evidence remain

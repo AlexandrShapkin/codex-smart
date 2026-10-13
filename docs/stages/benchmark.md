@@ -42,7 +42,7 @@ cgroup-empty cleanup. The representative runner now requires and fully rehashes 
 reviewed staged runtime before the authorization gate.
 
 `representative_campaign_ready` is true for the frozen technical contract, supported by
-credential-free readiness evidence `1b5feee9...`, but this is not execution authorization:
+credential-free readiness evidence `ea86c70f...`, but this is not execution authorization:
 the offline plan still reports `model_execution_enabled=false` and the only real entry
 still requires explicit `--authorize-execution`, exact runtime and inventory paths,
 reviewed qualification evidence, exact Codex identity, exact toolchains from the staged
