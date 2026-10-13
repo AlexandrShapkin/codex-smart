@@ -611,6 +611,19 @@ requests while completing an agent turn, so neither the smoke nor campaign claim
 internal model-request ceiling. Internal model-request count is unsupported by the
 normalized trace and remains null for executed jobs.
 
+The reviewed split-host campaign path keeps the same frozen 40 primary jobs while
+separating roles: Codex agent execution occurs on the eligible agent host and only a
+bounded UTF-8 submission envelope crosses to the already accepted grading host. The
+transport contains no credentials and exports only fixture/reference paths using
+descriptor-relative no-follow reads; hardlinks and special nodes are rejected.
+Exploration additionally rejects unexpected artifacts before export. Each job writes an
+immutable `started` ledger immediately before Codex may launch. A started job is never
+retried, including after interruption, so resume cannot exceed the 40-process budget.
+The grading host independently reparses raw traces, verifies transfer hashes/envelopes,
+reconstructs a private submission workspace and uses the accepted production grader.
+The split-host candidate remains fail-closed until its evidence reference is separately
+accepted.
+
 ### Qualified host dependency and stopping current-host investigation
 
 #38 merged as `0f220d0caadfb08b15a640f3581bb01ff2b7f759`. Its current-host result is
