@@ -20,6 +20,7 @@ import time
 import benchmark as b
 import benchmark_adaptive_lifecycle as adaptive
 import benchmark_adaptive_profile_smoke as profile_smoke
+import benchmark_adaptive_trusted_handoff as trusted_handoff
 import benchmark_campaign as primitives
 import benchmark_coverage as coverage
 import benchmark_host as host
@@ -1325,6 +1326,22 @@ def plan():
     }
 
 
+def _trusted_grade_digest(remote_summary, local_grade_dir, supplied_digest=None):
+    """Cross-check local transfer against srv0 over pinned ED25519 SSH.
+
+    A caller-supplied digest is never sufficient to establish grade origin.
+    """
+    if not remote_summary or not local_grade_dir:
+        raise AdaptiveCampaignRefusal("authenticated srv0 grading handoff required")
+    authoritative = trusted_handoff.pinned_srv0_summary_sha256(remote_summary)
+    if supplied_digest is not None and supplied_digest != authoritative:
+        raise AdaptiveCampaignRefusal("supplied digest differs from trusted srv0 receipt")
+    summary_path = _safe_path(Path(local_grade_dir) / "summary.json")
+    if not _regular_file(summary_path) or _sha256(summary_path) != authoritative:
+        raise AdaptiveCampaignRefusal("local grade summary differs from trusted srv0 receipt")
+    return authoritative
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
@@ -1345,6 +1362,8 @@ def main(argv=None):
     parser.add_argument("--agent-artifacts")
     parser.add_argument("--initial-grades")
     parser.add_argument("--initial-grades-sha256")
+    parser.add_argument("--trusted-initial-remote-summary")
+    parser.add_argument("--trusted-retry-remote-summary")
     parser.add_argument("--retry-grades")
     parser.add_argument("--retry-grades-sha256")
     parser.add_argument("--qualification-evidence")
@@ -1360,12 +1379,20 @@ def main(argv=None):
                 resume=args.resume,
             )
         elif args.retry_agent:
+            if not args.authorize_execution:
+                raise AdaptiveCampaignRefusal(
+                    "explicit adaptive lifecycle execution authorization required"
+                )
+            trusted_initial_sha256 = _trusted_grade_digest(
+                args.trusted_initial_remote_summary, args.initial_grades,
+                args.initial_grades_sha256,
+            )
             result = run_retry(
                 args.codex, args.code_mode_host, args.runtime_root,
                 args.inventory_dir, args.adapter, args.adapter_sha256,
                 args.run_id, args.initial_grades,
-                initial_grades_sha256=args.initial_grades_sha256,
-                authorized=args.authorize_execution,
+                initial_grades_sha256=trusted_initial_sha256,
+                authorized=True,
             )
         elif args.grade_round:
             if not args.authorize_execution:
@@ -1381,11 +1408,19 @@ def main(argv=None):
         elif args.export_grading_bundle:
             result = export_grading_bundle(args.agent_artifacts, args.output_dir)
         elif args.finalize:
+            trusted_initial_sha256 = _trusted_grade_digest(
+                args.trusted_initial_remote_summary, args.initial_grades,
+                args.initial_grades_sha256,
+            )
+            trusted_retry_sha256 = _trusted_grade_digest(
+                args.trusted_retry_remote_summary, args.retry_grades,
+                args.retry_grades_sha256,
+            )
             result = finalize(
                 args.agent_artifacts, args.initial_grades,
                 args.retry_grades, args.output_dir,
-                initial_grades_sha256=args.initial_grades_sha256,
-                retry_grades_sha256=args.retry_grades_sha256,
+                initial_grades_sha256=trusted_initial_sha256,
+                retry_grades_sha256=trusted_retry_sha256,
             )
         else:
             result = plan()

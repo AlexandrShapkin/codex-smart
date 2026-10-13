@@ -73,11 +73,29 @@ trace/stderr locally. Its explicit grading-bundle export contains bounded attemp
 metadata and allowlisted
 submission files, never raw logs; the grading host accepts only this bundle and uses
 the qualified production grader. Grade rows are bound to job, attempt and agent
-artifact hashes when returned to the agent host. The retry/finalization commands require
-the grading summary SHA-256 received separately through a trusted handoff; without this
-pin they refuse the grade. The digest does not authenticate its own origin, so the
-handoff channel remains a review gap. The runner has no accepted campaign execution
-evidence or authorization yet.
+artifact hashes when returned to the agent host. Retry/finalization CLI paths now
+derive the grading summary SHA-256 directly from `srv0` over noninteractive SSH, using
+`StrictHostKeyChecking=yes`, an ED25519-only host-key algorithm, an exact reviewed
+server host-key fingerprint pinned in `benchmark_adaptive_trusted_handoff.py`, and a
+locally owned, non-world-writable `known_hosts`. The remote path must be a
+`/tmp/.../summary.json` regular file without a symlink in its resolved path. An optional
+caller-provided digest cannot replace or override the authenticated remote response.
+The local transferred grade summary must match the fresh remote digest, and grade rows
+must match the pinned summary hashes. The CLI refuses an absent trusted remote path,
+incorrect host key, SSH failure, tampered grade bytes, or missing execution authorization.
+
+For a reviewed campaign, first pin the exact merged source on both hosts, perform only
+the separately authorized agent attempts on ThinkPad, transfer only the explicit
+sanitized grading bundle to `srv0`, and run the qualified grader there. Copy its output
+back to ThinkPad without credentials. Pass `--trusted-initial-remote-summary` to
+`--retry-agent`; pass both `--trusted-initial-remote-summary` and
+`--trusted-retry-remote-summary` to `--finalize`, each pointing to the original
+`srv0` grading summary (not to a ThinkPad copy). SSH still requires the operator's
+already provisioned access to `srv0`; no private key or authentication state is copied.
+This authenticates the origin as the pinned SSH host, not the grader's correctness:
+the qualified grader/runtime/source identity and file-level evidence must still be
+independently accepted. The runner has no accepted campaign execution evidence or
+authorization yet.
 
 ## Quality before cost
 
