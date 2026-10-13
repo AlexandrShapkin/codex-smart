@@ -70,12 +70,9 @@ provider/model resolution must verify compatibility at execution time; risk floo
 can forbid lower classes. Benchmark campaigns independently pin concrete models
 for reproducibility.
 
-The controller may escalate reasoning effort or model capability on ambiguity,
-failure, risk or validation evidence. Cheap/low → medium → strong/high describes a
-possible path, not a universal starting rule. Architecture, security, ambiguity or
-high-risk changes may start strong. Planned controls include bounded retries,
-validation-driven escalation, compressed handoffs and strong final review where
-required. Budgets and terminal outcomes must be explicit and inspectable.
+The #43 pure adaptive controller now consumes only a `Ready` workflow plan, a `Ready` validation recipe and a bounded execution budget. It preserves the selected workflow profile/reasoning as a hard floor: economy may advance to standard and then strong/high, but no transition can lower the floor. High-risk/security plans therefore start strong/high rather than trying a cheaper profile first. Runtime failure and timeout are explicit controller triggers; playbook ambiguity/context/capability/validation triggers remain typed and inspectable. Missing evidence enters `NeedsEvidence` rather than being assumed away; unavailable or conflicting safety/validation evidence blocks.
+
+Every started attempt is retained with its profile, reasoning, outcome, validation result and trigger. Completion is impossible until an attempt completes and independent validation passes. Retry and attempt ceilings are explicit (`MAX_ATTEMPTS=4`, `MAX_RETRIES=3`); exhaustion is terminal. A delegation ceiling is carried in the budget but #43 deliberately grants no delegation authority—#45 owns that implementation. Provider/model resolution and actual execution/retry adapters remain #44 work. Cheap/low → medium → strong/high is therefore a possible monotonic path, not a universal starting rule.
 
 Future bounded delegation may suit narrow read-only inspection, mechanical
 transformation, selected-context summarization, simple deterministic repair or

@@ -1,4 +1,5 @@
 //! Thin launcher primitives. Discovery never executes discovered programs.
+pub mod adaptive;
 pub mod capability;
 pub mod config;
 pub mod doctor;
