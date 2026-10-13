@@ -29,6 +29,10 @@ impl Fixture {
             &format!("bin/{name}"),
             "#!/bin/sh\nprintf touched > \"$HOME/side-effect\"\nexit 1\n",
         );
+        // Do not inherit the host/CI umask here. Production discovery rejects
+        // group/world-writable PATH directories, so the fixture must model a
+        // trusted PATH deterministically on every Unix runner.
+        fs::set_permissions(self.0.join("bin"), fs::Permissions::from_mode(0o700)).unwrap();
         fs::set_permissions(
             self.0.join("bin").join(name),
             fs::Permissions::from_mode(0o700),
