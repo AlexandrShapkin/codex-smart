@@ -94,7 +94,8 @@ class SubmissionGradingTests(unittest.TestCase):
                 root, "1" * 64, (info.st_dev, info.st_ino), roles)
             self.assertTrue(grading._runtime_identity_matches(prepared))
             old = root / "python"
-            old.rmdir()
+            retained = root / "python-retained-old-inode"
+            old.rename(retained)
             old.mkdir()
             self.assertFalse(grading._runtime_identity_matches(prepared))
 
