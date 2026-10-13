@@ -1,9 +1,10 @@
 # Workflow intelligence target
 
-Status: future design, not delivered behavior. The active stage remains benchmark;
-#14 owns measurement and #15 owns separate aggregate telemetry. The current Router
-contract and single Codex launch remain implemented behavior. This target does not
-enable adaptive execution, delegation, prepared resources or model calls.
+Status: active 0.4 Playbooks work. #14 measured benchmark and #15 aggregate telemetry
+are accepted. Router v2 and the single Codex launch remain implemented behavior. The
+first Playbooks slice defines typed workflow semantics only; it does not select a
+playbook, prepare resources, enable adaptive execution/delegation or authorize model
+calls.
 
 ## Objective and boundaries
 
@@ -38,8 +39,9 @@ doctor retain their existing side-effect boundaries.
 
 ## Playbook semantics
 
-The future typed contract may describe the following semantics; exact Rust APIs
-remain for reviewed implementation work.
+The first reviewed Rust contract implements these semantics as bounded enums and
+versioned built-in archetypes. Selection and resource preparation remain separate
+follow-up work (#41), and validation/explain application remains #42.
 
 | Field | Meaning |
 | --- | --- |
@@ -53,9 +55,10 @@ remain for reviewed implementation work.
 | Escalation | Observable triggers, budgets and stopping conditions |
 | Cleanup and fallback | Resource disposal, recovery and safe native behavior |
 
-Initial archetypes may include read-only inspection, focused bug fix, failing-test
-repair, feature implementation, API change, refactor, security-sensitive change,
-CI/config repair, dependency update, documentation change and release preparation.
+The v1 built-in set is bounded to eleven archetypes: read-only inspection, focused bug
+fix, failing-test repair, feature implementation, API change, refactor,
+security-sensitive change, CI/config repair, dependency update, documentation change
+and release preparation.
 A frequent deterministic workflow should move more known preparation/validation
 outside the model and delegate less routine planning to it. Built-in playbooks stay
 bounded; benchmark evidence is required before any savings claim.
@@ -118,14 +121,14 @@ routing. See [distribution](distribution.md) for its future transactional contra
 
 #14 remains the measurement foundation. Future comparisons may add playbook-enabled
 and adaptive codex-smart to vanilla and static/native codex-smart only after genuine
-implementations exist. No variants or results are fabricated. Historical preliminary
-42-job historical plan remains unchanged and unexecuted; the representative 40-primary-execution campaign has completed and produced the accepted measured baseline `ffd8fbbc...`; submitted-code
-grading still requires a separately qualified isolation host. Representative readiness
-remains false. No savings or winner claim exists.
+implementations exist. No variants or results are fabricated. The historical 42-job
+plan remains unchanged and unexecuted; the representative 40-primary-execution campaign
+produced accepted baseline `ffd8fbbc...` through the reviewed split-host boundary. No
+savings or winner claim exists.
 
-#15 stays separate. Its implemented benchmark-local aggregate boundary consumes only
-normalized records and requires explicit invocation; scenario detail is separately
-opted in and there is no network export. Future workflow/profile aggregates may add
+#15 is accepted. Its benchmark-local aggregate boundary consumes only normalized
+records and requires explicit invocation; scenario detail is separately opted in and
+there is no network export. Future workflow/profile aggregates may add
 escalation yes/no, validation pass/fail, retry counts and bounded token/cost/latency
 counters under the same privacy boundary. Adaptive routing must function when telemetry
 collection is disabled. Neither optimization nor telemetry requires source, prompts, credentials or arbitrary

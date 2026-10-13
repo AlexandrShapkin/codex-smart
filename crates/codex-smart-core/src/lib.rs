@@ -3,6 +3,7 @@ pub mod capability;
 pub mod config;
 pub mod doctor;
 pub mod migration;
+pub mod playbook;
 pub mod process;
 pub mod routing;
 pub mod tool_lock;

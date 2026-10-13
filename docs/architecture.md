@@ -53,13 +53,20 @@ Installer · Updater · Migration · Rollback · Release metadata
 Compatibility verification · Doctor
 ```
 
-Router assessment feeds typed playbook selection. The resource planner prepares
-verified context/capabilities lazily; the adaptive controller selects risk-constrained
-profiles and responds to independent validation evidence with bounded escalation.
-Lifecycle operations never become model-routing decisions. Minimize expected total
-lifecycle cost subject to required quality, safety and verification, rather than
-single-call token count. Planned semantics, preparation invalidation, explainability,
-telemetry boundaries and replaceable profile/model mapping are in
+Router assessment feeds typed playbook selection. The v1 playbook semantic contract is
+implemented in `codex-smart-core::playbook`: eleven bounded archetypes define
+applicability, native requirements, optional external needs, context obligations,
+prepared-state metadata, profile/reasoning floors, validation, escalation, cleanup and
+fallback. This contract grants no execution authority and performs no selection or
+resource preparation.
+
+The resource planner will prepare verified context/capabilities lazily; the adaptive
+controller will select risk-constrained profiles and respond to independent validation
+evidence with bounded escalation. Lifecycle operations never become model-routing
+decisions. Minimize expected total lifecycle cost subject to required quality, safety
+and verification, rather than single-call token count. Preparation invalidation,
+explainability, telemetry boundaries and replaceable profile/model mapping are in
 [workflow intelligence](workflow-intelligence.md),
 [distribution](distribution.md) and [ADR 0008](decisions/0008-deterministic-workflows.md).
-These layers are not implemented by the roadmap PR.
+Selector/planner/controller behavior remains separate reviewed work; the semantic
+contract alone does not change production launch behavior.

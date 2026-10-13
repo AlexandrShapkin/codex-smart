@@ -1,6 +1,6 @@
 # Workflow playbooks and resource planning
 
-Status: planned 0.4 Workflow Intelligence; not implemented. Dependencies: benchmark.
+Status: active 0.4 Workflow Intelligence. Benchmark dependencies are accepted; the task-archetype semantic contract is the first implementation slice.
 
 ## Goal
 
@@ -12,7 +12,7 @@ Read [workflow intelligence](../workflow-intelligence.md), [architecture](../arc
 
 ## Current state
 
-Router v2 and the single native-first Codex launch are delivered. Workflow playbooks, adaptive execution, reusable automation and install/update tooling are not implemented. The representative 40-run campaign has executed on the accepted split-host boundary and produced the accepted measured baseline `ffd8fbbc...`; the historical 42-job campaign remains unexecuted. Submitted-code production grading and representative technical readiness are verified.
+Router v2, the accepted representative baseline `ffd8fbbc...`, and privacy-preserving aggregate telemetry are delivered. The first Playbooks slice defines a versioned typed semantic contract for eleven bounded archetypes, but no selector, resource preparation, production activation or additional model execution is delivered yet. Adaptive execution, reusable automation and install/update tooling remain future stages.
 
 ## Target state
 
@@ -40,7 +40,7 @@ Use the thin Rust control plane and existing argument/configuration safety contr
 
 ## Acceptance
 
-Contract and selector tested with positive/negative task/risk controls; unknown capabilities refused; explain exposes workflow/profile/reasoning/context/tools/validation/escalation/fallback; preparation has identity/version/scope/owner/validity/invalidation/privacy/cleanup.
+The stage requires three separately reviewable slices: #40 typed archetype semantics; #41 deterministic selector/resource planner; #42 validation recipes and explainable preparation. #40 acceptance requires a bounded versioned contract, native-first fallback, risk floors, complete prepared-state attributes and model/provider-independent explanations. Full stage acceptance additionally requires positive/negative selection controls, unknown-capability refusal and explain output for workflow/profile/reasoning/context/tools/validation/escalation/fallback.
 
 ## Validation
 

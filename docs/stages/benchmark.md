@@ -56,7 +56,7 @@ exported and all 36 passed the accepted production grader. Strict pass rates rem
 95% vanilla and 85% native because failures stay in the denominator; two of the native
 agent failures were provider-capacity errors and each variant had one timeout. The normalized measurement evidence `ffd8fbbc...` is accepted; it deliberately records
 no winner or savings claim. The current development host is not a submitted-code
-grading target. See [host/runner contract](../benchmark-host.md). #14 benchmark
-acceptance is complete. #15 local privacy-preserving aggregate telemetry is implemented
-over normalized records with explicit collection/detail opt-ins and no network export;
-its acceptance remains subject to exact-head review/CI.
+grading target. See [host/runner contract](../benchmark-host.md). #14 benchmark acceptance and #15 privacy-preserving aggregate telemetry are complete.
+The accepted baseline is `ffd8fbbc...`; the sanitized telemetry snapshot is
+`359b01bc...`. The next active stage is Playbooks 0.4; future model-backed measurements
+remain separately authorized.
