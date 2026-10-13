@@ -724,8 +724,10 @@ adds an inventory requirement, not a verified runtime or a host fallback.
 Campaign identity/status and readiness are unchanged:
 `representative_campaign_ready` remains false and both campaigns are unexecuted. A
 separate-host receipt, exact agent-isolation evidence and the constrained grading
-backend are now reviewed, but production submission grading is still unimplemented
-and therefore cannot promote readiness. The historical seven-component
+backend are now reviewed. Production submission grading now has a bounded candidate implementation with
+descriptor-relative no-follow submission copying, private tmpfs grading input, a private
+verdict channel and cgroup-empty cleanup evidence, but that evidence is not yet accepted
+by its frozen contract and therefore cannot promote readiness. The historical seven-component
 manifest/preliminary 42-job plan and smoke evidence remain byte-identical. #14 stays
 open, #15 separate and benchmark partial.
 
@@ -734,7 +736,8 @@ open, #15 separate and benchmark partial.
 #56 merged as `707c5f080af279cd99f54bfab564c3fe92798709`; active stage stays benchmark.
 The matrix is accepted and the representative runner contract prepared (fake-tested
 adapter). A separate-host receipt plus agent-isolation and constrained grading-backend
-evidence are reviewed, but production submission grading remains refusal-only;
+evidence are reviewed. The production submission grader has a tested candidate path,
+but the public boundary remains refusal-only until its evidence is separately accepted;
 therefore the representative campaign is still not ready and measured comparative
 evidence remains absent. See [the typed qualification and execution
 contract](benchmark-host.md). The historical development host remains non-qualified.
