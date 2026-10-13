@@ -48,21 +48,8 @@ def _ssh_options(known_hosts):
     ]
 
 
-def pinned_srv0_summary_sha256(remote_summary, *, run=subprocess.run):
-    """Read a *fresh* remote digest over pinned, noninteractive SSH.
-
-    Accept only an absolute, non-shell-expressible /tmp/.../summary.json path.
-    The active SSH config selects srv0's address/port; both must resolve to the
-    pinned ED25519 fingerprint in the invoking user's known_hosts.
-    """
-    if (
-        type(remote_summary) is not str
-        or len(remote_summary) > 256
-        or not REMOTE_SUMMARY.fullmatch(remote_summary)
-        or any(part in (".", "..") for part in remote_summary.split("/"))
-    ):
-        raise GradingHandoffRefusal("unsafe remote adaptive grading summary path")
-
+def pinned_srv0_options(*, run=subprocess.run):
+    """Resolve the existing alias and verify its reviewed identity; no config writes."""
     known_hosts = Path.home() / ".ssh/known_hosts"
     try:
         metadata = known_hosts.lstat()
@@ -98,6 +85,19 @@ def pinned_srv0_summary_sha256(remote_summary, *, run=subprocess.run):
     ]
     if TRUSTED_ED25519_SHA256 not in fingerprints or len(set(fingerprints)) != 1:
         raise GradingHandoffRefusal("trusted grader ED25519 host key pin mismatch")
+    return [*options, "-o", f"HostKeyAlias={lookup}"]
+
+
+def pinned_srv0_summary_sha256(remote_summary, *, run=subprocess.run):
+    """Read a fresh remote digest; caller strings cannot replace host authentication."""
+    if (
+        type(remote_summary) is not str
+        or len(remote_summary) > 256
+        or not REMOTE_SUMMARY.fullmatch(remote_summary)
+        or any(part in (".", "..") for part in remote_summary.split("/"))
+    ):
+        raise GradingHandoffRefusal("unsafe remote adaptive grading summary path")
+    options = pinned_srv0_options(run=run)
 
     quoted = shlex.quote(remote_summary)
     remote_command = (
@@ -106,7 +106,7 @@ def pinned_srv0_summary_sha256(remote_summary, *, run=subprocess.run):
         f"/usr/bin/sha256sum -- {quoted} | /usr/bin/cut -d ' ' -f1"
     )
     digest = _result([
-        SSH, *options, "-o", f"HostKeyAlias={lookup}", "-T",
+        SSH, *options, "-T",
         TRUSTED_ALIAS, remote_command,
     ], run).strip()
     if not DIGEST.fullmatch(digest):
