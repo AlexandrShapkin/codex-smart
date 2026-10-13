@@ -41,6 +41,34 @@ class SubmissionGradingTests(unittest.TestCase):
         with patch.object(backend, "representative_contract_verified", return_value=True):
             self.assertFalse(grading.contract_verified(q))
 
+    def test_acceptance_is_data_only_and_preserves_review_contract_identity(self):
+        candidate = grading.load_candidate_evidence()
+        accepted = grading.expected_contract()
+        accepted["accepted_evidence_sha256"] = [candidate["evidence_reference"]]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "accepted.json"
+            path.write_text(json.dumps(accepted, indent=2, sort_keys=True) + "\n")
+            loaded = grading.load_contract(path)
+        self.assertEqual(loaded["accepted_evidence_sha256"],
+                         [candidate["evidence_reference"]])
+        self.assertEqual(candidate["candidate"]["contract_sha256"],
+                         __import__("hashlib").sha256(grading._review_contract_bytes()).hexdigest())
+
+    def test_hypothetical_acceptance_verifies_contract_but_not_unprepared_runtime(self):
+        receipt = Path(__file__).resolve().parent.parent / "benchmarks/qualified-host-receipt-v1.json"
+        q = host.load_evidence(receipt)
+        candidate = grading.load_candidate_evidence()
+        accepted = grading.load_contract()
+        accepted = dict(accepted)
+        accepted["accepted_evidence_sha256"] = [candidate["evidence_reference"]]
+        with patch.object(grading, "load_contract", return_value=accepted):
+            self.assertTrue(grading.contract_verified(q))
+            result = grading.grade_representative(
+                "python-billing", Path("/tmp"), q, None,
+                SimpleNamespace(task_files_immutable=False, allowed_answer_artifacts=()),
+            )
+        self.assertEqual(result.reason, "grading-runtime-not-prepared")
+
     def test_production_mount_plan_has_one_untrusted_final_bind_and_private_channel(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -120,7 +148,7 @@ class SubmissionGradingTests(unittest.TestCase):
         record = grading.load_candidate_evidence()
         self.assertEqual(
             record["evidence_reference"],
-            "38da26664d2bf8868677ec96c3875214b84da875ef0058f0faeae62bb15db019",
+            "199ec7721ec56c57f1e09f19267e8888cc3f1ee31a8ccf754a4b0af0742bf602",
         )
         self.assertEqual(record["candidate"]["references_passed"], 10)
         self.assertEqual(record["candidate"]["wrong_controls_rejected"], 20)

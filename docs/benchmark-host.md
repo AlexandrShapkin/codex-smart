@@ -224,7 +224,7 @@ released until its cgroup is empty. Repository-owned controls on srv0 passed 10/
 references, rejected 20/20 wrong controls, and passed expected-file symlink/hardlink/FIFO,
 exploration immutability/extra-artifact, trusted/runtime read-only, host/env/network/capability,
 detached-descendant and forged-verdict security controls with zero model calls. Candidate
-evidence reference `38da2666...` remains unaccepted by `submission-grading-v1.json`. Historical
+evidence reference `199ec772...` remains unaccepted by `submission-grading-v1.json`. Historical
 42 jobs and representative 40 primary executions remain unexecuted; successful IaC
 smoke and historical failed evidence remain unchanged. Next separately review and admit
 that evidence, repin readiness, and only then consider authorized live execution.

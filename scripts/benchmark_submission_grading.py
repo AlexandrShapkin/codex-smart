@@ -150,9 +150,21 @@ def expected_contract():
     }
 
 
+def _review_contract_bytes():
+    """Exact pre-acceptance contract bytes used by candidate qualification evidence."""
+    return (json.dumps(expected_contract(), indent=2, sort_keys=True) + "\n").encode()
+
+
 def load_contract(path=CONTRACT):
     actual = json.loads(Path(path).read_text())
-    if json.dumps(actual, sort_keys=True) != json.dumps(expected_contract(), sort_keys=True):
+    accepted = actual.get("accepted_evidence_sha256")
+    if (type(accepted) is not list or len(accepted) > 1
+            or any(type(value) is not str or not re.fullmatch("[0-9a-f]{64}", value)
+                   for value in accepted)):
+        raise ValueError("invalid production grading acceptance list")
+    reviewed_shape = dict(actual)
+    reviewed_shape["accepted_evidence_sha256"] = []
+    if json.dumps(reviewed_shape, sort_keys=True) != json.dumps(expected_contract(), sort_keys=True):
         raise ValueError("unreviewed production grading contract")
     return actual
 
@@ -617,7 +629,7 @@ def load_candidate_evidence(path=CANDIDATE_EVIDENCE):
             or candidate["runtime_full_rehash"] is not True
             or candidate["implementation_sha256"] != _sha256(Path(__file__))
             or candidate["probe_sha256"] != _sha256(PROBE)
-            or candidate["contract_sha256"] != _sha256(CONTRACT)
+            or candidate["contract_sha256"] != hashlib.sha256(_review_contract_bytes()).hexdigest()
             or candidate["controller_sha256"] != contract["trusted_controller_sha256"]
             or candidate["supervisor_sha256"] != contract["grading_supervisor_sha256"]
             or candidate["references_passed"] != 10

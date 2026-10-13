@@ -4,7 +4,7 @@
     "controller_sha256": "2d9212462ea84ca94491169d5b6d97649cd49a4e5494a17983c8ca62a3e8a652",
     "correctness_controls_sha256": "9799dbc18018812dc7dae4198e54819cb92d45478b9918957d15470cb387c1a5",
     "grading_backend_reference": "af25f5138a442a8ea1e52f09c81458a16f57e756f6502af8b49fc1be1b93dbec",
-    "implementation_sha256": "9a162ba3f11e3d99f3acbd48fe90ac0cae681b16cc512231da8c8c492eff2be1",
+    "implementation_sha256": "b562a80469b9449c63555bd0da85afc2c9ce0b8cb6040af2746e6adf41e50e39",
     "model_calls": 0,
     "probe_sha256": "aa749bffecc049bdba73f56b1e4afcf650b25aa06bf0676e6041b7e05698f5dc",
     "qualified_host_receipt": "d2af64ce237de72c9c0ee2659723e2d2858c9e19982cc85dd4420a6c6592d265",
@@ -36,7 +36,7 @@
     "wrong_controls_rejected": 20
   },
   "contract_id": "benchmark-production-submission-grading-v1",
-  "evidence_reference": "38da26664d2bf8868677ec96c3875214b84da875ef0058f0faeae62bb15db019",
+  "evidence_reference": "199ec7721ec56c57f1e09f19267e8888cc3f1ee31a8ccf754a4b0af0742bf602",
   "model_calls": 0,
   "probe_kind": "bounded-production-submission-grading",
   "real_credentials_used": false,
