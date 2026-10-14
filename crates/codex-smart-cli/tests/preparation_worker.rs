@@ -16,6 +16,30 @@ use std::{
     time::{Duration, Instant},
 };
 static TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+// Failure-only parent evidence: numeric IDs and kernel flags, never descriptor
+// targets, paths, environment values or raw procfs text. Drop the listing before
+// inspecting flags so its transient descriptor cannot masquerade as inheritance.
+fn descriptor_snapshot() -> Vec<(i32, Option<u32>)> {
+    let Ok(entries) = fs::read_dir("/proc/self/fd") else {
+        return Vec::new();
+    };
+    let mut ids: Vec<i32> = entries
+        .filter_map(Result::ok)
+        .filter_map(|entry| entry.file_name().to_str()?.parse().ok())
+        .collect();
+    ids.sort_unstable();
+    ids.into_iter()
+        .filter_map(|id| {
+            let info = fs::read_to_string(format!("/proc/self/fdinfo/{id}")).ok()?;
+            let flags = info
+                .lines()
+                .find_map(|line| u32::from_str_radix(line.strip_prefix("flags:")?.trim(), 8).ok());
+            Some((id, flags))
+        })
+        .collect()
+}
+
 struct Fixture(PathBuf);
 impl Fixture {
     fn new() -> Self {
@@ -138,12 +162,15 @@ fn actual_worker_and_adversarial_workers_are_bounded_and_reaped() {
     )
     .unwrap();
     let worker = f.pin(&worker_path);
+    let descriptors = descriptor_snapshot();
     let result = attempt(&worker, &request, 250);
     assert_eq!(
         result.state,
         State::Succeeded,
-        "worker exit code: {:?}",
-        result.worker_exit_code
+        "worker exit code: {:?}; parent fd count: {}; numeric fd/flags: {:?}",
+        result.worker_exit_code,
+        descriptors.len(),
+        descriptors
     );
     let prepared = result.preparation.unwrap();
     assert_eq!(prepared.failure, None);
@@ -417,6 +444,7 @@ fn worker_command() -> Command {
     command
 }
 fn assert_direct_exit(mut command: Command, bytes: &[u8], expected_code: u8) {
+    let descriptors = descriptor_snapshot();
     let mut child = TestChild(
         command
             .stdin(Stdio::piped())
@@ -473,7 +501,13 @@ fn assert_direct_exit(mut command: Command, bytes: &[u8], expected_code: u8) {
         if let Some(status) = exit
             && eof.iter().all(|x| *x)
         {
-            assert_eq!(status.code(), Some(i32::from(expected_code)));
+            assert_eq!(
+                status.code(),
+                Some(i32::from(expected_code)),
+                "parent fd count: {}; numeric fd/flags: {:?}",
+                descriptors.len(),
+                descriptors
+            );
             return;
         }
         std::thread::sleep(Duration::from_millis(1));

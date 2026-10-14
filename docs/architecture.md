@@ -142,6 +142,15 @@ including an inherited descriptor to the worker's own procfs directory retained
 across exec. Enumeration failures also refuse. No descriptor targets are read or
 logged by this check; it does not depend on kernel-specific target rendering.
 
+Integration-test failure messages also retain a pre-spawn parent descriptor count
+and numeric fd/kernel-flag pairs read from procfs fdinfo. Only numeric fields are
+reported; descriptor targets, paths, environment values and raw procfs contents
+are excluded. The listing is dropped before reading flags. These test diagnostics
+do not change worker output or security decisions. Linux's close-on-exec flag is
+`0o2000000` in fdinfo; a parent descriptor without that bit can survive Rust
+`Command` startup even when the child environment is empty. Parent snapshots are
+observations, not proof of which descriptors the child actually received.
+
 The dedicated executable reports failures only through stable exit codes, with
 empty stdout/stderr before request handling. Legacy code 3 meant undifferentiated
 bootstrap refusal; the current `BootstrapRefusal` replaces it with these categories:
