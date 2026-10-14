@@ -164,6 +164,10 @@ these local results do not establish exact-head CI/Security acceptance.
 
 ## Local preparation runtime verification
 
+The following records the initial local attempt. The resumed finalization below
+supersedes its working-tree, network and current verification observations while
+retaining that earlier evidence.
+
 The worker/runtime diff starts from accepted main
 `b6b41c5814fd21549bae6fcc042d10b3a1c20fd2` on
 `feat/supervised-preparation-worker` in the existing isolated checkout. Base freshness
@@ -195,3 +199,85 @@ live issue update occurred. These local results are not exact-head CI/Security
 acceptance. Next action: independent review of this local-only boundary and its
 missing confinement guarantees, followed by the unchanged check/security gates in
 a writable, socket-capable CI environment before considering integration.
+
+### Resumed finalization after quota repair (2026-10-14)
+
+The owner repaired the host's temporary-filesystem quota outside this session.
+Sandbox launches and file access now work. The existing branch and commits were
+preserved at `5ef6b4c37050d70820761b6bae6ae149099bb0fe`; no competing writer was
+visible in the session's process namespace. GitHub main was independently observed
+at accepted base `b6b41c5814fd21549bae6fcc042d10b3a1c20fd2`.
+
+The retained `/tmp/cs-worker-check-final.log` recorded eight direct disk-quota errors
+and a downstream partial-transfer IndexError. All nine failed Python tests passed
+when reproduced individually. Sequential offline verification then passed all
+three focused preparation/protocol unit tests, 14 worker/acquisition/supervision
+integration tests, formatting, Clippy with warnings denied, all 183 workspace Rust
+tests, all 183 nextest tests with zero skips, and docs-check. The complete
+`CARGO_NET_OFFLINE=true just check` passed (exit 0): 295 Python tests, including the
+Unix-socket and trusted-reference controls, followed by formatting, Clippy, workspace
+Rust tests and build. Fixture compilation uses one code-generation unit and one
+linker thread; no post-spawn deadline or adversarial coverage was changed.
+
+Dependency provenance passed for the same 30 checksum-backed registry packages.
+`CARGO_NET_OFFLINE=true just security` exited 1 because cargo-deny could not take
+the exclusive `/home/user/.cargo/advisory-dbs/db.lock` on its read-only path. No
+advisory policy, cache, quota, permission or mount was changed or bypassed.
+
+Existing Draft PR [#91](https://github.com/AlexandrShapkin/codex-smart/pull/91) and
+the remote branch both resolve to `5ef6b4c37050d70820761b6bae6ae149099bb0fe`.
+GitHub Actions app 15368 reports Security/review success and CI/check failure for
+that exact head. Both CI logs show the first real worker returning bootstrap
+refusal code 3 (expected Succeeded, observed Failed), before adversarial fixture
+compilation. Which bootstrap prerequisite refused is not identified by that code;
+this remains an unresolved CI acceptance failure, distinct from quota exhaustion
+and fixture compilation load. Local passes do not establish remote acceptance.
+
+The common Git metadata and worktree index remain read-only in the sandbox. The
+final fixture/tooling adjustments and this verification update remain uncommitted;
+no new commit or push was attempted. The existing PR stays Draft. Final acceptance
+requires diagnosis of the Ubuntu CI bootstrap refusal, unchanged host security
+verification, a commit/push from the existing writable owner session and successful
+exact-head CI/Security. Main, historical evidence and unrelated worktrees remain unchanged.
+
+### Bootstrap diagnosis increment (2026-10-14)
+
+The pending finalization files above were preserved. Published CI evidence identifies
+only legacy bootstrap refusal code 3 on Ubuntu 24.04.5 runner image 20261004.327.1;
+it does not identify a syscall, resource limit or descriptor target. The local kernel
+is 7.2.9-zen1-1-zen. The [pinned runner-image documentation](https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md)
+reports 6.17.0-1022-azure; this is image metadata, not a fresh capability probe.
+No kernel capability, resource-limit or system-security configuration was changed.
+
+Bootstrap now returns payload-free categories for environment, individual procfs
+prerequisites, descriptor enumeration/inheritance, no-new-privileges and each
+resource limit. The [architecture contract](architecture.md#supervised-preparation-boundary-explicit-local-runtime)
+owns the exit-code map. Invalid-request tests require code 4, so an earlier bootstrap
+refusal cannot masquerade as successful protocol rejection.
+
+A separate controlled exec fixture demonstrated a descriptor-check defect: the old
+worker accepted an inherited descriptor to its own procfs directory and reached
+request handling (exit 4, empty stdout/stderr). The corrected worker rejects that
+same fixture with code 17, empty stdout/stderr. The exemption now uses only the
+iterator's exact owned fd; the procfs target-string comparison is removed. This
+strengthens inheritance refusal and removes target-rendering assumptions while
+preserving all other prerequisites and resource ceilings.
+
+All five focused real/adversarial/bootstrap integration tests passed after the
+change, including environment/argument categories, inherited-directory refusal and
+absence of observable child leakage. The corrected descriptor check is a demonstrated
+local defect; its causal connection to the existing Ubuntu CI failure remains
+unproven until a new exact-head runner execution. No CI success or exact root-cause
+attribution is claimed from the legacy code 3 logs.
+
+Sequential verification of the updated implementation passed the three focused
+protocol/acquisition unit tests, 12 acquisition/supervision integration tests,
+formatting, Clippy with warnings denied and docs-check. Nextest passed all 186 tests,
+zero skipped. The single full offline just check after the code change passed
+(exit 0): 295 Python tests, formatting, Clippy, all 186 Rust tests and workspace build.
+The adversarial exec fixture uses the correct variadic fcntl ABI; the complete gate
+tested that final fixture source. No timeout or acceptance assertion was weakened.
+Dependency provenance again passed for 30 registry packages. Local just security
+again exited 1 solely at the read-only advisory database lock; no advisory-policy
+or cache bypass occurred. Git metadata is still read-only, so no new commit or
+exact-head CI execution is available for these changes until owner-side publication.

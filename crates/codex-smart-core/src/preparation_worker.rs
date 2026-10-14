@@ -20,6 +20,31 @@ pub enum Error {
     Spawn,
     Limits,
 }
+/// Stable, payload-free dedicated-worker exit categories. No OS error, environment
+/// value, path or descriptor target is retained or printed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum BootstrapRefusal {
+    UnsupportedPlatform = 10,
+    NonemptyEnvironment = 11,
+    ProcRoot = 12,
+    ProcDirectory = 13,
+    ProcExecutableOpen = 14,
+    ProcExecutableMetadata = 15,
+    DescriptorEnumeration = 16,
+    InheritedDescriptor = 17,
+    NoNewPrivileges = 18,
+    CoreLimit = 19,
+    CpuLimit = 20,
+    AddressSpaceLimit = 21,
+    ProcessLimit = 22,
+    DescriptorLimit = 23,
+}
+impl BootstrapRefusal {
+    pub const fn exit_code(self) -> u8 {
+        self as u8
+    }
+}
 pub struct Outcome {
     pub state: State,
     pub preparation: Option<Preparation>,
@@ -50,14 +75,14 @@ pub fn run_local_preparation(
     }
 }
 /// Applied only by the dedicated worker, never by a read-only CLI command.
-pub fn worker_bootstrap() -> Result<(), Error> {
+pub fn worker_bootstrap() -> Result<(), BootstrapRefusal> {
     #[cfg(target_os = "linux")]
     {
         linux::bootstrap()
     }
     #[cfg(not(target_os = "linux"))]
     {
-        Err(Error::Unsupported)
+        Err(BootstrapRefusal::UnsupportedPlatform)
     }
 }
 #[cfg(target_os = "linux")]
@@ -108,8 +133,8 @@ mod linux {
         }
     }
     const POLL: Duration = Duration::from_millis(1);
-    fn host() -> Result<(), Error> {
-        let slash = File::open("/").map_err(|_| Error::Unsupported)?;
+    fn host() -> Result<(), BootstrapRefusal> {
+        let slash = File::open("/").map_err(|_| BootstrapRefusal::ProcRoot)?;
         openat2(
             &slash,
             "proc/self/fd",
@@ -117,51 +142,69 @@ mod linux {
             Mode::empty(),
             ResolveFlags::BENEATH | ResolveFlags::NO_MAGICLINKS,
         )
-        .map_err(|_| Error::Unsupported)?;
+        .map_err(|_| BootstrapRefusal::ProcDirectory)?;
         let fd = rustix::fs::open(
             "/proc/self/exe",
             OFlags::RDONLY | OFlags::CLOEXEC,
             Mode::empty(),
         )
-        .map_err(|_| Error::Unsupported)?;
+        .map_err(|_| BootstrapRefusal::ProcExecutableOpen)?;
         if !File::from(fd)
             .metadata()
-            .map_err(|_| Error::Unsupported)?
+            .map_err(|_| BootstrapRefusal::ProcExecutableMetadata)?
             .is_file()
         {
-            return Err(Error::Unsupported);
+            return Err(BootstrapRefusal::ProcExecutableMetadata);
         }
         Ok(())
     }
-    pub(super) fn bootstrap() -> Result<(), Error> {
+    pub(super) fn bootstrap() -> Result<(), BootstrapRefusal> {
         if std::env::vars_os().next().is_some() {
-            return Err(Error::Unsupported);
+            return Err(BootstrapRefusal::NonemptyEnvironment);
         }
         host()?;
-        // Refuse leaked inherited descriptors before consuming any request/source.
-        let listing = format!("/proc/{}/fd", std::process::id());
-        for entry in std::fs::read_dir("/proc/self/fd").map_err(|_| Error::Unsupported)? {
-            let entry = entry.map_err(|_| Error::Unsupported)?;
-            let n = entry
-                .file_name()
-                .to_str()
-                .and_then(|s| s.parse::<u32>().ok())
-                .ok_or(Error::Unsupported)?;
-            if n > 2
-                && std::fs::read_link(entry.path()).map_err(|_| Error::Unsupported)?
-                    != std::path::Path::new(&listing)
-            {
-                return Err(Error::Unsupported);
+        // Exempt only the descriptor owned by this iterator. Procfs link target
+        // text is neither a kernel-independent identity nor proof of ownership.
+        let fd = rustix::fs::open(
+            "/proc/self/fd",
+            OFlags::RDONLY | OFlags::DIRECTORY | OFlags::CLOEXEC,
+            Mode::empty(),
+        )
+        .map_err(|_| BootstrapRefusal::DescriptorEnumeration)?;
+        let mut directory =
+            rustix::fs::Dir::new(fd).map_err(|_| BootstrapRefusal::DescriptorEnumeration)?;
+        let listing_fd = directory
+            .fd()
+            .map_err(|_| BootstrapRefusal::DescriptorEnumeration)?
+            .as_raw_fd();
+        for entry in &mut directory {
+            let entry = entry.map_err(|_| BootstrapRefusal::DescriptorEnumeration)?;
+            let name = entry.file_name().to_bytes();
+            if name == b"." || name == b".." {
+                continue;
+            }
+            let n = std::str::from_utf8(name)
+                .ok()
+                .and_then(|s| s.parse::<i32>().ok())
+                .filter(|n| *n >= 0)
+                .ok_or(BootstrapRefusal::DescriptorEnumeration)?;
+            if n > 2 && n != listing_fd {
+                return Err(BootstrapRefusal::InheritedDescriptor);
             }
         }
-        rustix::thread::set_no_new_privs(true).map_err(|_| Error::Unsupported)?;
+        drop(directory);
+        rustix::thread::set_no_new_privs(true).map_err(|_| BootstrapRefusal::NoNewPrivileges)?;
         use rustix::process::{Resource, Rlimit, setrlimit};
-        for (resource, n) in [
-            (Resource::Core, 0),
-            (Resource::Cpu, 1),
-            (Resource::As, 128 * 1024 * 1024),
-            (Resource::Nproc, 0),
-            (Resource::Nofile, 32),
+        for (resource, n, refusal) in [
+            (Resource::Core, 0, BootstrapRefusal::CoreLimit),
+            (Resource::Cpu, 1, BootstrapRefusal::CpuLimit),
+            (
+                Resource::As,
+                128 * 1024 * 1024,
+                BootstrapRefusal::AddressSpaceLimit,
+            ),
+            (Resource::Nproc, 0, BootstrapRefusal::ProcessLimit),
+            (Resource::Nofile, 32, BootstrapRefusal::DescriptorLimit),
         ] {
             setrlimit(
                 resource,
@@ -170,7 +213,7 @@ mod linux {
                     maximum: Some(n),
                 },
             )
-            .map_err(|_| Error::Unsupported)?;
+            .map_err(|_| refusal)?;
         }
         Ok(())
     }
@@ -262,7 +305,7 @@ mod linux {
     /// Local-only admission derives identity from the independent receipt and host
     /// primitives. No caller-provided WorkerFacts can open this gate.
     fn admit_pinned_local_worker(pin: &WorkerPin) -> Result<File, Error> {
-        host()?;
+        host().map_err(|_| Error::Unsupported)?;
         verified_file(pin)
     }
     fn nonblocking(fd: impl AsFd) -> std::io::Result<()> {

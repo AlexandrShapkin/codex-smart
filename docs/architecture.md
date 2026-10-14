@@ -136,6 +136,40 @@ binary the caller's OS authority. Dynamic loader and system libraries are also t
 These missing guarantees prohibit production admission. The pure #90
 `runtime_admission` still returns RuntimeUnavailable even for all-Verified facts.
 
+The descriptor exemption uses the exact fd owned by rustix's directory iterator,
+not a procfs symlink target spelling. Every other fd above stdio is refused,
+including an inherited descriptor to the worker's own procfs directory retained
+across exec. Enumeration failures also refuse. No descriptor targets are read or
+logged by this check; it does not depend on kernel-specific target rendering.
+
+The dedicated executable reports failures only through stable exit codes, with
+empty stdout/stderr before request handling. Legacy code 3 meant undifferentiated
+bootstrap refusal; the current `BootstrapRefusal` replaces it with these categories:
+
+| Code | Refusal |
+| --- | --- |
+| 2 | Unexpected arguments |
+| 4 | Invalid request or request handling failure |
+| 10 | Unsupported platform |
+| 11 | Nonempty environment |
+| 12 | Procfs prerequisite root open |
+| 13 | openat2 procfs descriptor-directory prerequisite |
+| 14 | Procfs executable open |
+| 15 | Procfs executable metadata/type |
+| 16 | Descriptor-directory open/iteration/entry parsing |
+| 17 | Inherited descriptor |
+| 18 | no-new-privileges setup |
+| 19 | Core-dump limit |
+| 20 | CPU limit |
+| 21 | Address-space limit |
+| 22 | Process-count limit |
+| 23 | Descriptor-count limit |
+
+These enum-only categories carry no environment values, source, paths, targets or
+OS error text. They do not bypass a prerequisite or imply an unsupported host is
+supported. Parent admission continues to map unavailable host prerequisites to
+Unsupported; `Outcome.worker_exit_code` retains a reaped worker's numeric category.
+
 The separate private `admit_pinned_local_worker` gate requires Linux openat2 and
 procfs, plus a caller-specified trusted absolute executable, independently recorded
 32-byte SHA-256 and protocol version 1. It never discovers PATH, reads project config,

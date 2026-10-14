@@ -37,3 +37,11 @@ the direct dependency gate requires that exact feature set. CLI integration fixt
 reuse the already locked rustix and sha2 versions as dev dependencies. No registry
 package/version/checksum was added or changed. These changes do not activate tools
 or modify host installations.
+
+Preparation integration tests compile controlled adversarial executables during
+fixture setup, before supervised execution. Code generation uses one unit and the
+linker uses one thread; fixture compilation time is excluded from the parent's
+post-spawn elapsed clock. On resource-constrained hosts, run heavyweight gates
+sequentially with `CARGO_BUILD_JOBS=1`, `RUST_TEST_THREADS=1` and
+`NEXTEST_TEST_THREADS=1`. These developer settings do not raise runtime deadlines,
+retry failed workers or change production admission.

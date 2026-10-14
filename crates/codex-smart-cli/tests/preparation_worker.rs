@@ -54,6 +54,10 @@ impl Fixture {
         let result = Command::new("rustc")
             .arg("--edition=2024")
             .arg("-Awarnings")
+            // Fixture setup is outside supervision. Bound codegen and linker
+            // parallelism without changing any worker's post-spawn deadline.
+            .arg("-C")
+            .arg("codegen-units=1")
             .arg("-C")
             .arg("link-arg=-Wl,--threads=1")
             .arg(&source)
@@ -292,7 +296,9 @@ fn actual_worker_and_adversarial_workers_are_bounded_and_reaped() {
     // Real worker refuses a descriptor deliberately made inheritable by the caller.
     let leaked = fs::File::open(f.0.join("bait.txt")).unwrap();
     rustix::io::fcntl_setfd(&leaked, rustix::io::FdFlags::empty()).unwrap();
-    assert_eq!(attempt(&worker, &r, 250).state, State::Failed);
+    let refusal = attempt(&worker, &r, 250);
+    assert_eq!(refusal.state, State::Failed);
+    assert_eq!(refusal.worker_exit_code, Some(17));
     drop(leaked);
     for path in [
         "../a.rs",
@@ -405,10 +411,14 @@ fn test_nonblocking(fd: impl AsFd) {
     )
     .unwrap();
 }
-fn assert_direct_rejection(bytes: &[u8]) {
+fn worker_command() -> Command {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_codex-smart-preparation-worker"));
+    command.env_clear().current_dir("/");
+    command
+}
+fn assert_direct_exit(mut command: Command, bytes: &[u8], expected_code: u8) {
     let mut child = TestChild(
-        Command::new(env!("CARGO_BIN_EXE_codex-smart-preparation-worker"))
-            .env_clear()
+        command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -463,12 +473,60 @@ fn assert_direct_rejection(bytes: &[u8]) {
         if let Some(status) = exit
             && eof.iter().all(|x| *x)
         {
-            assert!(!status.success());
+            assert_eq!(status.code(), Some(i32::from(expected_code)));
             return;
         }
         std::thread::sleep(Duration::from_millis(1));
     }
     panic!("invalid request worker failed to return within test deadline");
+}
+#[test]
+fn bootstrap_refuses_inherited_proc_directory() {
+    let _test_lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let baseline = children();
+    // Even a descriptor whose target names the iterator directory is inherited.
+    let leaked = fs::File::open("/proc/self/fd").unwrap();
+    rustix::io::fcntl_setfd(&leaked, rustix::io::FdFlags::empty()).unwrap();
+    assert_direct_exit(worker_command(), &[], 17);
+    drop(leaked);
+    assert_eq!(children(), baseline);
+}
+#[test]
+fn bootstrap_refuses_inherited_own_proc_directory_after_exec() {
+    let _test_lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let f = Fixture::new();
+    let baseline = children();
+    // Controlled adversarial executable: retain its own proc directory across
+    // exec, so its target has exactly the spelling the old bootstrap exempted.
+    // Linux F_SETFD=2; the unsafe FFI lives only in compiled fixture source.
+    let helper = f.fake(
+        "proc-exec",
+        &format!(
+            "use std::os::{{fd::AsRawFd,unix::process::CommandExt}}; \
+         unsafe extern \"C\" {{ fn fcntl(fd:i32,cmd:i32,...)->i32; }} \
+         let directory=std::fs::File::open(\"/proc/self/fd\").unwrap(); \
+         assert_eq!(unsafe {{fcntl(directory.as_raw_fd(),2,0_i32)}},0); \
+         let _=std::process::Command::new({:?}).env_clear().exec(); \
+         std::process::exit(99);",
+            env!("CARGO_BIN_EXE_codex-smart-preparation-worker")
+        ),
+    );
+    let mut command = Command::new(&helper.executable);
+    command.env_clear();
+    assert_direct_exit(command, &[], 17);
+    assert_eq!(children(), baseline);
+}
+#[test]
+fn bootstrap_environment_and_arguments_have_payload_free_refusal_codes() {
+    let _test_lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let baseline = children();
+    let mut command = worker_command();
+    command.env("CS_PUBLIC_BOOTSTRAP_FIXTURE", "public-fixture-value");
+    assert_direct_exit(command, &[], 11);
+    let mut command = worker_command();
+    command.arg("unsupported-fixture-argument");
+    assert_direct_exit(command, &[], 2);
+    assert_eq!(children(), baseline);
 }
 #[test]
 fn worker_rejects_bounded_bad_requests_without_logging() {
@@ -499,7 +557,7 @@ fn worker_rejects_bounded_bad_requests_without_logging() {
     malformed.push(trailing);
     for bytes in malformed {
         assert!(PreparationRequest::decode(&bytes).is_err());
-        assert_direct_rejection(&bytes);
+        assert_direct_exit(worker_command(), &bytes, 4);
         assert_eq!(children(), baseline);
     }
 }
