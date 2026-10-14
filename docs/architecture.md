@@ -117,7 +117,10 @@ routing, retries, command execution and comparative measurements remain pending.
 
 The dedicated `codex-smart-preparation-worker` binary and explicit core API
 `preparation_worker::run_local_preparation` implement one Linux child process around
-`preparation::prepare`. Ordinary CLI run/explain/doctor never invoke this API. The
+`preparation::prepare`. Ordinary CLI run/explain/doctor and declarative plan never invoke this API.
+The separately explicit `prepare` command joins the shared typed inspection plan
+to this API once; [configuration](configuration.md#explicit-supervised-inspection-preparation)
+owns its grammar and payload-free outcome contract. The
 initial accepted intent is Inspection and the only accepted nomination obligation
 is RelevantFiles. The existing Router assessment, workflow planner, default unknown
 native surface and validation recipe are reused. All obligations remain unresolved;

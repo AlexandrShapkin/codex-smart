@@ -1,4 +1,5 @@
 mod plan;
+mod prepare;
 
 use codex_smart_core::{
     VERSION,
@@ -187,8 +188,17 @@ fn execute(mut args: Vec<OsString>) -> Result<i32, &'static str> {
             println!("codex-smart {VERSION}")
         }
         Some("--help" | "-h" | "help") if args.len() == 1 => println!(
-            "codex-smart {VERSION}\nCommands: plan --intent inspection [--task KIND] [--risk LEVEL] [--safety FACT] [--file RELATIVE_PATH ...] (plan-only; plan --help for values), run [--tool-lock FILE] [--dry-run] [--] [codex args...], doctor [--json] [--codex-config FILE] [--tool-lock FILE], capabilities [--tool-lock FILE], explain [--tool-lock FILE] [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nOther arguments pass through to Codex. Use -- to pass a reserved command name. Config transactions default to dry-run; use --file FILE and explicit --apply. Tool pins are explicit; versions/health remain unverified."
+            "codex-smart {VERSION}\nCommands: prepare (explicit pinned local worker; prepare --help for required options), plan --intent inspection [--task KIND] [--risk LEVEL] [--safety FACT] [--file RELATIVE_PATH ...] (plan-only; plan --help for values), run [--tool-lock FILE] [--dry-run] [--] [codex args...], doctor [--json] [--codex-config FILE] [--tool-lock FILE], capabilities [--tool-lock FILE], explain [--tool-lock FILE] [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nOther arguments pass through to Codex. Use -- to pass a reserved command name. Config transactions default to dry-run; use --file FILE and explicit --apply. Tool pins are explicit; versions/health remain unverified."
         ),
+        Some("prepare") => {
+            if args[1..] == [OsString::from("--help")] {
+                println!("{}", prepare::HELP);
+            } else {
+                let (summary, code) = prepare::execute(&args[1..], &cwd()?)?;
+                print!("{summary}");
+                return Ok(code);
+            }
+        }
         Some("plan") => {
             if args[1..] == [OsString::from("--help")] {
                 println!("{}", plan::HELP);

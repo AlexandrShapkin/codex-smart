@@ -6,7 +6,7 @@ use codex_smart_core::{
         assessment::{RiskLevel, RoutingFacts, SafetyFact, TaskKind, assess},
         engine::CapabilitySurface,
     },
-    workflow::{NativeSurface, ResourceCatalog, plan_workflow},
+    workflow::{NativeSurface, ResourceCatalog, WorkflowPlan, plan_workflow},
 };
 use std::{collections::BTreeSet, ffi::OsString, path::Path};
 
@@ -14,8 +14,18 @@ pub const HELP: &str = "plan --intent inspection [--task inspect|edit|refactor|u
 const INVALID: &str = "E_PLAN_ARGS: invalid, unsupported or duplicate plan option";
 const LIMIT: &str = "E_PLAN_LIMIT: plan input exceeds bounded limits";
 
-/// Output contains only policy enums and counts; input values are never echoed.
+/// Internal declarative plan; paths have no Debug/logging surface.
+pub struct InspectionPlan {
+    pub workflow: WorkflowPlan,
+    pub files: Vec<std::path::PathBuf>,
+    pub summary: String,
+}
+
 pub fn preview(args: &[OsString]) -> Result<String, &'static str> {
+    parse(args).map(|plan| plan.summary)
+}
+
+pub fn parse(args: &[OsString]) -> Result<InspectionPlan, &'static str> {
     // Eight singleton option/value arguments and sixteen file option/value pairs.
     if args.len() > 40 || args.iter().map(|arg| arg.len()).sum::<usize>() > 18_432 {
         return Err(LIMIT);
@@ -95,7 +105,7 @@ pub fn preview(args: &[OsString]) -> Result<String, &'static str> {
         &ResourceCatalog::default(),
     );
     let validation = workflow.validation_recipe(&native);
-    Ok(format!(
+    let summary = format!(
         "{}Assessment: {:?}; {:?}; {:?}\nRisk evidence: {}\nSafety evidence: {}\nNative evidence: Unknown\nExternal evidence: Unknown\nModel identity: Unknown\nNominated relevant files: {} (declarative; acquired=0; semantic coverage=Unknown)\nValidation recipe: {:?}\nExecution authority: none\n",
         workflow.render(),
         assessment.task,
@@ -109,5 +119,10 @@ pub fn preview(args: &[OsString]) -> Result<String, &'static str> {
         },
         files.len(),
         validation,
-    ))
+    );
+    Ok(InspectionPlan {
+        workflow,
+        files: files.into_iter().map(Path::to_path_buf).collect(),
+        summary,
+    })
 }

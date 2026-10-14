@@ -621,3 +621,123 @@ fn worker_rejects_bounded_bad_requests_without_logging() {
         assert_eq!(children(), baseline);
     }
 }
+
+fn prepare_cli(f: &Fixture, pin: &WorkerPin, extra: &[&str]) -> std::process::Output {
+    let digest = pin
+        .sha256
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect::<String>();
+    Command::new(env!("CARGO_BIN_EXE_codex-smart"))
+        .current_dir(&f.0)
+        .env_clear()
+        .env("PATH", "/nonexistent")
+        .args(["prepare", "--intent", "inspection", "--worker"])
+        .arg(&pin.executable)
+        .args([
+            "--worker-sha256",
+            &digest,
+            "--worker-protocol",
+            "1",
+            "--file",
+            "a.rs",
+        ])
+        .args(extra)
+        .output()
+        .unwrap()
+}
+
+#[test]
+fn explicit_prepare_cli_success_refusal_and_private_input() {
+    let _guard = TEST_LOCK.lock().unwrap();
+    let f = Fixture::new();
+    fs::write(f.0.join("a.rs"), "PRIVATE_SOURCE_SENTINEL").unwrap();
+    fs::write(f.0.join(".codex-smart.toml"), "PRIVATE_CONFIG invalid").unwrap();
+    let worker = f.0.join("worker");
+    fs::copy(
+        env!("CARGO_BIN_EXE_codex-smart-preparation-worker"),
+        &worker,
+    )
+    .unwrap();
+    let mut pin = f.pin(&worker);
+    let output = prepare_cli(&f, &pin, &["--risk", "low", "--safety", "security"]);
+    assert_eq!(output.status.code(), Some(0));
+    let text = String::from_utf8(output.stdout).unwrap();
+    assert!(output.stderr.is_empty());
+    assert!(text.contains("Preparation state: Succeeded"));
+    assert!(text.contains("files=1; bytes=23"));
+    assert!(text.contains("Strong"));
+    assert!(text.contains("Semantic context sufficiency: Unknown"));
+    assert!(text.contains("Production admission: closed"));
+    assert!(!text.contains("PRIVATE"));
+    pin.sha256[0] ^= 1;
+    let output = prepare_cli(&f, &pin, &[]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Preparation refused: Identity"));
+    pin.sha256[0] ^= 1;
+    for extra in [
+        vec!["--worker-protocol", "1"],
+        vec!["--worker", "PRIVATE_PATH"],
+        vec!["--deadline-ms", "0"],
+        vec!["--cleanup-ms", "251"],
+        vec!["--file", ".env.PRIVATE"],
+        vec!["--file", "../PRIVATE"],
+        vec!["--file", "a.rs"],
+        vec!["--task", "edit"],
+        vec!["--task", "unknown"],
+        vec!["--unexpected", "PRIVATE"],
+    ] {
+        let output = prepare_cli(&f, &pin, &extra);
+        assert_eq!(output.status.code(), Some(2));
+        assert!(output.stdout.is_empty());
+        assert!(!String::from_utf8_lossy(&output.stderr).contains("PRIVATE"));
+    }
+    fs::remove_file(f.0.join("a.rs")).unwrap();
+    let output = prepare_cli(&f, &pin, &[]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("UnsafeOrMissingFile"));
+}
+
+#[test]
+fn explicit_prepare_cli_supervises_timeout_protocol_and_private_output() {
+    let _guard = TEST_LOCK.lock().unwrap();
+    let f = Fixture::new();
+    for (name, behavior, expected, extra) in [
+        (
+            "cli-timeout",
+            "std::thread::sleep(std::time::Duration::from_secs(10));",
+            "TimedOut",
+            vec!["--deadline-ms", "30"],
+        ),
+        (
+            "cli-protocol",
+            "std::io::stdout().write_all(b\"PRIVATE_WIRE\").unwrap();",
+            "Failed",
+            vec![],
+        ),
+        (
+            "cli-private-stderr",
+            "std::io::stderr().write_all(b\"PRIVATE_STDERR\").unwrap(); std::thread::sleep(std::time::Duration::from_secs(10));",
+            "Failed",
+            vec![],
+        ),
+    ] {
+        let pin = f.fake(name, behavior);
+        let start = Instant::now();
+        let output = prepare_cli(&f, &pin, &extra);
+        assert!(start.elapsed() < Duration::from_secs(3));
+        assert_eq!(output.status.code(), Some(2));
+        let text = String::from_utf8(output.stdout).unwrap();
+        assert!(text.contains(&format!("Preparation state: {expected}")));
+        assert!(!text.contains("PRIVATE"));
+        assert!(output.stderr.is_empty());
+    }
+    // A fresh invocation can succeed after each cancelled child was reaped.
+    let worker = f.0.join("worker");
+    fs::copy(
+        env!("CARGO_BIN_EXE_codex-smart-preparation-worker"),
+        &worker,
+    )
+    .unwrap();
+    assert_eq!(prepare_cli(&f, &f.pin(&worker), &[]).status.code(), Some(0));
+}

@@ -115,3 +115,17 @@ integration acceptance; [#95](https://github.com/AlexandrShapkin/codex-smart/iss
 owns separately authorized comparative lifecycle measurement. Milestone issue counts
 do not constitute stage acceptance. [#92](https://github.com/AlexandrShapkin/codex-smart/issues/92)
 tracks the bounded positive-control reliability investigation without release ownership.
+
+### Explicit preparation CLI increment (#100)
+
+[#100](https://github.com/AlexandrShapkin/codex-smart/issues/100), the first bounded
+child of #94, joins the typed inspection plan to one independently pinned local worker
+through explicit `prepare`. It reuses accepted pin/protocol/supervision and renders
+only acquisition counts and enum outcomes, preserving unknown semantic sufficiency,
+cleanup uncertainty and closed production admission. Ordinary run remains passthrough
+and plan remains declarative. [Configuration](../configuration.md#explicit-supervised-inspection-preparation)
+owns CLI bounds and exit meanings. Isolated regressions cover success, pin/scope
+refusal, timeout, protocol/private-output failure and uncertainty rendering; the
+existing pure supervision suite covers unreapable-child cleanup uncertainty.
+No model/retry/escalation/validation/delegation or measurement is activated. Independent
+technical review remains required; Adaptive stays active and #94/#95 remain residual owners.

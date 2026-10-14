@@ -1501,6 +1501,8 @@ fn plan_reserved_name_escape_run_and_help_preserve_launch_contract() {
     for args in [
         vec!["--", "plan", "--intent", "inspection"],
         vec!["run", "--", "plan", "--intent", "inspection"],
+        vec!["--", "prepare", "--intent", "inspection"],
+        vec!["run", "--", "prepare", "--intent", "inspection"],
         vec!["exec", "--config", "model=operator", "plan"],
     ] {
         let output = f.command().args(&args).output().unwrap();
@@ -1522,7 +1524,9 @@ fn plan_reserved_name_escape_run_and_help_preserve_launch_contract() {
     for args in [
         vec!["--help"],
         vec!["plan", "--help"],
+        vec!["prepare", "--help"],
         vec!["run", "--dry-run", "--", "plan"],
+        vec!["run", "--dry-run", "--", "prepare"],
     ] {
         let output = f.command().args(args).output().unwrap();
         assert!(output.status.success());
