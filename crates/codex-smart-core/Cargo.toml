@@ -13,4 +13,5 @@ sha2 = { version = "=0.11.0", default-features = false }
 toml_edit = { version = "=0.25.15", default-features = false, features = ["parse", "display"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rustix = { version = "=1.1.5", features = ["fs", "process"] }
+rustix = { version = "=1.1.5", features = ["fs", "process", "thread"] }
+codex-smart-process = { version = "=0.1.0", path = "../codex-smart-process" }

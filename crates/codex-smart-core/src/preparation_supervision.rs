@@ -1,4 +1,4 @@
-//! Pure supervision policy. No worker is launched and no hard timeout is implemented.
+//! Pure supervision policy, driven by the separate explicit local worker adapter.
 use std::time::Duration;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -70,10 +70,12 @@ pub struct Observation {
     pub elapsed: Duration,
     pub output_bytes: usize,
     pub response_verified: bool,
+    /// Adapter-observed protocol or pipe failure; never substitutes a fabricated byte count.
+    pub transport_failed: bool,
     pub reaped_exit: Option<bool>,
 }
 
-/// Models one worker, no retries. A future adapter owns its monotonic clock,
+/// Models one worker, no retries. The runtime adapter owns its monotonic clock,
 /// nonblocking I/O, termination and reaping; this type performs none of those effects.
 pub struct SupervisionPolicy {
     state: State,
@@ -121,7 +123,8 @@ impl SupervisionPolicy {
         }
         let invalid = observation.elapsed < self.previous.elapsed
             || observation.output_bytes < self.previous.output_bytes
-            || observation.output_bytes > self.output_limit;
+            || observation.output_bytes > self.output_limit
+            || observation.transport_failed;
         self.previous = observation;
         if self.state == State::Running {
             self.timed_out = observation.elapsed >= self.deadline;

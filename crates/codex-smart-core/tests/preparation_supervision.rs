@@ -135,3 +135,18 @@ fn output_overflow_and_regressing_observations_fail_closed_deterministically() {
         assert_eq!(p.state(), State::CleanupUnknown);
     }
 }
+
+#[test]
+fn real_transport_failure_cancels_without_fabricating_wire_bytes() {
+    let mut p = policy();
+    let mut o = observation(10);
+    o.transport_failed = true;
+    o.output_bytes = 3;
+    assert_eq!(p.observe(o), Action::TerminateAndPollReap);
+    o.elapsed = Duration::from_millis(11);
+    o.transport_failed = false;
+    o.response_verified = true;
+    o.reaped_exit = Some(true);
+    assert_eq!(p.observe(o), Action::Return);
+    assert_eq!(p.state(), State::Failed);
+}

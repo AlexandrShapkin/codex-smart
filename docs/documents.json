@@ -711,6 +711,15 @@
         "workflow",
         "adaptive"
       ]
+    },
+    {
+      "path": "docs/decisions/0009-child-descriptor-isolation.md",
+      "title": "ADR-0009: Child-only descriptor isolation for the supervised worker",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "adaptive"
+      ]
     }
   ]
 }

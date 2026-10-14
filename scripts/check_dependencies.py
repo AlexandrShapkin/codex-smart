@@ -4,9 +4,11 @@ import tomllib
 from pathlib import Path
 
 approved = {
+    "libc": ("=0.2.189", []),
     "sha2": ("=0.11.0", []),
     "toml_edit": ("=0.25.15", ["display", "parse"]),
-    "rustix": ("=1.1.5", ["fs", "process"]),
+    "rustix": ("=1.1.5", ["fs", "process", "thread"]),
+    "codex-smart-process": ("=0.1.0", []),
     "codex-smart-core": ("=0.1.0", []),
 }
 
@@ -17,12 +19,12 @@ def check_table(table):
         selected = (spec.get("version"), sorted(spec.get("features", [])))
         if name not in approved or selected != approved[name]:
             raise SystemExit(f"Unreviewed direct dependency/version/features: {name}")
-        if name in {"toml_edit", "sha2"} and spec.get("default-features") is not False:
+        if name in {"toml_edit", "sha2", "libc"} and spec.get("default-features") is not False:
             raise SystemExit("Dependency must keep only reviewed features")
-        if name == "codex-smart-core" and spec.get("path") != "../codex-smart-core":
-            raise SystemExit("Unexpected local core path")
+        if name in {"codex-smart-core", "codex-smart-process"} and spec.get("path") != "../" + name:
+            raise SystemExit("Unexpected local package path")
         allowed = {"version", "features", "default-features"}
-        if name == "codex-smart-core":
+        if name in {"codex-smart-core", "codex-smart-process"}:
             allowed.add("path")
         if set(spec) - allowed:
             raise SystemExit(f"Unreviewed dependency options/source: {name}")
@@ -42,7 +44,7 @@ for manifest in [Path("Cargo.toml"), *Path("crates").glob("*/Cargo.toml")]:
             check_table(container.get(kind, {}))
 packages = tomllib.loads(Path("Cargo.lock").read_text())["package"]
 external = [p for p in packages if "source" in p]
-internal_names = {"codex-smart-cli", "codex-smart-core"}
+internal_names = {"codex-smart-cli", "codex-smart-core", "codex-smart-process"}
 for package in packages:
     if "source" not in package and (
         package["name"] not in internal_names

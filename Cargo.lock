@@ -28,15 +28,26 @@ name = "codex-smart-cli"
 version = "0.1.0"
 dependencies = [
  "codex-smart-core",
+ "codex-smart-process",
+ "rustix",
+ "sha2",
 ]
 
 [[package]]
 name = "codex-smart-core"
 version = "0.1.0"
 dependencies = [
+ "codex-smart-process",
  "rustix",
  "sha2",
  "toml_edit",
+]
+
+[[package]]
+name = "codex-smart-process"
+version = "0.1.0"
+dependencies = [
+ "libc",
 ]
 
 [[package]]

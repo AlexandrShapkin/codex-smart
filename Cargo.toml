@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/codex-smart-core", "crates/codex-smart-cli"]
+members = ["crates/codex-smart-core", "crates/codex-smart-cli", "crates/codex-smart-process"]
 resolver = "3"
 
 [workspace.package]

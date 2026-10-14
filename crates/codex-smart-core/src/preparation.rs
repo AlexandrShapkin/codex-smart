@@ -23,6 +23,18 @@ impl Default for Limits {
         }
     }
 }
+impl Limits {
+    pub(crate) fn valid(self) -> bool {
+        self.files > 0
+            && self.files <= 16
+            && self.file_bytes > 0
+            && self.file_bytes <= 8192
+            && self.total_bytes > 0
+            && self.total_bytes <= 32768
+            && !self.elapsed.is_zero()
+            && self.elapsed <= Duration::from_millis(250)
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Request {
     pub path: PathBuf,
@@ -165,18 +177,10 @@ fn acquire(
     started: Instant,
     obligations: &BTreeSet<ContextObligation>,
 ) -> Result<Vec<Snippet>, Failure> {
-    if limits.files == 0
-        || limits.files > 16
-        || limits.file_bytes == 0
-        || limits.file_bytes > 8192
-        || limits.total_bytes == 0
-        || limits.total_bytes > 32768
-        || limits.elapsed.is_zero()
-        || limits.elapsed > Duration::from_millis(250)
-    {
+    if !limits.valid() {
         return Err(Failure::InvalidLimits);
     }
-    if root.as_os_str().len() > 1024 || root.components().count() > 32 {
+    if !safe_root(root) {
         return Err(Failure::InvalidRequest);
     }
     if requests.len() > limits.files {
@@ -186,13 +190,7 @@ fn acquire(
     ordered.sort_by(|a, b| a.path.cmp(&b.path).then(a.obligation.cmp(&b.obligation)));
     let mut seen = BTreeSet::new();
     for request in &ordered {
-        if request.path.as_os_str().len() > 1024
-            || request.path.as_os_str().is_empty()
-            || request.path.components().count() > 16
-            || request
-                .path
-                .components()
-                .any(|c| !matches!(c, Component::Normal(_)))
+        if !safe_nomination(&request.path)
             || !obligations.contains(&request.obligation)
             || !seen.insert(&request.path)
         {
@@ -236,6 +234,53 @@ fn acquire(
         return Err(Failure::Deadline);
     }
     Ok(snippets)
+}
+/// Conservative nomination policy; callers must still nominate public task files.
+pub(crate) fn safe_root(root: &Path) -> bool {
+    root.is_absolute()
+        && root.as_os_str().len() <= 1024
+        && root.components().count() <= 32
+        && root
+            .components()
+            .all(|c| matches!(c, Component::RootDir | Component::Normal(_)))
+        && root.components().all(|c| match c {
+            Component::Normal(s) => !sensitive(s),
+            _ => true,
+        })
+}
+pub(crate) fn safe_nomination(path: &Path) -> bool {
+    !path.as_os_str().is_empty()
+        && path.as_os_str().len() <= 1024
+        && path.components().count() <= 16
+        && path.components().all(|c| match c {
+            Component::Normal(s) => !sensitive(s),
+            _ => false,
+        })
+}
+fn sensitive(name: &std::ffi::OsStr) -> bool {
+    let Some(name) = name.to_str() else {
+        return true;
+    };
+    let name = name.to_ascii_lowercase();
+    matches!(
+        name.as_str(),
+        ".git"
+            | ".ssh"
+            | ".aws"
+            | ".codex"
+            | ".gnupg"
+            | "credentials"
+            | "credentials.json"
+            | "auth.json"
+            | "id_rsa"
+            | "id_ed25519"
+            | "id_ecdsa"
+            | "id_dsa"
+    ) || name == ".env"
+        || name.starts_with(".env.")
+        || name.ends_with(".pem")
+        || name.ends_with(".key")
+        || name.ends_with(".p12")
 }
 #[cfg(target_os = "linux")]
 fn read_file(root: &Path, path: &Path, limit: usize) -> Result<Vec<u8>, Failure> {
