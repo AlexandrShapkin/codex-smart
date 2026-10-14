@@ -658,11 +658,18 @@ The representative campaign also disables multi-agent and account/network-backed
 app/plugin/browser/computer/image/skill-search surfaces for both variants. No real
 credential or model call was used. These observations motivate the pinned
 `agent-execution-isolation-v1` contract; they do not verify or accept runtime evidence.
-The reproducible credential-free probe produced candidate reference `ae2840a9...`,
-frozen in `agent-execution-isolation-candidate-v1.json`; the accepted-evidence list
-remains empty, so this candidate cannot enable execution.
+At this historical design stage, the reproducible credential-free probe produced
+candidate reference `ae2840a9...`, frozen in
+`agent-execution-isolation-candidate-v1.json`; the accepted-evidence list was empty.
+The current contract accepts the exact reference
+`ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb`.
+Current verification requires both accepted-reference membership and an independently
+reviewed qualified-host component carrying that same reference. Technical readiness
+is verified; execution still requires the remaining runtime and authorization gates.
+The separate adaptive campaign #95 is not authorized by this acceptance.
 
-Seven kinds of evidence must remain separate:
+The following seven kinds of evidence record the historical design-stage snapshot;
+current accepted evidence is described above:
 
 1. **Harness validation:** the original seven scenarios are harness/component coverage.
 2. **Codex live-contract smoke:** one successful bounded JSON-only IaC smoke verifies

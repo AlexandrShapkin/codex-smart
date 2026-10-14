@@ -286,6 +286,63 @@ class RepresentativeRunnerTests(unittest.TestCase):
         s=coverage.load_manifest()['scenarios'][0]
         self.assertEqual(historical.prompt(c,s,'native'),historical.prompt(c,s,'vanilla')+historical.NATIVE_INSTRUCTION)
 
+    def test_agent_candidate_rehashed_unsafe_outcomes_remain_unaccepted(self):
+        # Fake reviewed components isolate the downstream gate from receipt review.
+        # This does not qualify a real host or change any accepted contract bytes.
+        safe = agent_isolation.load_candidate_evidence()
+        accepted = 'ae2840a92172e46eedf574885bf2d68a31043f5d0ad9a586fc8a9921aea848cb'
+        self.assertEqual(safe['evidence_reference'], accepted)
+        outcomes = {
+            'auth_file_absent': True,
+            'api_key_in_child_environment': False,
+            'user_bus_connectable': False,
+            'private_bus_address_in_child_environment': False,
+            'private_bus_connectable': False,
+            'credential_backing_store_readable': False,
+            'external_tool_surface_disabled': True,
+            'command_paths_reviewed': True,
+        }
+        self.assertEqual({key: safe['candidate'][key] for key in outcomes}, outcomes)
+
+        def qualification(reference):
+            return host.qualify(host.HostQualificationEvidence(
+                'benchmark-qualified-host-v1', tuple(
+                    host.ComponentEvidence(name, 'verified',
+                        reference if name == agent_isolation.COMPONENT else '1' * 64)
+                    for name in host.COMPONENTS)))
+
+        self.assertTrue(agent_isolation.representative_contract_verified(qualification(accepted)))
+        self.assertFalse(agent_isolation.representative_contract_verified(qualification('0' * 64)))
+        missing = host.HostQualificationEvidence('benchmark-qualified-host-v1', tuple(
+            row for row in qualification(accepted).evidence.components
+            if row.component != agent_isolation.COMPONENT))
+        with self.assertRaisesRegex(ValueError, 'missing or unordered'):
+            host.qualify(missing)
+
+        loader = agent_isolation.load_candidate_evidence
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'synthetic-agent.json'
+            for key, value in outcomes.items():
+                with self.subTest(outcome=key):
+                    changed = copy.deepcopy(safe)
+                    changed['candidate'][key] = not value
+                    # Independently normalize/re-hash, rather than relying on the loader.
+                    changed['evidence_reference'] = hashlib.sha256(json.dumps(
+                        changed['candidate'], sort_keys=True, separators=(',', ':')
+                    ).encode()).hexdigest()
+                    path.write_text(json.dumps(changed))
+                    loaded = loader(path)
+                    self.assertEqual(loaded, changed)  # Loader does not reject safe-value drift.
+                    reference = loaded['evidence_reference']
+                    self.assertNotIn(reference, agent_isolation.load_contract()['accepted_evidence_sha256'])
+                    with patch.object(agent_isolation, 'load_candidate_evidence', return_value=loaded):
+                        # Even a matching independently reviewed synthetic component cannot
+                        # turn an unaccepted rehashed candidate into accepted evidence.
+                        self.assertFalse(agent_isolation.representative_contract_verified(
+                            qualification(reference)))
+                        self.assertFalse(agent_isolation.representative_contract_verified(
+                            qualification(accepted)))
+
     def test_agent_execution_isolation_contract_fail_closed(self):
         contract = agent_isolation.load_contract()
         self.assertEqual(contract['accepted_evidence_sha256'],
