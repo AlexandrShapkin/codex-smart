@@ -25,6 +25,8 @@ pub struct Outcome {
     pub preparation: Option<Preparation>,
     /// Parent monotonic elapsed after successful spawn; excludes verification/spawn.
     pub elapsed: Duration,
+    /// Payload-free observed worker exit code, if reaping completed.
+    pub worker_exit_code: Option<i32>,
 }
 /// Explicit opt-in, one attempt, no retry; serializes all callers in this process.
 pub fn run_local_preparation(
@@ -362,6 +364,7 @@ mod linux {
         let mut stdout_eof = false;
         let mut stderr_eof = false;
         let mut reaped = None;
+        let mut worker_exit_code = None;
         let mut preparation = None;
         loop {
             // Never touch potentially blocking pipes if nonblocking setup failed.
@@ -400,7 +403,10 @@ mod linux {
             }
             if reaped.is_none() {
                 match child.try_wait() {
-                    Ok(Some(s)) => reaped = Some(s.success()),
+                    Ok(Some(s)) => {
+                        worker_exit_code = s.code();
+                        reaped = Some(s.success());
+                    }
                     Ok(None) => {}
                     Err(_) => bad = true,
                 }
@@ -442,6 +448,7 @@ mod linux {
                             None
                         },
                         elapsed: started.elapsed(),
+                        worker_exit_code,
                     });
                 }
             }

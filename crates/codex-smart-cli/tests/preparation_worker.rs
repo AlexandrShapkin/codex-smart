@@ -135,7 +135,12 @@ fn actual_worker_and_adversarial_workers_are_bounded_and_reaped() {
     .unwrap();
     let worker = f.pin(&worker_path);
     let result = attempt(&worker, &request, 250);
-    assert_eq!(result.state, State::Succeeded);
+    assert_eq!(
+        result.state,
+        State::Succeeded,
+        "worker exit code: {:?}",
+        result.worker_exit_code
+    );
     let prepared = result.preparation.unwrap();
     assert_eq!(prepared.failure, None);
     assert_eq!(prepared.snippets[0].text, "fn public_source() {}\n");
