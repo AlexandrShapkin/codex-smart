@@ -683,6 +683,15 @@
         "adaptive",
         "benchmark"
       ]
+    },
+    {
+      "path": "docs/production-routing-readiness.md",
+      "title": "Production routing integration readiness",
+      "owner": "architecture",
+      "role": "current",
+      "stages": [
+        "adaptive"
+      ]
     }
   ]
 }

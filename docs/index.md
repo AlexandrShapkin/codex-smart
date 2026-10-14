@@ -60,6 +60,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [P3: Production hardening and 1.0 readiness](../docs/issues/17.md) | engineering | reference | stable |
 | [P0: Launch Codex safely with exact OS arguments](../docs/issues/18.md) | engineering | reference | baseline |
 | [Issue index](../docs/issues/index.md) | engineering | reference | baseline |
+| [Production routing integration readiness](../docs/production-routing-readiness.md) | architecture | current | adaptive |
 | [Provenance gate](../docs/provenance.md) | provenance | current | baseline |
 | [Release readiness](../docs/releasing.md) | release | current | distribution, hardening |
 | [Routing](../docs/routing.md) | engineering | current | router |
