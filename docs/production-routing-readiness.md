@@ -305,3 +305,30 @@ validation execution, durable recovery and production admission remain unready.
 Ordinary run and plan behavior remain unchanged. Independent technical review and
 exact-head CI/Security acceptance are still required; no stage or measurement advancement
 is inferred from offline regressions or this explicit local adapter.
+
+## Explicit native inspection evidence boundary (#102)
+
+`native_inspection::assess` is a pure prerequisite contract, not a collector or
+product integration. Candidate receipts and independently reviewed records bind the
+read-only ReadFiles/Search/Git capability, source/configuration/tool SHA-256 identities,
+verifier and canonical receipt digests, and identical observed/expiry times. The caller
+supplies current identities and time in the reviewed clock domain. Lifetimes must be
+positive and at most 300 seconds; expiry is exclusive. No system clock, PATH, file,
+configuration, network or discovered program is accessed.
+
+Missing or untrusted records, drift, future observations, invalid intervals and
+expiration retain Unknown with deterministic enum-only diagnostics. Digests are
+opaque fixed-size bytes without Debug output. A fresh consistent reviewed observation
+yields AcceptedInspection only; health remains Unknown and execution_authorized is
+false. Edit/Build/Tests receipts are refused. No conversion into NativeSurface or
+ordinary run/plan/prepare integration exists.
+
+The separately supplied IndependentlyReviewed provenance is an explicit assertion
+at the trusted caller boundary, not cryptographic authentication. A copied candidate,
+PATH hint, configuration declaration or digest match cannot establish independent
+origin. The future adapter must independently acquire the reviewed record, hash the
+canonical receipt payload excluding its digest field, observe current identities,
+and provide trusted time on every use. These missing adapters and actual native compatibility/health verification
+remain #94; this contract adds no trusted preparation, validation execution, model
+execution or production admission. Synthetic fake-environment tests establish only
+the binding/refusal policy, without probing the host.

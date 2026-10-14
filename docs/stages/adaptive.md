@@ -22,6 +22,16 @@ not a hostile-code sandbox or production Adaptive/model runtime. See the
 for post-spawn timing limits and process-lifetime cleanup ownership. Production
 admission, retries, validation command execution and benchmark acceptance stay closed.
 
+#102 adds a pure inspection-evidence binding evaluator, without a product adapter.
+It checks a candidate against an independently supplied reviewed record and current
+capability/source/configuration/tool identities, verifier and receipt digests, and a
+validity interval capped at 300 seconds. Missing, declared, mismatched or expired
+records stay Unknown. AcceptedInspection describes only that reviewed observation;
+health, semantic sufficiency and execution authority remain unknown/ungranted.
+No NativeSurface projection, receipt collection, tool probe or CLI join is added.
+The future adapter must establish independent provenance, canonical receipt hashing,
+current identity and trusted clock inputs; the pure contract cannot authenticate them.
+
 ## Target state
 
 A bounded typed controller contract plus verified runtime adapters for progressive reasoning/model escalation, retries, validation feedback, handoffs and completion.

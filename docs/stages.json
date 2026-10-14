@@ -250,7 +250,8 @@
         93,
         94,
         95,
-        100
+        100,
+        102
       ],
       "contract": "docs/stages/adaptive.md",
       "reads": [
@@ -272,7 +273,9 @@
         "crates/codex-smart-process/src/lib.rs",
         "crates/codex-smart-process/Cargo.toml",
         "crates/codex-smart-cli/src/plan.rs",
-        "crates/codex-smart-cli/src/prepare.rs"
+        "crates/codex-smart-cli/src/prepare.rs",
+        "crates/codex-smart-core/src/native_inspection.rs",
+        "crates/codex-smart-core/tests/native_inspection.rs"
       ],
       "evidence": []
     },
