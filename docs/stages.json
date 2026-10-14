@@ -258,7 +258,8 @@
       "sources": [
         "docs/stages.json",
         "docs/documents.json",
-        "crates/codex-smart-core/src/preparation.rs"
+        "crates/codex-smart-core/src/preparation.rs",
+        "crates/codex-smart-core/src/preparation_supervision.rs"
       ],
       "evidence": []
     },
