@@ -15,6 +15,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [Roadmap](../ROADMAP.md) | engineering | generated | workflow |
 | [Security](../SECURITY.md) | security | current | hardening |
 | [Codex Smart — project brief and engineering backlog](../codex-smart-project-brief.md) | provenance | input | baseline |
+| [Adaptive split-host operator runbook](../docs/adaptive-operations.md) | benchmark | current | adaptive, benchmark |
 | [Architecture](../docs/architecture.md) | architecture | current | baseline, router, playbooks, adaptive, automation, distribution |
 | [Benchmark qualified-host and representative runner contract](../docs/benchmark-host.md) | benchmark | contract | benchmark |
 | [Development benchmark protocol](../docs/benchmarking.md) | benchmark | current | benchmark |
@@ -35,6 +36,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [External executable pin validation — 2026-10-06](../docs/diagnostics/2026-10-06-tools.md) | engineering | historical | tools |
 | [Bounded workflow validation — 2026-10-06](../docs/diagnostics/2026-10-06-workflow.md) | engineering | historical | workflow |
 | [Initial engineering diagnostic — 2026-10-06](../docs/diagnostics/2026-10-06.md) | engineering | historical | baseline |
+| [Adaptive orchestrator adversarial audit — 2026-10-14](../docs/diagnostics/2026-10-14-adaptive-orchestrator-audit.md) | benchmark | historical | adaptive, benchmark |
 | [Repository workflow normalization audit](../docs/diagnostics/2026-10-14-workflow-normalization.md) | engineering | historical | workflow |
 | [Distribution and release lifecycle target](../docs/distribution.md) | release | contract | playbooks, adaptive, automation, distribution, hardening, stable |
 | [Offline Doctor contract](../docs/doctor.md) | engineering | current | doctor |

@@ -663,6 +663,26 @@
       "stages": [
         "workflow"
       ]
+    },
+    {
+      "path": "docs/adaptive-operations.md",
+      "title": "Adaptive split-host operator runbook",
+      "owner": "benchmark",
+      "role": "current",
+      "stages": [
+        "adaptive",
+        "benchmark"
+      ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-14-adaptive-orchestrator-audit.md",
+      "title": "Adaptive orchestrator adversarial audit — 2026-10-14",
+      "owner": "benchmark",
+      "role": "historical",
+      "stages": [
+        "adaptive",
+        "benchmark"
+      ]
     }
   ]
 }

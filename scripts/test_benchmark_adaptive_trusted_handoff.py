@@ -60,6 +60,16 @@ class TrustedHandoffTests(unittest.TestCase):
         self.assertIn(self.remote, calls[2][-1])
         self.assertEqual(calls[2][-2], handoff.TRUSTED_ALIAS)
 
+    def test_forwarding_is_disabled_even_when_fake_config_enables_it(self):
+        config = self.root / "offline-ssh-config"
+        config.write_text("Host fake-grader\n Hostname 127.0.0.1\n CanonicalizeHostname no\n ForwardAgent yes\n ForwardX11 yes\n")
+        # -G resolves ONLY a disposable fixture: no connection or campaign credentials.
+        reply = subprocess.run([handoff.SSH, "-F", str(config), *handoff._ssh_options(self.known_hosts),
+                                "-G", "fake-grader"], check=True, capture_output=True, text=True, timeout=5)
+        values = dict(line.split(" ", 1) for line in reply.stdout.splitlines() if " " in line)
+        self.assertEqual(values["forwardagent"], "no")
+        self.assertEqual(values["forwardx11"], "no")
+
     def test_bad_host_key_and_missing_known_hosts_refuse(self):
         fake, _ = self.fake_run(fingerprint="SHA256:malicious")
         with self.assertRaisesRegex(handoff.GradingHandoffRefusal, "pin mismatch"):
