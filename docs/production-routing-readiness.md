@@ -293,3 +293,15 @@ receipt ingestion, semantic preparation, validation execution and runtime joins 
 [#94](https://github.com/AlexandrShapkin/codex-smart/issues/94). Comparative acceptance
 remains [#95](https://github.com/AlexandrShapkin/codex-smart/issues/95). Existing offline
 fixtures and policy floors do not authorize execution or prove savings.
+
+## Explicit supervised preparation CLI child (#100)
+
+The first child of #94 exposes one opt-in local acquisition attempt through `prepare`,
+sharing the accepted declarative inspection parser and calling the existing independently
+pinned worker supervisor. [Configuration](configuration.md#explicit-supervised-inspection-preparation)
+owns required authority inputs, bounds, payload-free outcomes and uncertainty limits.
+This joins file acquisition only; semantic sufficiency, capability/model compatibility,
+validation execution, durable recovery and production admission remain unready.
+Ordinary run and plan behavior remain unchanged. Independent technical review and
+exact-head CI/Security acceptance are still required; no stage or measurement advancement
+is inferred from offline regressions or this explicit local adapter.

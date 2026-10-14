@@ -93,7 +93,56 @@ A successful exit means the preview was rendered, not that execution is ready.
 `plan` is a reserved launcher command. Forward it to Codex with `codex-smart -- plan`
 or `codex-smart run -- plan`; ordinary run/implicit passthrough retains exact operator
 argv and configuration priority. The plan ignores configuration rather than adding a
-new configuration layer. Worker-backed preparation and runtime joins belong to
+new configuration layer. Explicit worker-backed preparation is documented below; residual runtime joins belong to
 [#94](https://github.com/AlexandrShapkin/codex-smart/issues/94); measurement acceptance
 belongs to [#95](https://github.com/AlexandrShapkin/codex-smart/issues/95). Neither is
 activated by the preview.
+
+## Explicit supervised inspection preparation
+
+`codex-smart prepare --intent inspection --worker /absolute/reviewed/worker
+--worker-sha256 INDEPENDENT_SHA256 --worker-protocol 1 [--file RELATIVE_PATH ...]`
+explicitly invokes the accepted local preparation worker once. Supply one independently
+reviewed executable path, its 64 hexadecimal SHA-256 characters and protocol 1;
+the command never discovers or hashes a candidate to create its own trust pin.
+Digest matching establishes artifact integrity against that declaration, not publisher
+authenticity. The operator independently trusts the executable and nominates public files.
+`prepare --help` renders the complete grammar without worker access.
+
+The command shares the declarative inspection parser, nomination bounds and typed plan
+with `plan`. Optional risk/safety declarations preserve policy floors; only a compatible
+inspection task selection admits acquisition (`--task edit|refactor|unknown` refuses).
+Native/model evidence remains Unknown. Protocol v1 carries inspection/file acquisition,
+not task-risk declarations: the parent retains the declared plan and uses the returned
+report only as acquisition evidence. It never admits model or validation execution.
+
+Optional `--deadline-ms` and `--cleanup-ms` independently lower the existing nonzero
+250 ms ceilings; defaults are 250 ms each. The acquisition cooperative budget is also
+lowered to the selected runtime deadline. File/count/byte ceilings remain the accepted
+16 files, 8192 bytes/file and 32768 total bytes. Preparation input is capped at 50
+option/value arguments and 20480 bytes, worker path at 1024 bytes; singleton runtime
+options cannot repeat. Invalid/unsafe input returns a bounded error without input values.
+The current absolute directory is the acquisition root; existing descriptor traversal,
+root and nomination rules apply. Configuration and PATH are never consulted.
+
+Only enums and counts are rendered: worker state/exit category, acquisition failure,
+unresolved obligations and declarative validation readiness. Source, paths, digests,
+wire bytes and stderr payloads are omitted. Exit 0 means supervised acquisition
+succeeded, including an empty nomination set; it never establishes semantic context
+sufficiency. Refusal, acquisition failure, timeout, protocol failure and CleanupUnknown
+exit 2. Semantic sufficiency stays Unknown and production admission closed. CleanupUnknown
+retains the existing process-lifetime ownership contract; CLI exit does not prove reaping
+and there is no durable cross-process recovery or automatic replay.
+
+Worker verification and spawn are outside the post-spawn deadline; this is neither an
+end-to-end real-time guarantee nor a hostile-code sandbox. The trusted artifact retains
+the caller's OS authority. All isolation, pin/protocol and cleanup limitations in
+[architecture](architecture.md#supervised-preparation-boundary-explicit-local-runtime)
+remain applicable. No retry, escalation, model, validation command, delegation,
+network, indexing or config/auth mutation is added. `plan` remains declarative.
+`prepare` is reserved; `codex-smart -- prepare` and `codex-smart run -- prepare`
+forward it through the ordinary unchanged Codex launch path.
+
+This bounded CLI join belongs to [#100](https://github.com/AlexandrShapkin/codex-smart/issues/100),
+the first child of #94. Independent technical acceptance and residual runtime gates
+remain open; it does not activate production routing or measurement.
