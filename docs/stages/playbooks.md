@@ -12,7 +12,7 @@ Read [workflow intelligence](../workflow-intelligence.md), [architecture](../arc
 
 ## Current state
 
-Router v2, accepted representative baseline `ffd8fbbc...`, privacy-preserving aggregate telemetry and all 0.4 Playbooks slices are delivered. #40 defines the typed archetype semantics; #41 adds the pure deterministic selector/resource planner; #42 adds bounded native validation recipes plus the complete enum-only explain surface. Generic edits are not guessed into an archetype, required native state fails closed, optional external state cannot substitute for native validation, and preparation remains declarative. No playbook code executes tools, prepares resources, changes production launch behavior or authorizes model calls. Adaptive execution, automation and distribution remain later stages.
+Router v2, accepted representative baseline `ffd8fbbc...`, privacy-preserving aggregate telemetry and all 0.4 Playbooks slices are delivered. #40 defines the typed archetype semantics; #41 adds the pure deterministic selector/resource planner; #42 adds bounded native validation recipes plus the complete enum-only explain surface. Generic edits are not guessed into an archetype, required native state fails closed, optional external state cannot substitute for native validation, and preparation remains declarative. No playbook code executes tools, prepares resources, changes production launch behavior or authorizes model calls. Adaptive policy is now implemented in the active adaptive stage; production adaptive execution, automation and distribution remain future work.
 
 ## Target state
 

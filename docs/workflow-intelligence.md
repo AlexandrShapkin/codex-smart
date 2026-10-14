@@ -89,8 +89,9 @@ levels, but that metadata is not execution evidence. The distinct three-executio
 profile smoke has now passed the accepted production grader for Economy/Medium,
 Standard/High and Strong/High. Execution evidence `908a97f1...` binds the exact
 trace/submission hashes and is accepted, so the profile mapping is execution-verified.
-The measured campaign still requires a separate explicit authorization and remains
-disabled until a reviewed live-runner boundary is merged.
+The offline-tested benchmark runner is merged in #83. The comparative campaign has
+not run and still requires separate explicit authorization and reviewed operational
+readiness. This is distinct from the unimplemented production routing adapter.
 
 The lifecycle report must measure quality, summed attempt tokens, total lifecycle latency,
 escalation count, failed-cheap attempts, strong-model-avoided and handoff count/overhead.

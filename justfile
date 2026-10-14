@@ -5,6 +5,10 @@ default:
 status:
     @python3 -B scripts/workflow.py repo-inspect
 
+# Declared local source/snapshot audit; no network, SSH, fetch, sync or cleanup.
+consistency-audit inventory sha:
+    @python3 -B scripts/workflow.py consistency-audit --inventory {{quote(inventory)}} --expected-sha {{quote(sha)}}
+
 # Explicit network fetch + new worktree; source checkout may be dirty/diverged.
 task-start branch destination sha:
     @python3 -B scripts/workflow.py task-start --branch {{quote(branch)}} --destination {{quote(destination)}} --expected-sha {{quote(sha)}}
