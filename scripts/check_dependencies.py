@@ -6,7 +6,7 @@ from pathlib import Path
 approved = {
     "libc": ("=0.2.189", []),
     "sha2": ("=0.11.0", []),
-    "toml_edit": ("=0.25.15", ["display", "parse"]),
+    "toml_edit": ("=0.25.17", ["display", "parse"]),
     "rustix": ("=1.1.5", ["fs", "process", "thread"]),
     "codex-smart-process": ("=0.1.0", []),
     "codex-smart-core": ("=0.1.0", []),

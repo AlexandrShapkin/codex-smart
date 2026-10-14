@@ -24,19 +24,32 @@ class DependencyTests(unittest.TestCase):
 
     def test_reviewed_pin(self):
         self.assertEqual(self.check(
-            '{version="=0.25.15", default-features=false, features=["parse","display"]}'
+            '{version="=0.25.17", default-features=false, features=["parse","display"]}'
         ), 0)
 
+    def test_unreviewed_versions_and_feature_sets_fail(self):
+        for version in ["=0.25.15", "0.25.17", "=0.25.18"]:
+            with self.subTest(version=version):
+                self.assertNotEqual(self.check(
+                    '{version="' + version + '", default-features=false, features=["parse","display"]}'
+                ), 0)
+        for features in ['["parse"]', '["display"]', '["parse","display","serde"]',
+                         '["parse","display","unbounded"]']:
+            with self.subTest(features=features):
+                self.assertNotEqual(self.check(
+                    '{version="=0.25.17", default-features=false, features=' + features + '}'
+                ), 0)
+
     def test_source_and_feature_overrides_fail(self):
-        base = 'version="=0.25.15", default-features=false, features=["parse","display"]'
+        base = 'version="=0.25.17", default-features=false, features=["parse","display"]'
         for extra in ['path="../../unreviewed"', 'git="https://example.invalid"',
                       'package="different-crate"', 'optional=true']:
             with self.subTest(extra=extra):
                 self.assertNotEqual(self.check('{' + base + ', ' + extra + '}'), 0)
-        self.assertNotEqual(self.check('{version="=0.25.15", features=["parse","display"]}'), 0)
+        self.assertNotEqual(self.check('{version="=0.25.17", features=["parse","display"]}'), 0)
 
     def test_root_patches_and_external_local_lock_entries_fail(self):
-        spec = '{version="=0.25.15", default-features=false, features=["parse","display"]}'
+        spec = '{version="=0.25.17", default-features=false, features=["parse","display"]}'
         self.assertNotEqual(self.check(spec, '[patch.crates-io]\nsha2={path="unreviewed"}\n'), 0)
         self.assertNotEqual(self.check(spec, lock='[[package]]\nname="sha2"\nversion="0.11.0"\n'), 0)
 
