@@ -76,3 +76,39 @@ The #43 adaptive state machine in `codex-smart-core::adaptive` is likewise pure 
 #45's `codex-smart-core::adaptive_delegation` adds a policy-only narrow delegation boundary, not a general multi-agent runtime. It allows only parent-originated read-only evidence or mechanical workspace subtasks with opaque bounded context/scope handles, explicit time/cost/output ceilings and mandatory parent revalidation. High-risk parents and explicit security, concurrency, destructive-migration, ambiguous-API or conflicting-evidence hazards are refused. Nested delegation is refused. Handoffs retain bounded evidence digests, child failures and protocol violations, but a successful child result remains advisory and can never complete the parent controller. No child process, network, authentication, source transfer or model call is launched by this layer.
 
 #44's `codex-smart-core::adaptive_routing` keeps provider/model identity outside policy. A caller-supplied compatibility catalog uses opaque provider/model handles plus independently verified availability and reasoning-support states. The pure resolver maps the controller's current profile/reasoning requirement to the minimally sufficient verified candidate; stronger verified fallback is allowed, lower capability and unknown compatibility are not. Catalog order cannot change the result and conflicting duplicate descriptors block. Production Codex argv application, actual retries and validation command execution remain future/evidence-gated work. #46 therefore uses a benchmark-only replay adapter built from the same core state machine/resolver; it does not change production `run`. The adapter has no authority to execute a model. Profile-smoke evidence is accepted in #82, and an offline-tested benchmark runner is merged in #83. The comparative campaign remains unexecuted and requires separate explicit authorization and reviewed operational readiness. Lifecycle operations never become model-routing decisions. Minimize expected total lifecycle cost subject to required quality, safety and verification, rather than single-call token count. See [workflow intelligence](workflow-intelligence.md), [distribution](distribution.md) and [ADR 0008](decisions/0008-deterministic-workflows.md). Production launch behavior remains unchanged.
+
+## Bounded native preparation adapter
+
+`codex-smart-core::preparation::prepare` is an explicit repository I/O boundary
+around an existing `WorkflowPlan` and its native validation recipe. It accepts
+caller-nominated relative file paths tagged with a playbook context obligation;
+it does not infer task intent, crawl directories, read manifests for commands or
+execute tools. Router assessment, playbook selection and validation planning remain
+in their existing modules. CLI `run`, `explain` and `doctor` remain unchanged.
+
+Hard ceilings are 16 requests, 8192 bytes per file, 32768 acquired bytes,
+1024 bytes per path, 16 relative path components and a 250 ms cooperative deadline.
+Callers can lower these limits. Requests are sorted; duplicate paths, traversal,
+absolute paths, irrelevant obligations and invalid limits are refused. Acquisition
+errors discard all snippets and preserve unresolved obligations and the independent
+validation recipe. Empty requests supply no evidence. Blocked plans refuse acquisition.
+Snippets carry relative provenance and SHA-256 of the exact UTF-8 bytes; source text
+has no Debug implementation and is never automatically logged or persisted.
+
+The Linux adapter uses descriptor-relative openat2 with no symlinks or magic links,
+pins each file with O_PATH before opening its verified regular-file descriptor through
+/proc/self/fd, and rejects hard links, special files, binary text and observed concurrent
+modification. Unsupported kernels/platforms and unavailable procfs fail safely.
+These checks are not a consistent repository snapshot or a sandbox against concurrent
+writers. The caller must nominate public repository files appropriate to the task;
+there is no credential discovery or automatic source upload. The root and filesystem
+must be operator-controlled. The deadline checks cannot interrupt a stalled kernel
+filesystem operation: hard wall time requires a future supervised adapter. No
+production launch should consume this adapter until that boundary is reviewed.
+
+Acquisition never establishes semantic sufficiency. All context obligations remain
+explicitly unresolved, including relevant-file coverage. Validation recipes expose
+existing obligation/native-readiness checks, not approved executable commands or
+validation passes. Remaining joins are reviewed intent/coverage evidence, trusted
+bounded validation argv and a separately opt-in single-attempt runtime; Adaptive
+routing, retries, command execution and comparative measurements remain pending.
