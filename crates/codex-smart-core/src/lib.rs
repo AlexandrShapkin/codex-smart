@@ -6,6 +6,7 @@ pub mod capability;
 pub mod config;
 pub mod doctor;
 pub mod migration;
+pub mod native_inspection;
 pub mod playbook;
 pub mod preparation;
 pub mod preparation_supervision;
