@@ -30,3 +30,10 @@ path/package/source overrides. No developer tool or LLVM component was installed
 Doctor now separates local checks from unprobed runtime readiness; use `doctor --json`
 for the schema-1 evidence report. No active probes or installers are invoked. See
 [the Doctor contract](doctor.md) for permissions, remote hints and index limits.
+
+The explicit local preparation worker additionally enables rustix's `thread` feature
+for safe no-new-privileges setup. The exact pin remains =1.1.5 with fs/process/thread;
+the direct dependency gate requires that exact feature set. CLI integration fixtures
+reuse the already locked rustix and sha2 versions as dev dependencies. No registry
+package/version/checksum was added or changed. These changes do not activate tools
+or modify host installations.

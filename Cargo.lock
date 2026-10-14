@@ -28,6 +28,8 @@ name = "codex-smart-cli"
 version = "0.1.0"
 dependencies = [
  "codex-smart-core",
+ "rustix",
+ "sha2",
 ]
 
 [[package]]

@@ -54,6 +54,12 @@ Diagnostics are offline/read-only by default and never execute discovered binari
 
 `explain` previews the reference Rust policy using explicit task hints and conservative capability evidence. `run` preserves exact Codex arguments and injects no profile or reasoning override. Router v2 composition, fallback, Playbooks and Adaptive policies are implemented and tested as pure contracts; their application to production execution remains unimplemented. See [routing](docs/routing.md) and [architecture](docs/architecture.md).
 
+A separate `codex-smart-preparation-worker` binary supports explicit core API
+`preparation_worker::run_local_preparation` calls for bounded, nominated local
+inspection files. It requires an independently trusted artifact SHA-256; it is never
+selected by CLI startup or routing. See the [worker contract](docs/architecture.md#supervised-preparation-boundary-explicit-local-runtime)
+for protocol, actual post-spawn supervision and remaining containment limits.
+
 ## Development
 
 Start with `just context [STAGE]` and `just issues`; validate with `just check`. See the [development guide](docs/development.md) for prerequisites and [workflow](docs/workflow.md) for documentation ownership. Security checks use `just security-fetch` for the explicit public advisory refresh, then `just security`.

@@ -127,14 +127,21 @@ refusal behavior and filesystem/time limitations. This closes the missing bounde
 file-acquisition primitive, not semantic coverage, CLI integration or hard supervised
 timeouts. Context sufficiency remains unknown; no measured savings are claimed.
 
-The next supervised preparation increment delivers a pure supervision policy and
-per-obligation acquisition review view. Runtime admission remains closed for all
-worker facts; a hard timeout adapter and semantic review authority are still absent.
-[Architecture](architecture.md#supervised-preparation-boundary-policy-only-slice)
-owns the precise policy, cleanup uncertainty, platform limitations and next runtime
-join. Validation argv planning is deferred because the existing recipes do not
-approve executable commands. Offline policy tests do not establish runtime timing
-or efficiency evidence.
+The next increment adds a working Linux process-isolated preparation worker and
+explicit local supervisor, based on accepted main `b6b41c5814fd21549bae6fcc042d10b3a1c20fd2`
+(#90). Production runtime admission remains closed. Independently pinned descriptor
+execution, bounded versioned transport and parent-owned post-spawn deadlines are
+implemented for inspection-only requests, without validation/model/SSH operations.
+[Architecture](architecture.md#supervised-preparation-boundary-explicit-local-runtime)
+owns protocol, session ownership and limits. This smaller working boundary does not
+implement hostile-code syscall confinement, cross-process lifetime ownership or
+bounded verification/spawn, and therefore cannot activate production routing.
+Semantic review authority and validation argv remain deferred. Real offline worker
+and fake-worker tests establish local behavior, not efficiency or model-quality evidence.
+Live issue reconciliation/CI acceptance remains external; no issue, benchmark or
+production acceptance is advanced by this local slice.
+
+Historical verification of #90's policy-only slice follows (not this runtime's results).
 
 Local verification of this policy slice used base
 `4c54b9bacd62e924f378ec745ef6d32415ad6079` in the existing isolated task
@@ -154,3 +161,37 @@ No gate was weakened or cache/mount bypassed. GitHub main observation exited 128
 because github.com could not resolve; remote freshness and live issue state remain
 unverified. Git metadata is read-only, so the result is an uncommitted review diff;
 these local results do not establish exact-head CI/Security acceptance.
+
+## Local preparation runtime verification
+
+The worker/runtime diff starts from accepted main
+`b6b41c5814fd21549bae6fcc042d10b3a1c20fd2` on
+`feat/supervised-preparation-worker` in the existing isolated checkout. Base freshness
+was independently supplied by the parent session; no network observation was attempted.
+Local workspace Cargo tests and nextest each passed 183 tests (exit 0, no skips).
+Focused protocol/acquisition tests and real/fake worker integration checks passed;
+post-spawn bounds are asserted with a 100 ms scheduler allowance, including a worker
+that never reads a request larger than the pipe capacity. Success, failed exits,
+late responses, floods, unsolicited/partial/mismatched messages, inherited descriptors,
+unsafe nominations, pin mismatch and concurrent admission are covered. Generated
+fake-worker fixtures use the Rust 1.98 Linux default LLD-compatible linker with a
+one-thread cap; alternative linker configurations were not verified. No actual
+uninterruptible kernel-I/O worker was induced; policy tests cover CleanupUnknown.
+Formatter, clippy with warnings denied, locked offline workspace build,
+docs-generate/docs-check and diff whitespace checks passed (exit 0). Generated roadmap
+and index content remained unchanged; Adaptive source pointers were extended.
+
+`CARGO_NET_OFFLINE=true just check` exited 1 after 295 Python tests: 294 passed and
+the existing `test_main_sends_verdict_only_over_private_unix_socket` failed at
+`listener.bind` with `PermissionError: [Errno 1] Operation not permitted`. All Rust
+gates were therefore run independently. `CARGO_NET_OFFLINE=true just security`
+exited 1: dependency provenance passed (same 30 registry packages), but cargo-deny
+could not acquire `/home/user/.cargo/advisory-dbs/db.lock` on the read-only path.
+No policy/test/cache bypass or advisory refresh occurred.
+
+Git reports effective write access false for both this worktree's index and metadata
+directory. Changes are intentionally unstaged and uncommitted; no publication or
+live issue update occurred. These local results are not exact-head CI/Security
+acceptance. Next action: independent review of this local-only boundary and its
+missing confinement guarantees, followed by the unchanged check/security gates in
+a writable, socket-capable CI environment before considering integration.

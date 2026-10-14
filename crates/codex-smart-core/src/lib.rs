@@ -9,6 +9,8 @@ pub mod migration;
 pub mod playbook;
 pub mod preparation;
 pub mod preparation_supervision;
+pub mod preparation_wire;
+pub mod preparation_worker;
 pub mod process;
 pub mod routing;
 pub mod tool_lock;

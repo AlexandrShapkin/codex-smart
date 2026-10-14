@@ -14,6 +14,14 @@ Read [workflow intelligence](../workflow-intelligence.md), [architecture](../arc
 
 Pure Router v2 policy, the passthrough Codex launcher and Playbooks 0.4 contracts are delivered; native-first instruction results belong to the separate accepted benchmark. #43 now adds a pure bounded adaptive controller contract on top of a ready workflow plus ready validation recipe. It preserves workflow profile/reasoning floors, starts high-risk/security work at `Strong/High`, records every attempt outcome, requires independent validation before completion, and exposes explicit `Ready`/`Running`/`AwaitingValidation`/`NeedsEvidence`/`Completed`/`Blocked`/`Exhausted` states. #44 now adds a pure replaceable compatibility resolver: product policy keeps opaque `Economy`/`Standard`/`Strong` classes separate from provider/model identity; caller-supplied model descriptors must independently verify availability and Medium/High reasoning support. Resolution chooses the minimally sufficient verified class, may use a verified stronger class as a quality-safe fallback, and never treats Unknown as ready. Re-running resolution after a #43 transition supplies progressive routing without embedding commercial model names. #45 adds a separate policy-only single-child ledger for bounded read-only evidence or mechanical workspace subtasks: opaque context/scope handles, explicit time/cost/output ceilings, no nesting, fail-closed high-risk/hazard checks, retained failures/protocol violations and advisory handoffs that require parent review. Production argv/runtime application, actual retry execution and child-process execution remain unimplemented pending evidence. For #46, a benchmark-only Rust replay adapter now exercises the actual #43/#44 policy over the same ten representative scenarios. The frozen adaptive measurement uses two repetitions, at most two attempts per job and one retry, so 20 adaptive jobs can start at most 40 Codex executions. The profile map is Economy → `gpt-6-luna`, Standard → `gpt-6-sol`, Strong → `gpt-6-astra`. The separately authorized 3-execution profile smoke completed with zero retries; all three profiles exported submissions and passed production grading. Execution evidence `908a97f1...` is accepted as the profile-mapping execution proof. The accepted representative baseline remains `ffd8fbbc...`.
 
+The explicitly invoked local preparation runtime now provides a dedicated Linux
+worker, independently pinned descriptor execution, bounded inspection-only protocol
+and actual parent supervision. It is a process-isolated offline evidence adapter,
+not a hostile-code sandbox or production Adaptive/model runtime. See the
+[architecture boundary](../architecture.md#supervised-preparation-boundary-explicit-local-runtime)
+for post-spawn timing limits and process-lifetime cleanup ownership. Production
+admission, retries, validation command execution and benchmark acceptance stay closed.
+
 ## Target state
 
 A bounded typed controller contract plus verified runtime adapters for progressive reasoning/model escalation, retries, validation feedback, handoffs and completion.
@@ -73,15 +81,17 @@ Next dependent stage begins after explicit acceptance. Unresolved quality, secur
 An explicit core adapter now acquires nominated local file evidence and reuses the
 existing validation recipe. [Architecture](../architecture.md#bounded-native-preparation-adapter)
 owns limits, fail-safe behavior and remaining runtime joins. Production passthrough,
-measurement acceptance and stage status remain unchanged; hard supervised deadlines,
-semantic sufficiency and approved validation execution remain follow-up work.
+measurement acceptance and stage status remain unchanged. The local worker adds
+post-spawn supervision; semantic sufficiency and approved validation execution remain
+follow-up work.
 
-### Supervision policy increment
+### Supervision runtime increment
 
-The preparation supervision policy and deterministic per-obligation acquisition
-report are implemented offline. Runtime admission always refuses; no hard deadline,
-worker process or semantic coverage authority is implemented. Validation argv is
-entirely deferred pending approved command contracts. The
-[architecture boundary](../architecture.md#supervised-preparation-boundary-policy-only-slice)
-owns limitations and the next worker/protocol slice. This does not advance stage
-acceptance, live issue state, production routing or measurement evidence.
+The supervision policy now drives an actual pinned Linux preparation worker with
+bounded transport and a parent deadline after successful spawn. The per-obligation
+report still confers no semantic coverage authority. Production admission always
+refuses; validation argv is deferred pending approved command contracts. The
+[architecture boundary](../architecture.md#supervised-preparation-boundary-explicit-local-runtime)
+owns implemented behavior and missing confinement/verification/spawn guarantees.
+This does not advance stage acceptance, live issue state, production routing or
+measurement evidence.

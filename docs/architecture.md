@@ -103,47 +103,112 @@ These checks are not a consistent repository snapshot or a sandbox against concu
 writers. The caller must nominate public repository files appropriate to the task;
 there is no credential discovery or automatic source upload. The root and filesystem
 must be operator-controlled. The deadline checks cannot interrupt a stalled kernel
-filesystem operation: hard wall time requires a future supervised adapter. No
-production launch should consume this adapter until that boundary is reviewed.
+filesystem operation: post-spawn enforcement requires the explicit local supervisor
+below. No production launch should consume this adapter until that boundary is reviewed.
 
 Acquisition never establishes semantic sufficiency. All context obligations remain
 explicitly unresolved, including relevant-file coverage. Validation recipes expose
 existing obligation/native-readiness checks, not approved executable commands or
 validation passes. Remaining joins are reviewed intent/coverage evidence, trusted
-bounded validation argv and a separately opt-in single-attempt runtime; Adaptive
+bounded validation argv and production runtime integration; Adaptive
 routing, retries, command execution and comparative measurements remain pending.
 
-### Supervised preparation boundary: policy-only slice
+### Supervised preparation boundary: explicit local runtime
 
-`preparation_supervision` models one worker with independently verified identity,
-protocol, containment and termination facts. Unknown facts refuse admission; denied
-facts take precedence. `runtime_admission` always returns `RuntimeUnavailable` even
-when every fact is verified. There is no preparation worker binary, transport,
-spawn, OS timer, kill or reap implementation in this slice. The existing acquisition
-adapter still has only its cooperative deadline; no hard wall-time guarantee is
-claimed and production consumption remains prohibited.
+The dedicated `codex-smart-preparation-worker` binary and explicit core API
+`preparation_worker::run_local_preparation` implement one Linux child process around
+`preparation::prepare`. Ordinary CLI run/explain/doctor never invoke this API. The
+initial accepted intent is Inspection and the only accepted nomination obligation
+is RelevantFiles. The existing Router assessment, workflow planner, default unknown
+native surface and validation recipe are reused. All obligations remain unresolved;
+no validation command, model, tool, SSH or network operation is implemented.
 
-The pure policy accepts a monotonic elapsed-time observation and cumulative wire
-output count. It limits modeled acquisition time to 250 ms, cleanup to a further
-250 ms and wire output to 65536 bytes (source ceilings remain those above). Deadline
-expiry, output overflow or regressing observations request termination and
-nonblocking reap polling. Success requires both a verified response and successful
-reap strictly before the deadline. Cancellation cannot become success. At the fixed
-cleanup ceiling, unreaped workers remain `CleanupUnknown`; terminal observations
-cannot reopen the attempt. There is one worker slot, no retry and constant ledger
-space. Tests simulate observations; they do not test an OS supervisor.
+This is a smaller functioning process-isolation slice, **not a hostile-code sandbox**.
+The independently trusted worker artifact is the authority boundary. Worker startup
+requires an empty environment, refuses inherited descriptors beyond stdio (other than
+its temporary procfs listing descriptor), sets no-new-privileges and caps core dumps
+at zero, CPU at one second, address space at 128 MiB, descriptors at 32 and NPROC at
+zero. NPROC does not prevent root from forking and these limits do not deny exec,
+network or arbitrary filesystem syscalls. There is no seccomp, namespace, cgroup or
+Landlock confinement. The dedicated reviewed worker contains no command-launch,
+model or networking path; replacing it with an arbitrary pinned binary grants that
+binary the caller's OS authority. Dynamic loader and system libraries are also trusted.
+These missing guarantees prohibit production admission. The pure #90
+`runtime_admission` still returns RuntimeUnavailable even for all-Verified facts.
 
-A reviewed runtime needs a dedicated pinned worker executable and bounded/versioned
-request-response protocol around the acquisition adapter, trusted OS argv, a
-parent-owned monotonic timer, bounded nonblocking transport, worker containment and
-bounded termination/reap handling. Reusing the passthrough Codex launcher or running
-filesystem I/O in an uncancellable thread cannot provide that guarantee. Linux
-uninterruptible kernel I/O may delay SIGKILL and reaping indefinitely: caller return
-must remain bounded independently, cleanup uncertainty must be retained, and a
-supervisor must prevent further workers while one remains unreaped. Other platforms
-need independently reviewed containment/termination adapters and otherwise refuse.
-Spawn and executable verification can themselves involve filesystem operations;
-review must cover those before claiming an end-to-end wall-time bound.
+The separate private `admit_pinned_local_worker` gate requires Linux openat2 and
+procfs, plus a caller-specified trusted absolute executable, independently recorded
+32-byte SHA-256 and protocol version 1. It never discovers PATH, reads project config,
+or creates a pin from a candidate. It uses O_PATH/no-symlink descriptor traversal,
+refuses special files, hardlinks, foreign ownership (only root or effective UID),
+group/world write and special mode bits, then opens the pinned regular descriptor
+through procfs. Only ELF files up to 64 MiB are accepted. Bounded streaming hashing
+and metadata rechecks precede invocation of that same descriptor with OS arguments,
+empty environment, cwd `/` and three pipes. Holding the descriptor removes pathname
+replacement races; the operator must still exclude concurrent inode writers and
+control the root/filesystem. Ancestor-directory permission ownership is not certified.
+No candidate content or protocol source is logged or given a Debug implementation.
+Sensitive-name nominations are refused in the shared acquisition boundary, including
+.env variants, .git/.ssh/.aws/.codex/.gnupg directories, auth/credential files and
+private-key names/extensions. This is not semantic secret detection: public task-file
+nomination remains the caller's responsibility.
+
+The parent drives #90's SupervisionPolicy using its own Instant clock, actual cumulative
+output and actual try_wait results. Runtime and cleanup are each caller-lowered
+nonzero budgets of at most 250 ms, with one nonblocking read per output pipe and one nonblocking write
+per iteration, separated by at most a 1 ms requested sleep. Stdout retention is capped
+at 65536 bytes; any stderr, malformed response or exhaustion cancels the attempt.
+Success requires the complete exact response, EOF on both pipes, successful reap and
+elapsed time strictly below the deadline. Late responses cannot restore success.
+The parent sends SIGKILL directly, polls reaping without wait/wait_with_output and
+returns at the fixed deadline-plus-cleanup ceiling even if the child remains in
+uninterruptible kernel I/O. CleanupUnknown remains an honest terminal uncertainty.
+This is a post-successful-spawn bound subject to OS scheduling and finite processing
+per tick, not a real-time or end-to-end wall-clock guarantee: executable verification,
+procfs/filesystem operations and spawn itself may block before that clock starts.
+
+One process-wide mutex slot serializes these explicit calls. Busy callers refuse;
+there is no retry or second simultaneous worker. An unreaped Child remains owned in
+the process-lifetime slot even after return or unwinding. Later calls may kill and
+try_wait that child but cannot launch until reaping is proven. At most one verified executable descriptor is also retained until the next
+pre-spawn admission, keeping filesystem close/release operations out of the timed
+loop and caller return path. No background reaper is started; a dropped/inactive caller does not erase uncertainty. Parent process exit
+is the end of this ownership contract; cross-process exclusion and crash recovery
+are not implemented. The trusted worker does not fork; descendant containment for an
+arbitrary replacement artifact is not claimed. Policy tests model unreapable children;
+integration tests exercise real success, cancellation, noncooperation, late output,
+protocol errors, floods, descriptor refusal and absence of observable child leakage.
+
+#### Wire protocol version 1
+
+All integers are unsigned big-endian u32. A frame is an 8-byte magic (`CSPREQ`, NUL,
+version byte 1 for requests; `CSPRES`, NUL, 1 for responses), payload length and exactly
+that payload, followed by EOF. Total request length is at most 18432 bytes; total
+response length is at most 65536 bytes. Strings are u32 length plus strict UTF-8
+without NUL. Decoders check ceilings before allocations and reject unknown versions,
+trailing/partial messages, oversized counts, invalid intent/obligation and encoding.
+The worker consumes at most request-limit-plus-one bytes, not unbounded stdin.
+
+Request payload: intent byte 1 (Inspection); root string (absolute, at most 1024
+bytes/32 components); u32 files/file_bytes/total_bytes/elapsed_ms limits; u32 nomination
+count; then for each nomination obligation byte 1 (RelevantFiles) and relative path
+string (at most 1024 bytes/16 components). Existing hard acquisition ceilings apply:
+16 files, 8192 bytes/file, 32768 total bytes and 250 ms cooperative acquisition time.
+Only integer millisecond acquisition budgets are accepted. There are no command,
+executable, URL or native-readiness fields. The root must be an operator-controlled
+public repository; filesystem confinement and sensitive-file policy remain in prepare.
+
+Response payload: SHA-256 of the entire request frame (32 raw bytes); failure byte;
+u32 snippet count; then lexically sorted nominated path string, text string and
+SHA-256 of exact text (32 raw bytes) for each snippet. Failure 0 means acquisition
+success; codes 1–10 map to InvalidLimits, MissingIntent, BlockedPlan, InvalidRequest,
+UnsafeOrMissingFile, FileLimit, ByteLimit, Deadline, InvalidText, UnsupportedPlatform.
+Failures require zero snippets; success requires exactly every nomination in order.
+The parent independently checks binding, counts, names, digests, text and request
+byte ceilings, and reconstructs the same unresolved obligations/validation recipe
+from the deterministic workflow. A successful process can report an acquisition
+refusal; that does not become acquired evidence. Source snippets reach only the
+explicit caller. No transcript or diagnostic source retention is automatic.
 
 `Preparation::context_evidence(plan)` supplies a deterministic enum-only row for
 every selected playbook obligation, including blocked acquisition. Each row records

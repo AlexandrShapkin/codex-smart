@@ -245,3 +245,24 @@ fn obligation_evidence_distinguishes_acquisition_from_coverage_and_refusal() {
             && entry.acquisition == AcquisitionEvidence::Refused(result.failure.unwrap())));
     }
 }
+
+#[test]
+fn sensitive_nominations_are_refused_by_the_shared_acquisition_boundary() {
+    let f = Fixture::new();
+    for path in [
+        ".env",
+        ".env.local",
+        ".aws/credentials",
+        ".git/config",
+        ".ssh/id_rsa",
+        "auth.json",
+        "private.pem",
+        "private.key",
+    ] {
+        fs::write(f.0.join(".env"), "fixture-only public text").unwrap();
+        assert_eq!(
+            f.run(&[path], Limits::default()).failure,
+            Some(Failure::InvalidRequest)
+        );
+    }
+}

@@ -259,7 +259,11 @@
         "docs/stages.json",
         "docs/documents.json",
         "crates/codex-smart-core/src/preparation.rs",
-        "crates/codex-smart-core/src/preparation_supervision.rs"
+        "crates/codex-smart-core/src/preparation_supervision.rs",
+        "crates/codex-smart-core/src/preparation_wire.rs",
+        "crates/codex-smart-core/src/preparation_worker.rs",
+        "crates/codex-smart-cli/src/preparation_worker.rs",
+        "crates/codex-smart-cli/tests/preparation_worker.rs"
       ],
       "evidence": []
     },
