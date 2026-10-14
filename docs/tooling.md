@@ -8,12 +8,23 @@ GitHub account/repository access checked without retaining auth output. Context7
 
 `code-graph-smart` is a shell wrapper with `npx -y -p @sdsrs/code-graph` fallback; direct `code-graph-mcp` absent. Initial help invocation attempted network/cache writes and failed on read-only npm cache. This is recorded as a legacy wrapper risk, not a supported offline capability. Runtime doctor/explain do not invoke it. No packages were installed.
 
-Versions above are an engineering observation, not runtime pins or compatibility guarantees. Pinning and handshake matrix are tracked separately. Official Codex contract sources: https://developers.openai.com/codex/cli/reference/ and https://developers.openai.com/codex/config-reference/ . Installed CLI help confirms argument-array `--config` overrides. Avoid legacy profile assumptions: installed 0.160.0 describes layered profile files.
+On 2026-10-15, the operator verified Codex CLI 0.162.1 on the developer host.
+The 0.160.0 observation above is dated 2026-10-06, not the current host version.
+Neither observation attests a discovered runtime artifact, model compatibility,
+authentication or health. The independently reviewed 0.160.0 source contract remains
+a separate reference in [tool compatibility](tool-compatibility.md).
 
-Config slice: toml_edit =0.25.15 (parse/display only), rustix =1.1.5 (fs/process; Linux). Cargo.lock pins transitive crates with registry checksums. One missing crate, toml_writer 1.1.2+spec-1.1.0, was fetched from static.crates.io and SHA-256 matched to Cargo.lock in an isolated /tmp Cargo cache. No tool/global config/auth installation occurred. yq 4.54.1 is installed and validates workflow/template/Dependabot YAML syntax locally. Public RustSec advisories were explicitly refreshed for cargo-deny; duplicate cargo-audit scanning is unnecessary for this gate.
+Versions above are an engineering observation, not runtime pins or compatibility guarantees. Pinning and handshake matrix are tracked separately. Official Codex contract sources: https://developers.openai.com/codex/cli/reference/ and https://developers.openai.com/codex/config-reference/ . The 2026-10-06 installed CLI help confirmed argument-array `--config` overrides. Avoid legacy profile assumptions: the observed 0.160.0 described layered profile files.
+
+Original 2026-10-06 config slice: toml_edit =0.25.15 (parse/display only), rustix =1.1.5 (fs/process; Linux). Cargo.lock pins transitive crates with registry checksums. One missing crate, toml_writer 1.1.2+spec-1.1.0, was fetched from static.crates.io and SHA-256 matched to Cargo.lock in an isolated /tmp Cargo cache. No tool/global config/auth installation occurred. yq 4.54.1 is installed and validates workflow/template/Dependabot YAML syntax locally. Public RustSec advisories were explicitly refreshed for cargo-deny; duplicate cargo-audit scanning is unnecessary for this gate.
 
 
 ## Current runtime evidence and pins
+
+The accepted direct TOML pin is now `toml_edit =0.25.17`, default features disabled,
+parse/display only, through merged PR #108 at
+`c47c61880c2f791241134c0b5c5283553f757f15`. Issue #104 is completed and
+bot PR #97 closed without merge; [provenance](provenance.md) retains the review evidence.
 
 Issue #7 adds [the explicit compatibility/evidence contract](tool-compatibility.md).
 Availability, declared version, reference compatibility and readiness are separate typed

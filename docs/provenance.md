@@ -8,14 +8,22 @@ Preserved input: `codex-smart-project-brief.md`, SHA-256 `eb73025973d0da73c2d2d2
 
 Future archives go in an isolated provenance store, with checksum manifest, source version evidence and license review; never in new core modules. No known old defect is claimed reproduced without a baseline; tests instead cover the reported failure contracts (read-only explain, no hidden installs, no shell injection, capability honesty).
 
-## Issue #104: exact TOML dependency candidate (2026-10-15)
+## Issue #104: accepted exact TOML dependency update (2026-10-15)
 
-Accepted main independently observed through native GitHub API, native HTTPS
+The reviewed `toml_edit =0.25.17` update was accepted through merged
+[PR #108](https://github.com/AlexandrShapkin/codex-smart/pull/108) at
+`c47c61880c2f791241134c0b5c5283553f757f15`.
+[Issue #104](https://github.com/AlexandrShapkin/codex-smart/issues/104) is completed;
+bot PR #97 was closed without merge. The following records the investigation and
+validation preceding acceptance, not a pending dependency proposal.
+
+The investigation base on accepted main was independently observed through native
+GitHub API, native HTTPS
 `git ls-remote`, and governed task-start:
-`9f5a9a359c03e58fd1980cffefb2191ff34a2abc`. Investigation uses the separate
+`9f5a9a359c03e58fd1980cffefb2191ff34a2abc`. Investigation used the separate
 `chore/issue-104-toml-review-20261015` worktree. Legacy Dependabot
 [#97](https://github.com/AlexandrShapkin/codex-smart/pull/97), head
-`1610127bc34a721006c970ddf0f3e82d1a70ef12`, supplies a proposal, not approval.
+`1610127bc34a721006c970ddf0f3e82d1a70ef12`, supplied a proposal, not approval.
 
 Official `https://index.crates.io/to/ml/<crate>` records and independently downloaded
 `https://static.crates.io/crates/<crate>/<crate>-<version>.crate` archives agree with
@@ -62,7 +70,7 @@ roundtrip, malformed syntax/duplicate keys and generated key encoding. Existing
 transaction tests remain the write/rollback safety gate. No benchmark scripts,
 frozen manifests, source/evidence pins or deployed bytes are changed; historical
 pins identify their original source, not this candidate. ADR-0005 records the
-original accepted pin; this candidate is not accepted until independent review.
+original accepted pin; PR #108 records acceptance of this reviewed update.
 
 The initial offline cache blocker was resolved by the owner's explicit authorization
 of `cargo fetch --locked` on resumption. Installed Rust/Cargo 1.98 performed that
@@ -78,7 +86,7 @@ explicitly refreshed advisory cache. `CARGO_NET_OFFLINE=true just check` passes
 `CARGO_NET_OFFLINE=true just nextest` passes all 207 tests with none skipped.
 `just docs-check` and `git diff --check` pass. Existing private Unix socket/process
 tests ran through supported host approval without changing permissions or assertions.
-Keep #104 and #97 open; independent ChatGPT and owner acceptance, exact-head
-CI/check and Security/review app 15368 remain required. This owner candidate
-supersedes the proposed dependency scope of #97 only after acceptance; the bot
-branch and PR are preserved until the owner authorizes their eventual disposition.
+At the end of that investigation, independent ChatGPT/owner acceptance and exact-head
+CI/check and Security/review app 15368 were still required. Those were review gates
+before acceptance, not current open conditions. The accepted owner update in #108
+superseded #97's dependency proposal; #104 is completed and #97 closed without merge.

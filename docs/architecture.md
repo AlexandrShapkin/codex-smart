@@ -1,6 +1,6 @@
 # Architecture
 
-Two crates: `codex-smart-core` holds typed capability inventory, policy, config, migration and process planning; `codex-smart-cli` holds argument parsing and output. No second agent, custom MCP, vector database or local model.
+Three workspace crates: `codex-smart-core` holds typed capability inventory, policy, config, migration and process planning; `codex-smart-cli` holds argument parsing, output and the `codex-smart` and `codex-smart-preparation-worker` binaries; `codex-smart-process` is the narrow Linux helper for the audited child-only descriptor-isolation hook. Core and CLI forbid unsafe code; the helper permits it only in that hook. No second agent, custom MCP, vector database or local model.
 
 Level A prepares capabilities, risk, reasoning and auditable fallback. Level B is one Codex session deciding implementation and verification. Explicit task hints precede costly discovery. Pure decisions accept an inventory; host adapters never leak into unit tests.
 
@@ -33,10 +33,12 @@ to explicitly requested Codex launches; see [ADR-0007](decisions/0007-owned-exec
 and [the command/transport matrix](tool-compatibility.md). No handshake or installer is
 part of normal startup. Hash verification narrows execution races without eliminating them.
 
-## Future target: two deterministic planes
+## Delivered policies and future runtime: two deterministic planes
 
-The implemented architecture above remains the current behavior. The roadmap target
-adds workflow intelligence without a second general autonomous agent:
+The pure Router v2, Playbooks and Adaptive policies below are implemented. Public
+`plan` previews inspection intent and explicit `prepare` performs one supervised
+local acquisition attempt. Production `run` remains passthrough; the complete execution
+and lifecycle planes remain a roadmap target without a second general autonomous agent:
 
 ```text
 Execution plane
