@@ -8,7 +8,7 @@ An independent thin Rust compatibility/policy and capability layer for the exter
 
 ## Status
 
-**Pre-1.0: 0.1.0, unreleased.** Foundation, workflow, tool pins and offline diagnostics have validated slices. Router v2 is planned; current routing is not yet benchmark-proven. No production support guarantee or published package is claimed. See the [roadmap](ROADMAP.md).
+**Pre-1.0: 0.1.0, unreleased.** Foundation, workflow, tool pins and offline diagnostics have validated slices. Pure Router v2 and Playbooks policies are delivered; Adaptive policy contracts are implemented, while the comparative adaptive campaign has not run. Production `run` remains passthrough. No production support guarantee or published package is claimed. See the [roadmap](ROADMAP.md).
 
 ## Why codex-smart
 
@@ -40,9 +40,19 @@ After building, use `target/debug/codex-smart` or `cargo run -p codex-smart-cli 
 | --- | --- |
 | `doctor` | Offline capability and configuration diagnostics |
 | `explain --task architecture` | Inspect a routing preview without execution |
+| `plan --intent inspection [--file RELATIVE_PATH ...]` | Declarative inspection workflow preview; no acquisition or execution |
+| `prepare --intent inspection --worker ABSOLUTE_PATH --worker-sha256 INDEPENDENT_SHA256 --worker-protocol 1 [--file RELATIVE_PATH ...]` | One explicit supervised local acquisition attempt |
 | `config show` | Inspect separate codex-smart configuration |
 | `run --dry-run -- [codex args...]` | Plan an explicit launch |
 | `run -- [codex args...]` | Launch Codex with unchanged OS arguments |
+
+`plan` also accepts `--task inspect|edit|refactor|unknown`, `--risk low|medium|high`
+and `--safety none|security|migration|concurrency`; conflicting or unknown task hints
+leave the workflow unselected. `prepare` shares those declarations but requires a
+compatible inspection selection (omit `--task` or use `--task inspect`). Its optional
+`--deadline-ms` and `--cleanup-ms` each accept 1–250 and default to 250. File nominations
+are relative to the current directory; singleton options and file nominations cannot
+repeat. See `plan --help`, `prepare --help` and the [configuration contract](docs/configuration.md).
 
 Other non-reserved arguments pass through; `codex-smart -- doctor` forwards a reserved name to Codex. See [configuration](docs/configuration.md) for explicit dry-run/apply/rollback and [tool pins](docs/tool-compatibility.md) for optional `--tool-lock FILE`.
 
@@ -54,10 +64,15 @@ Diagnostics are offline/read-only by default and never execute discovered binari
 
 `explain` previews the reference Rust policy using explicit task hints and conservative capability evidence. `run` preserves exact Codex arguments and injects no profile or reasoning override. Router v2 composition, fallback, Playbooks and Adaptive policies are implemented and tested as pure contracts; their application to production execution remains unimplemented. See [routing](docs/routing.md) and [architecture](docs/architecture.md).
 
-A separate `codex-smart-preparation-worker` binary supports explicit core API
-`preparation_worker::run_local_preparation` calls for bounded, nominated local
-inspection files. It requires an independently trusted artifact SHA-256; it is never
-selected by CLI startup or routing. See the [worker contract](docs/architecture.md#supervised-preparation-boundary-explicit-local-runtime)
+The public `plan` and `prepare` commands accept only explicit inspection intent.
+`plan` leaves capability evidence and semantic coverage Unknown and grants no execution
+authority. `prepare` invokes the separate `codex-smart-preparation-worker` through
+`preparation_worker::run_local_preparation` once for bounded, nominated public local
+files. It requires an absolute worker path, independently trusted artifact SHA-256
+and protocol 1; it is never selected by CLI startup or routing. Semantic sufficiency
+remains Unknown and production admission stays closed. See the
+[command contracts](docs/configuration.md#explicit-supervised-inspection-preparation)
+and [worker contract](docs/architecture.md#supervised-preparation-boundary-explicit-local-runtime)
 for protocol, actual post-spawn supervision and remaining containment limits.
 
 ## Development

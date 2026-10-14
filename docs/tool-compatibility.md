@@ -23,13 +23,18 @@ fallback can invoke unpinned `npx -y`. Presence and hash equality cannot make it
 
 | Capability | Version evidence/reference | Command / transport | Launcher ownership and readiness |
 | --- | --- | --- | --- |
-| Codex | Observed 0.160.0; exact release source reference | OS argv for interactive CLI or `exec`; inherited terminal/stdin/stdout | Only owned external launch. Optional explicit artifact pin; runtime/auth readiness unverified. No profile or reasoning injection. |
+| Codex | 2026-10-06 observation: 0.160.0; operator-verified developer host on 2026-10-15: 0.162.1; independently reviewed 0.160.0 source reference | OS argv for interactive CLI or `exec`; inherited terminal/stdin/stdout | Only owned external launch. Optional explicit artifact pin; runtime/auth readiness unverified. No profile or reasoning injection. |
 | Rust / Cargo | Local and CI 1.98.0, workspace minimum 1.98 | Developer build/test CLI through just | Build tooling only; runtime discovery never executes it or asserts compatibility. |
 | Git / rg / gh | Engineering observations in tooling.md; runtime versions unknown | Developer native CLI; `just issues` explicitly calls gh online | No runtime execution/pins managed by codex-smart. Discovery is metadata only. |
 | Serena | Observed 1.7.0; exact release CLI source reference | Reference `start-mcp-server`; stdio default, SSE and streamable HTTP options | No launcher invocation or runtime pin. MCP/auth/project readiness unknown. |
 | Direct CodeGraph | Runtime/reference version unknown | CLI/MCP commands and transport not validated | No launcher invocation/pin; do not guess supported commands or enable MCP. |
 | Legacy code-graph-smart | Version unknown; inspected shell wrapper | Unpinned npm fallback may download dependencies | Unsupported; never invoked by diagnostics or the launcher. |
 | Context7 | Authoring-session integration; launched-session version unknown | Plugin/session transport not probed | No local executable artifact pin, duplicate manual MCP setup or readiness claim. |
+
+The dated host observations do not establish runtime compatibility or health for a
+discovered artifact. The reviewed 0.160.0 source contract is retained independently;
+it does not automatically apply to the observed 0.162.1 developer host. Benchmark
+artifact qualification remains scoped to the separate [host contract](benchmark-host.md).
 
 Reference evidence: Codex CLI tag rust-v0.160.0 resolves to commit
 [a956835d020762cb2b570053af06f643a11c0ecc](https://github.com/openai/codex/blob/a956835d020762cb2b570053af06f643a11c0ecc/codex-rs/cli/src/main.rs).
@@ -56,7 +61,7 @@ kind = "codex-smart-tools"
 schema_version = 1
 
 [tools.codex]
-version = "0.160.0" # declaration, not a runtime attestation
+version = "0.160.0" # illustrative source-reference declaration, not current host/runtime attestation
 sha256 = "REPLACE_WITH_64_HEX_ARTIFACT_DIGEST"
 ```
 
