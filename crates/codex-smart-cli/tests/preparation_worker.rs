@@ -320,12 +320,34 @@ fn actual_worker_and_adversarial_workers_are_bounded_and_reaped() {
         bait
     );
     assert!(!marker.exists());
-    // Real worker refuses a descriptor deliberately made inheritable by the caller.
+    // Supervised startup removes unrelated inheritable descriptors only in its child.
     let leaked = fs::File::open(f.0.join("bait.txt")).unwrap();
     rustix::io::fcntl_setfd(&leaked, rustix::io::FdFlags::empty()).unwrap();
-    let refusal = attempt(&worker, &r, 250);
-    assert_eq!(refusal.state, State::Failed);
-    assert_eq!(refusal.worker_exit_code, Some(17));
+    let high_a = rustix::io::fcntl_dupfd_cloexec(&leaked, 142).unwrap();
+    let high_b = rustix::io::fcntl_dupfd_cloexec(&leaked, 145).unwrap();
+    for fd in [&high_a, &high_b] {
+        rustix::io::fcntl_setfd(fd, rustix::io::FdFlags::empty()).unwrap();
+        assert_eq!(
+            rustix::io::fcntl_getfd(fd).unwrap(),
+            rustix::io::FdFlags::empty()
+        );
+    }
+    let isolated = attempt(&worker, &r, 250);
+    assert_eq!(isolated.state, State::Succeeded);
+    assert_eq!(isolated.worker_exit_code, Some(0));
+    assert_eq!(isolated.preparation.unwrap().snippets[0].text, bait);
+    // Parent flags and descriptors remain intact, including high runner-like IDs.
+    for fd in [leaked.as_fd(), high_a.as_fd(), high_b.as_fd()] {
+        assert_eq!(
+            rustix::io::fcntl_getfd(fd).unwrap(),
+            rustix::io::FdFlags::empty()
+        );
+    }
+    assert!(!marker.exists());
+    // A direct launch still reaches strict bootstrap rejection with code 17.
+    assert_direct_exit(worker_command(), &[], 17);
+    drop(high_a);
+    drop(high_b);
     drop(leaked);
     for path in [
         "../a.rs",
@@ -591,7 +613,11 @@ fn worker_rejects_bounded_bad_requests_without_logging() {
     malformed.push(trailing);
     for bytes in malformed {
         assert!(PreparationRequest::decode(&bytes).is_err());
-        assert_direct_exit(worker_command(), &bytes, 4);
+        let mut command = worker_command();
+        // Hermetic direct protocol test: remove ambient harness inheritance in
+        // this child. Deliberate descriptor-refusal tests use unsanitized commands.
+        codex_smart_process::stdio_only(&mut command);
+        assert_direct_exit(command, &bytes, 4);
         assert_eq!(children(), baseline);
     }
 }

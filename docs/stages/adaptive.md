@@ -95,3 +95,9 @@ refuses; validation argv is deferred pending approved command contracts. The
 owns implemented behavior and missing confinement/verification/spawn guarantees.
 This does not advance stage acceptance, live issue state, production routing or
 measurement evidence.
+
+The supervised preparation parent now isolates inherited descriptors in its forked
+child before descriptor-pinned exec, while direct worker launches retain strict
+bootstrap refusal. [ADR-0009](../decisions/0009-child-descriptor-isolation.md)
+records the narrow unsafe helper and Linux 5.11 close-on-exec requirement. This is
+CI/runtime isolation hardening within the current slice, not stage advancement.

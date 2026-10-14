@@ -14,3 +14,4 @@ toml_edit = { version = "=0.25.15", default-features = false, features = ["parse
 
 [target.'cfg(target_os = "linux")'.dependencies]
 rustix = { version = "=1.1.5", features = ["fs", "process", "thread"] }
+codex-smart-process = { version = "=0.1.0", path = "../codex-smart-process" }

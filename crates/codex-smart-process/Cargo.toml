@@ -1,0 +1,17 @@
+[package]
+name = "codex-smart-process"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# Core/CLI retain workspace unsafe_code=forbid. Only the audited syscall hook
+# in this Linux helper allows unsafe code; all other code here remains denied.
+[lints.rust]
+unsafe_code = "deny"
+[lints.clippy]
+all = "warn"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = { version = "=0.2.189", default-features = false }

@@ -382,14 +382,15 @@ mod linux {
 
         let executable_path = format!("/proc/self/fd/{}", executable.as_raw_fd());
         slot.executable = Some(executable);
-        let child = Command::new(executable_path)
+        let mut command = Command::new(executable_path);
+        command
             .env_clear()
             .current_dir("/")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|_| Error::Spawn)?;
+            .stderr(Stdio::piped());
+        codex_smart_process::stdio_only(&mut command);
+        let child = command.spawn().map_err(|_| Error::Spawn)?;
         let started = Instant::now();
         slot.child = Some(child);
         let running = Running(&mut slot.child);

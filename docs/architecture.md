@@ -136,6 +136,24 @@ binary the caller's OS authority. Dynamic loader and system libraries are also t
 These missing guarantees prohibit production admission. The pure #90
 `runtime_admission` still returns RuntimeUnavailable even for all-Verified facts.
 
+The supervised parent installs a final child-only pre-exec hook through the narrow
+`codex-smart-process` Linux helper. It calls `close_range(3, UINT_MAX,
+CLOSE_RANGE_CLOEXEC)` after stdio setup. Rust's hook forces fork with a private
+child descriptor table; unrelated parent descriptors and concurrent threads are
+untouched. Marking rather than immediately closing preserves the descriptor-pinned
+procfs executable lookup and Rust's spawn-error pipe until exec. Successful exec
+closes every descriptor above stderr. Linux 5.11 or later is required for this flag;
+unsupported kernels, flags or syscall denial fail spawn without a fallback. The
+post-spawn deadline still excludes verification and spawn, including this hook.
+The hook performs only a syscall and allocation-free errno read, with no locks,
+logging, filesystem enumeration or captured destructors. Core and CLI retain the
+workspace unsafe-code prohibition; the helper permits unsafe only in this audited
+hook, using pinned libc 0.2.189 (already present transitively). See
+[ADR-0009](decisions/0009-child-descriptor-isolation.md) for the review boundary.
+Direct worker launches continue to refuse genuinely inherited descriptors with 17.
+Malformed-protocol tests separately sanitize ambient harness inheritance in their
+child so protocol handling remains observable; descriptor-refusal tests do not.
+
 The descriptor exemption uses the exact fd owned by rustix's directory iterator,
 not a procfs symlink target spelling. Every other fd above stdio is refused,
 including an inherited descriptor to the worker's own procfs directory retained
