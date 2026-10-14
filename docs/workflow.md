@@ -295,6 +295,77 @@ or snapshot at a new path. Never rewrite historical evidence or attach an unveri
 SHA to an existing installation. Branch/worktree cleanup needs a separate owner
 decision after checking unique commits, dirty files, PRs and evidence references.
 
+## Operational source register and host-side checkpoint
+
+[source-register.json](source-register.json) is a versioned observation using the
+existing consistency-inventory schema. Its main/PR heads are recorded references,
+not automatically refreshed truth. Accepted main comes from a new explicit GitHub
+observation. Development worktrees are discovered locally; deployment paths and
+receipt digests remain `null` until independently established. Never fill them with
+guessed filenames or a candidate's self-asserted identity. A missing normalized
+receipt on an intentionally historical Git copy remains unverified without making
+that old source a defect.
+
+Runtime qualification/inventory and immutable measurement evidence already have
+authoritative versioned JSON registers: `benchmarks/host-contract-v1.json`,
+`benchmarks/submission-grading-v1.json`,
+`benchmarks/representative-measurement-candidate-v1.json` and
+`benchmarks/adaptive-lifecycle-v1.json`. The [host contract](benchmark-host.md) and
+[benchmarking protocol](benchmarking.md) own their interpretation. The source register
+does not duplicate these frozen contracts or confer their execution authority.
+
+Before development, run the read-only source audit, then the task-start procedure.
+Before deployment or benchmark work, independently verify each approved host pin and
+runtime; source equality alone is insufficient:
+
+```bash
+just consistency-audit /absolute/reviewed/checkout/docs/source-register.json FULL_CURRENT_MAIN_SHA
+python3 -B scripts/workflow.py consistency-audit --inventory /absolute/reviewed/checkout/docs/source-register.json --expected-sha FULL_CURRENT_MAIN_SHA --github --json
+```
+
+The public register initially returns exit `2`: deployment identities are missing.
+Copy the register into an operator-controlled private file for actual host paths,
+reviewed receipt digests and additional repositories. Keep the private copy outside
+Git, version its approved identities/roles, and retain earlier observations. Changing
+an expected pin requires owner review; an audit never changes a pin or installation.
+Update public main/PR observations only through a factual reviewed change. A stale
+catalog cannot establish that source is current or accepted.
+
+When Codex's pinned SSH configuration diagnostic refuses before connection, use an
+independently authorized operator's already verified ThinkPad/srv0 access. Do not
+bypass system configuration, alter credentials or weaken host-key checks. On each
+host run the trusted reviewed verifier locally against explicitly identified paths:
+
+```bash
+python3 -B /trusted/reviewed/scripts/verify_host_snapshot.py --snapshot /absolute/approved/source --source-sha FULL_APPROVED_SOURCE_SHA --receipt-sha256 INDEPENDENT_SOURCE_RECEIPT_SHA256
+python3 -B /trusted/reviewed/scripts/verify_host_snapshot.py --snapshot /absolute/approved/source --source-sha FULL_APPROVED_SOURCE_SHA --receipt-sha256 INDEPENDENT_SOURCE_RECEIPT_SHA256 --runtime-root /tmp/benchmark-runtime-APPROVED --inventory-dir /absolute/approved/inventory --qualification /absolute/approved/qualification.json --qualification-sha256 INDEPENDENT_QUALIFICATION_SHA256
+```
+
+Replace all placeholders from approved independent records. Missing legacy receipts
+require investigation; do not mint a new receipt around unverified installed bytes.
+The verifier launches no subprocess, SSH, grader, model or toolchain. It checks source
+permissions/hashes through the normalized verifier, then the frozen runtime manifest
+hashes, complete topology, all file sizes/modes/hashes, symlink targets, directory modes,
+saved qualification and grading implementation pins. It rejects writable identity
+files/directories and aliased regular files; it never repairs them. Do not refactor
+the evidence-pinned production grading implementation simply to reuse its executable
+preflight. The read-only helper reuses its contract and manifest parsers.
+
+JSON `PASS` / exit `0` covers only declared bytes and the saved accepted receipt.
+Physical host identity and **fresh isolation qualification stay NOT VERIFIED**;
+`operation_authorized` stays false. Source-only inspection exits `2` with runtime
+unknown. Missing evidence or permission-denied access gives exit `2`; known identity
+or permission drift gives `FAIL` / exit `1`. No status authorizes grading or model
+execution. Fresh runtime/isolation preflight remains the accepted runner's separate
+operator-controlled gate.
+
+Retain the sanitized JSON result, expected/observed identities and observation time
+in a new deployment record. Investigate any historical `CURRENT` pointer against its
+exact manifests and installed runtime; differing adjacent hashes prove an ambiguous
+reference, not which version is installed. Keep the old pointer, manifests, installation
+and benchmark evidence untouched. This host-side checkpoint must complete before
+dependent operations; source drift is not resolved by synchronization.
+
 ## Interruption, resumption and mismatches
 
 After a connection interruption, inspect status, HEAD, worktree registrations and

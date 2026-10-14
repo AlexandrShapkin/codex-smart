@@ -38,6 +38,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [Initial engineering diagnostic — 2026-10-06](../docs/diagnostics/2026-10-06.md) | engineering | historical | baseline |
 | [Adaptive orchestrator adversarial audit — 2026-10-14](../docs/diagnostics/2026-10-14-adaptive-orchestrator-audit.md) | benchmark | historical | adaptive, benchmark |
 | [Infrastructure and governance reconciliation — 2026-10-14](../docs/diagnostics/2026-10-14-infrastructure-reconciliation.md) | engineering | historical | workflow |
+| [Integration and infrastructure stabilization — 2026-10-14](../docs/diagnostics/2026-10-14-integration-stabilization.md) | engineering | historical | workflow, adaptive |
 | [Repository workflow normalization audit](../docs/diagnostics/2026-10-14-workflow-normalization.md) | engineering | historical | workflow |
 | [Distribution and release lifecycle target](../docs/distribution.md) | release | contract | playbooks, adaptive, automation, distribution, hardening, stable |
 | [Offline Doctor contract](../docs/doctor.md) | engineering | current | doctor |

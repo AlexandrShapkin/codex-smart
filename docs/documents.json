@@ -701,6 +701,16 @@
       "stages": [
         "workflow"
       ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-14-integration-stabilization.md",
+      "title": "Integration and infrastructure stabilization — 2026-10-14",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "workflow",
+        "adaptive"
+      ]
     }
   ]
 }

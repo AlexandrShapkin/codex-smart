@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "pull_requests": [
+    {
+      "number": 85,
+      "branch": "feat/adaptive-split-host-orchestrator",
+      "head": "93e31c24ab90acd4a2f9874128857ef7dae5f3df",
+      "state": "open",
+      "merge": null
+    },
+    {
+      "number": 86,
+      "branch": "chore/production-routing-readiness",
+      "head": "f59dfc507e42fc955a061176cee18fcace1ef874",
+      "state": "open",
+      "merge": null
+    },
+    {
+      "number": 87,
+      "branch": "chore/infrastructure-reconciliation",
+      "head": "6ec86076846ecfc4367f43bbbc650321aaee2501",
+      "state": "open",
+      "merge": null
+    }
+  ],
+  "remote_branches": [
+    {
+      "branch": "main",
+      "head": "5102c0ebefeb53c3dbd56021266b340524be7ad3"
+    }
+  ],
+  "snapshots": [
+    {
+      "name": "thinkpad-agent",
+      "host": "local",
+      "path": null,
+      "sha": null,
+      "receipt_sha256": null,
+      "pin": "unknown",
+      "role": "agent"
+    },
+    {
+      "name": "srv0-grader",
+      "host": "srv0",
+      "path": null,
+      "sha": null,
+      "receipt_sha256": null,
+      "pin": "unknown",
+      "role": "grader"
+    },
+    {
+      "name": "historical-adaptive-runner",
+      "host": "local",
+      "path": null,
+      "sha": "4edd184e1e7796e763ef327f16adb76872b4b618",
+      "receipt_sha256": null,
+      "pin": "historical",
+      "role": "development-source"
+    }
+  ]
+}

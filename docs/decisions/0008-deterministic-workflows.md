@@ -4,7 +4,8 @@ Status: accepted direction; Playbooks 0.4 semantics plus Adaptive #43 bounded ex
 
 ## Context
 
-Router v2 currently assesses task/risk and composes a native-first Codex launch.
+Router v2's pure policy assesses task/risk and describes a native-first launch.
+Production `codex-smart run` remains passthrough; that policy is not applied there.
 The product objective spans completed development tasks: minimize expected total
 lifecycle cost subject to required quality, safety and verification. A lower-price
 model call can increase total cost through failed attempts, context duplication,

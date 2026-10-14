@@ -53,7 +53,11 @@
         "justfile",
         "scripts/workflow.py",
         "docs/stages.json",
-        "docs/documents.json"
+        "docs/documents.json",
+        "scripts/repository_workflow.py",
+        "scripts/repository_consistency.py",
+        "scripts/verify_host_snapshot.py",
+        "docs/source-register.json"
       ],
       "evidence": [
         "docs/diagnostics/2026-10-06-workflow.md"
