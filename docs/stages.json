@@ -257,7 +257,8 @@
       ],
       "sources": [
         "docs/stages.json",
-        "docs/documents.json"
+        "docs/documents.json",
+        "crates/codex-smart-core/src/preparation.rs"
       ],
       "evidence": []
     },

@@ -67,3 +67,11 @@ Reconcile each issue against concrete implementation and independent evidence. R
 ## Follow-ups
 
 Next dependent stage begins after explicit acceptance. Unresolved quality, security, compatibility or measurement gaps stay visible and fail closed.
+
+### Bounded preparation increment
+
+An explicit core adapter now acquires nominated local file evidence and reuses the
+existing validation recipe. [Architecture](../architecture.md#bounded-native-preparation-adapter)
+owns limits, fail-safe behavior and remaining runtime joins. Production passthrough,
+measurement acceptance and stage status remain unchanged; hard supervised deadlines,
+semantic sufficiency and approved validation execution remain follow-up work.

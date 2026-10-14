@@ -116,3 +116,13 @@ Exact results and proposed SHA are recorded in the separate draft PR. The fixtur
 not verify real provider compatibility or context economics. Product invocation/schema,
 capability receipt freshness, budget defaults, approved validation command sources and
 opt-in privacy/telemetry consent require independent design review before implementation.
+
+## Delivered bounded acquisition slice
+
+The core `preparation` adapter now collects explicitly nominated task files under
+hard file/byte/path ceilings and a cooperative deadline, and attaches the existing
+workflow validation recipe without command execution. See the
+[architecture contract](architecture.md#bounded-native-preparation-adapter) for
+refusal behavior and filesystem/time limitations. This closes the missing bounded
+file-acquisition primitive, not semantic coverage, CLI integration or hard supervised
+timeouts. Context sufficiency remains unknown; no measured savings are claimed.
