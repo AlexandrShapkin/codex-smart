@@ -1301,3 +1301,232 @@ fn doctor_refuses_auth_json_before_opening_or_parsing_it() {
     }
     assert_eq!(tree(&f.0), before);
 }
+
+#[test]
+fn plan_preview_is_declarative_deterministic_and_ignores_untrusted_host_state() {
+    let f = Fixture::new();
+    f.write("repo/.codex-smart.toml", "shell = 'FAKE_SECRET'\n");
+    f.write(
+        "home/.config/codex-smart/config.toml",
+        "invalid FAKE_SECRET",
+    );
+    f.write("home/.codex/auth.json", "FAKE_SECRET");
+    f.write("repo/public.rs", "FAKE_SECRET source payload");
+    for tool in [
+        "codex",
+        "git",
+        "rg",
+        "cargo",
+        "codex-smart-preparation-worker",
+    ] {
+        f.tool(tool);
+    }
+    let before = tree(&f.0);
+    let args = [
+        "plan",
+        "--intent",
+        "inspection",
+        "--file",
+        "public.rs",
+        "--file",
+        "missing.rs",
+    ];
+    let output = f.command().args(args).output().unwrap();
+    assert!(output.status.success(), "{output:?}");
+    let text = String::from_utf8(output.stdout.clone()).unwrap();
+    assert!(text.contains("Status: NeedsEvidence\nWorkflow: Some(Inspection)"));
+    assert!(text.contains("Risk evidence: Unknown\nSafety evidence: Unknown"));
+    assert!(
+        text.contains(
+            "Native evidence: Unknown\nExternal evidence: Unknown\nModel identity: Unknown"
+        )
+    );
+    assert!(text.contains(
+        "Nominated relevant files: 2 (declarative; acquired=0; semantic coverage=Unknown)"
+    ));
+    assert!(text.contains("Validation recipe: Some(ValidationRecipe { status: NeedsEvidence"));
+    assert!(text.len() < 8192);
+    for excluded in ["FAKE_SECRET", "public.rs", "missing.rs", "Ready\n"] {
+        assert!(!text.contains(excluded));
+    }
+    assert!(output.stderr.is_empty());
+    let reordered = f
+        .command()
+        .args([
+            "plan",
+            "--file",
+            "missing.rs",
+            "--intent",
+            "inspection",
+            "--file",
+            "public.rs",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.stdout, reordered.stdout);
+    let empty_path = f.command().env("PATH", "").args(args).output().unwrap();
+    assert_eq!(output.stdout, empty_path.stdout);
+    assert_eq!(tree(&f.0), before);
+}
+
+#[test]
+fn plan_conflicts_unknown_facts_and_safety_floors_remain_visible() {
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    for task in ["edit", "refactor", "unknown"] {
+        let output = f
+            .command()
+            .args(["plan", "--intent", "inspection", "--task", task])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let text = String::from_utf8(output.stdout).unwrap();
+        assert!(text.contains("Status: NeedsEvidence\nWorkflow: None"));
+        assert!(text.contains("Assessment: Unknown; Ambiguous"));
+        assert!(text.contains("Validation recipe: None"));
+    }
+    for fact in ["security", "migration", "concurrency"] {
+        let output = f
+            .command()
+            .args([
+                "plan",
+                "--intent",
+                "inspection",
+                "--risk",
+                "low",
+                "--safety",
+                fact,
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let text = String::from_utf8(output.stdout).unwrap();
+        assert!(text.contains("Risk: High\nProfile: Some(Strong)\nReasoning: Some(High)"));
+        assert!(text.contains("Status: NeedsEvidence"));
+    }
+}
+
+#[test]
+fn plan_rejects_unsafe_duplicate_unsupported_and_excessive_input_without_echo() {
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    let before = tree(&f.0);
+    for extra in [
+        vec![],
+        vec!["--intent", "edit"],
+        vec!["--intent", "inspection", "--intent", "inspection"],
+        vec!["--intent", "inspection", "--file", "../FAKE_SECRET"],
+        vec!["--intent", "inspection", "--file", "/FAKE_SECRET"],
+        vec!["--intent", "inspection", "--file", ".codex/auth.json"],
+        vec![
+            "--intent",
+            "inspection",
+            "--file",
+            "a.rs",
+            "--file",
+            "./a.rs",
+        ],
+        vec!["--intent", "inspection", "--risk", "low", "--risk", "high"],
+        vec![
+            "--intent",
+            "inspection",
+            "--safety",
+            "none",
+            "--safety",
+            "security",
+        ],
+        vec!["--intent", "inspection", "--model", "FAKE_SECRET"],
+        vec!["--intent", "inspection", "--worker", "FAKE_SECRET"],
+        vec!["--intent", "inspection", "--file"],
+    ] {
+        let output = f.command().arg("plan").args(extra).output().unwrap();
+        assert_eq!(output.status.code(), Some(2));
+        assert!(output.stdout.is_empty());
+        assert!(!String::from_utf8_lossy(&output.stderr).contains("FAKE_SECRET"));
+    }
+    for paths in [
+        vec!["x".repeat(1025)],
+        (0..17).map(|i| format!("f{i}.rs")).collect(),
+        vec!["x".repeat(18_433)],
+    ] {
+        let mut command = f.command();
+        command.args(["plan", "--intent", "inspection"]);
+        for path in paths {
+            command.arg("--file").arg(path);
+        }
+        let output = command.output().unwrap();
+        assert_eq!(output.status.code(), Some(2));
+        assert!(output.stdout.is_empty());
+        assert!(output.stderr.len() < 100);
+    }
+    let mut boundary = f.command();
+    boundary.args([
+        "plan",
+        "--intent",
+        "inspection",
+        "--task",
+        "inspect",
+        "--risk",
+        "medium",
+        "--safety",
+        "none",
+    ]);
+    for i in 0..16 {
+        boundary.arg("--file").arg(format!("f{i}.rs"));
+    }
+    let output = boundary.output().unwrap();
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("Nominated relevant files: 16"));
+    use std::os::unix::ffi::OsStringExt;
+    let output = f
+        .command()
+        .args(["plan", "--intent", "inspection", "--file"])
+        .arg(std::ffi::OsString::from_vec(vec![0xff]))
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    assert_eq!(tree(&f.0), before);
+}
+
+#[test]
+fn plan_reserved_name_escape_run_and_help_preserve_launch_contract() {
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    f.write("home/README", "fixture");
+    f.tool("codex");
+    f.write(
+        "bin/codex",
+        "#!/bin/sh\nprintf '%s\\0' \"$@\" > \"$HOME/argv\"\nexit 37\n",
+    );
+    for args in [
+        vec!["--", "plan", "--intent", "inspection"],
+        vec!["run", "--", "plan", "--intent", "inspection"],
+        vec!["exec", "--config", "model=operator", "plan"],
+    ] {
+        let output = f.command().args(&args).output().unwrap();
+        assert_eq!(output.status.code(), Some(37));
+        let start = if args[0] == "run" {
+            2
+        } else if args[0] == "--" {
+            1
+        } else {
+            0
+        };
+        let expected: Vec<u8> = args[start..]
+            .iter()
+            .flat_map(|arg| arg.bytes().chain([0]))
+            .collect();
+        assert_eq!(fs::read(f.0.join("home/argv")).unwrap(), expected);
+    }
+    let before = tree(&f.0);
+    for args in [
+        vec!["--help"],
+        vec!["plan", "--help"],
+        vec!["run", "--dry-run", "--", "plan"],
+    ] {
+        let output = f.command().args(args).output().unwrap();
+        assert!(output.status.success());
+        assert!(output.stderr.is_empty());
+        assert_eq!(tree(&f.0), before);
+    }
+}
