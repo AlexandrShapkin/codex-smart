@@ -248,7 +248,9 @@ pub(crate) fn safe_root(root: &Path) -> bool {
             _ => true,
         })
 }
-pub(crate) fn safe_nomination(path: &Path) -> bool {
+/// Pure lexical check shared by declarative previews and acquisition.
+/// This does not inspect a file or prove its public contents or semantic coverage.
+pub fn safe_nomination(path: &Path) -> bool {
     !path.as_os_str().is_empty()
         && path.as_os_str().len() <= 1024
         && path.components().count() <= 16

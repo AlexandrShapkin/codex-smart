@@ -64,3 +64,36 @@ printing values or reading referenced auth/plugin stores. It reports permission-
 and legacy sandbox conflicts and MCP declarations. It does not resolve effective Codex
 configuration across layers/profiles/CLI. Default Doctor retains no Codex store discovery.
 See [the Doctor contract](doctor.md) for schema, privacy and required-check semantics.
+
+## Explicit inspection plan preview
+
+`codex-smart plan --intent inspection` composes typed Router assessment and the
+Inspection Playbook into a deterministic plan-only summary. `plan --help` lists the
+bounded grammar. Optional `--task inspect|edit|refactor|unknown` supplies a separate
+task declaration; edits/refactors conflict with inspection and unknown task evidence
+remains ambiguous. Optional `--risk low|medium|high` and
+`--safety none|security|migration|concurrency` are declarations, not verified facts.
+Missing risk/safety declarations are explicitly Unknown; the displayed effective
+risk is a policy floor, not proof that risk is known. Safety-sensitive declarations
+retain Strong/High floors even with a low risk hint.
+
+Repeated `--file RELATIVE_PATH` nominates at most 16 public relevant files using the
+existing lexical nomination policy (1024 bytes/path, 16 components, no traversal,
+absolute paths, sensitive names or duplicate normalized paths). Input is capped at
+40 option/value arguments and 18432 bytes. Singleton options cannot repeat; unknown
+options and non-UTF-8 values fail with bounded errors that omit input values.
+
+The preview reads no configuration, PATH inventory or nominated file contents and
+performs no acquisition, worker spawn, model call, validation execution, retry,
+delegation, indexing or network action. Native/external capability evidence and model
+identity stay Unknown. It displays context obligations, declarative nomination counts,
+validation readiness and enum-only blockers; nomination grants no semantic coverage.
+A successful exit means the preview was rendered, not that execution is ready.
+
+`plan` is a reserved launcher command. Forward it to Codex with `codex-smart -- plan`
+or `codex-smart run -- plan`; ordinary run/implicit passthrough retains exact operator
+argv and configuration priority. The plan ignores configuration rather than adding a
+new configuration layer. Worker-backed preparation and runtime joins belong to
+[#94](https://github.com/AlexandrShapkin/codex-smart/issues/94); measurement acceptance
+belongs to [#95](https://github.com/AlexandrShapkin/codex-smart/issues/95). Neither is
+activated by the preview.

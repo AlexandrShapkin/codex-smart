@@ -1,3 +1,5 @@
+mod plan;
+
 use codex_smart_core::{
     VERSION,
     capability::{Capability, Inventory},
@@ -185,8 +187,15 @@ fn execute(mut args: Vec<OsString>) -> Result<i32, &'static str> {
             println!("codex-smart {VERSION}")
         }
         Some("--help" | "-h" | "help") if args.len() == 1 => println!(
-            "codex-smart {VERSION}\nCommands: run [--tool-lock FILE] [--dry-run] [--] [codex args...], doctor [--json] [--codex-config FILE] [--tool-lock FILE], capabilities [--tool-lock FILE], explain [--tool-lock FILE] [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nOther arguments pass through to Codex. Use -- to pass a reserved command name. Config transactions default to dry-run; use --file FILE and explicit --apply. Tool pins are explicit; versions/health remain unverified."
+            "codex-smart {VERSION}\nCommands: plan --intent inspection [--task KIND] [--risk LEVEL] [--safety FACT] [--file RELATIVE_PATH ...] (plan-only; plan --help for values), run [--tool-lock FILE] [--dry-run] [--] [codex args...], doctor [--json] [--codex-config FILE] [--tool-lock FILE], capabilities [--tool-lock FILE], explain [--tool-lock FILE] [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nOther arguments pass through to Codex. Use -- to pass a reserved command name. Config transactions default to dry-run; use --file FILE and explicit --apply. Tool pins are explicit; versions/health remain unverified."
         ),
+        Some("plan") => {
+            if args[1..] == [OsString::from("--help")] {
+                println!("{}", plan::HELP);
+            } else {
+                print!("{}", plan::preview(&args[1..])?);
+            }
+        }
         Some("doctor") => {
             let (lock, remaining) = diagnostic_options(&args[1..])?;
             let mut json = false;

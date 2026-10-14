@@ -61,7 +61,7 @@ Evidence: [docs/workflow-intelligence.md](docs/workflow-intelligence.md).
 
 Milestone: 0.5 Adaptive Execution; recorded progress: **active**.
 Dependencies: playbooks.
-[Stage contract](docs/stages/adaptive.md); issues: [#43](https://github.com/AlexandrShapkin/codex-smart/issues/43), [#44](https://github.com/AlexandrShapkin/codex-smart/issues/44), [#45](https://github.com/AlexandrShapkin/codex-smart/issues/45), [#46](https://github.com/AlexandrShapkin/codex-smart/issues/46).
+[Stage contract](docs/stages/adaptive.md); issues: [#43](https://github.com/AlexandrShapkin/codex-smart/issues/43), [#44](https://github.com/AlexandrShapkin/codex-smart/issues/44), [#45](https://github.com/AlexandrShapkin/codex-smart/issues/45), [#46](https://github.com/AlexandrShapkin/codex-smart/issues/46), [#93](https://github.com/AlexandrShapkin/codex-smart/issues/93), [#94](https://github.com/AlexandrShapkin/codex-smart/issues/94), [#95](https://github.com/AlexandrShapkin/codex-smart/issues/95).
 
 ## automation — Reusable automation and prepared workflows
 

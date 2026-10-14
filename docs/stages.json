@@ -246,7 +246,10 @@
         43,
         44,
         45,
-        46
+        46,
+        93,
+        94,
+        95
       ],
       "contract": "docs/stages/adaptive.md",
       "reads": [
@@ -266,7 +269,8 @@
         "crates/codex-smart-cli/src/preparation_worker.rs",
         "crates/codex-smart-cli/tests/preparation_worker.rs",
         "crates/codex-smart-process/src/lib.rs",
-        "crates/codex-smart-process/Cargo.toml"
+        "crates/codex-smart-process/Cargo.toml",
+        "crates/codex-smart-cli/src/plan.rs"
       ],
       "evidence": []
     },

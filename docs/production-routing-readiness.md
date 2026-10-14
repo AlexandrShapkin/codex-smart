@@ -281,3 +281,15 @@ Dependency provenance again passed for 30 registry packages. Local just security
 again exited 1 solely at the read-only advisory database lock; no advisory-policy
 or cache bypass occurred. Git metadata is still read-only, so no new commit or
 exact-head CI execution is available for these changes until owner-side publication.
+
+## Plan preview increment (#93)
+
+The explicit `plan --intent inspection` CLI now composes the genuine typed assessment,
+workflow and declarative validation requirements. It accepts bounded lexical file
+nominations without acquisition and keeps capability/model evidence Unknown.
+The [configuration contract](configuration.md#explicit-inspection-plan-preview) owns
+its grammar and limits. This implements only the plan-only portion of step 1; verified
+receipt ingestion, semantic preparation, validation execution and runtime joins remain
+[#94](https://github.com/AlexandrShapkin/codex-smart/issues/94). Comparative acceptance
+remains [#95](https://github.com/AlexandrShapkin/codex-smart/issues/95). Existing offline
+fixtures and policy floors do not authorize execution or prove savings.

@@ -101,3 +101,17 @@ child before descriptor-pinned exec, while direct worker launches retain strict
 bootstrap refusal. [ADR-0009](../decisions/0009-child-descriptor-isolation.md)
 records the narrow unsafe helper and Linux 5.11 close-on-exec requirement. This is
 CI/runtime isolation hardening within the current slice, not stage advancement.
+
+### Plan-only integration increment and residual owners
+
+[#93](https://github.com/AlexandrShapkin/codex-smart/issues/93) adds the explicit
+inspection plan preview: typed assessment, deterministic workflow, lexical context
+nominations and declared validation readiness, with unknown capability/model evidence
+and no runtime effects. The [configuration contract](../configuration.md#explicit-inspection-plan-preview)
+owns public options and bounds. Production passthrough and active stage status remain
+unchanged. Closed #43–#46 preserve historical policy/offline acceptance.
+[#94](https://github.com/AlexandrShapkin/codex-smart/issues/94) owns residual runtime
+integration acceptance; [#95](https://github.com/AlexandrShapkin/codex-smart/issues/95)
+owns separately authorized comparative lifecycle measurement. Milestone issue counts
+do not constitute stage acceptance. [#92](https://github.com/AlexandrShapkin/codex-smart/issues/92)
+tracks the bounded positive-control reliability investigation without release ownership.

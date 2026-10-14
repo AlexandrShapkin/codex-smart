@@ -286,3 +286,16 @@ Reading a repository recipe is insufficient command authority. No validation
 commands are selected or executed by preparation; developer verification remains the
 repository's existing offline gates. Production routing, CLI passthrough, model
 retry/grading and benchmark evidence remain unchanged.
+
+## Explicit plan-only CLI composition
+
+The opt-in `plan` command calls `routing::assessment::assess` and
+`workflow::plan_workflow` with explicit Inspection intent and independently unknown
+native/external/resource surfaces. The CLI adapter reuses the pure preparation
+nomination predicate and ceiling without calling acquisition, supervision or the
+worker. It renders the existing enum-only workflow and validation recipe alongside
+unknown evidence and declarative counts. Operator task/risk/safety declarations do
+not verify capabilities or model identity; contradictions remain unready. See the
+[public grammar and limits](configuration.md#explicit-inspection-plan-preview).
+Ordinary `run` and implicit launch still use the existing passthrough path. This
+increment grants no runtime authority or stage/measurement acceptance.
