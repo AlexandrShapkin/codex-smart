@@ -112,3 +112,51 @@ existing obligation/native-readiness checks, not approved executable commands or
 validation passes. Remaining joins are reviewed intent/coverage evidence, trusted
 bounded validation argv and a separately opt-in single-attempt runtime; Adaptive
 routing, retries, command execution and comparative measurements remain pending.
+
+### Supervised preparation boundary: policy-only slice
+
+`preparation_supervision` models one worker with independently verified identity,
+protocol, containment and termination facts. Unknown facts refuse admission; denied
+facts take precedence. `runtime_admission` always returns `RuntimeUnavailable` even
+when every fact is verified. There is no preparation worker binary, transport,
+spawn, OS timer, kill or reap implementation in this slice. The existing acquisition
+adapter still has only its cooperative deadline; no hard wall-time guarantee is
+claimed and production consumption remains prohibited.
+
+The pure policy accepts a monotonic elapsed-time observation and cumulative wire
+output count. It limits modeled acquisition time to 250 ms, cleanup to a further
+250 ms and wire output to 65536 bytes (source ceilings remain those above). Deadline
+expiry, output overflow or regressing observations request termination and
+nonblocking reap polling. Success requires both a verified response and successful
+reap strictly before the deadline. Cancellation cannot become success. At the fixed
+cleanup ceiling, unreaped workers remain `CleanupUnknown`; terminal observations
+cannot reopen the attempt. There is one worker slot, no retry and constant ledger
+space. Tests simulate observations; they do not test an OS supervisor.
+
+A reviewed runtime needs a dedicated pinned worker executable and bounded/versioned
+request-response protocol around the acquisition adapter, trusted OS argv, a
+parent-owned monotonic timer, bounded nonblocking transport, worker containment and
+bounded termination/reap handling. Reusing the passthrough Codex launcher or running
+filesystem I/O in an uncancellable thread cannot provide that guarantee. Linux
+uninterruptible kernel I/O may delay SIGKILL and reaping indefinitely: caller return
+must remain bounded independently, cleanup uncertainty must be retained, and a
+supervisor must prevent further workers while one remains unreaped. Other platforms
+need independently reviewed containment/termination adapters and otherwise refuse.
+Spawn and executable verification can themselves involve filesystem operations;
+review must cover those before claiming an end-to-end wall-time bound.
+
+`Preparation::context_evidence(plan)` supplies a deterministic enum-only row for
+every selected playbook obligation, including blocked acquisition. Each row records
+no acquisition, acquired-but-unreviewed file count, or the acquisition refusal.
+`covered` is always `None` (unknown); this view cannot accept semantic review receipts
+or grant readiness. The supplied plan must be the acquisition plan; identity-bound
+review receipts and protection against changed plans remain future work. Paths,
+source and digests are absent from the report; exact snippets remain available to an
+explicit independent reviewer under the existing privacy boundary.
+
+Validation argv planning is deferred entirely. Existing validation recipes approve
+obligations/native readiness, not executable identities or command argument lists.
+Reading a repository recipe is insufficient command authority. No validation
+commands are selected or executed by preparation; developer verification remains the
+repository's existing offline gates. Production routing, CLI passthrough, model
+retry/grading and benchmark evidence remain unchanged.

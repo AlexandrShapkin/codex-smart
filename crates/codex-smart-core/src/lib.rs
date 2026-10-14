@@ -8,6 +8,7 @@ pub mod doctor;
 pub mod migration;
 pub mod playbook;
 pub mod preparation;
+pub mod preparation_supervision;
 pub mod process;
 pub mod routing;
 pub mod tool_lock;

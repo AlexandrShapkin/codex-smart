@@ -126,3 +126,31 @@ workflow validation recipe without command execution. See the
 refusal behavior and filesystem/time limitations. This closes the missing bounded
 file-acquisition primitive, not semantic coverage, CLI integration or hard supervised
 timeouts. Context sufficiency remains unknown; no measured savings are claimed.
+
+The next supervised preparation increment delivers a pure supervision policy and
+per-obligation acquisition review view. Runtime admission remains closed for all
+worker facts; a hard timeout adapter and semantic review authority are still absent.
+[Architecture](architecture.md#supervised-preparation-boundary-policy-only-slice)
+owns the precise policy, cleanup uncertainty, platform limitations and next runtime
+join. Validation argv planning is deferred because the existing recipes do not
+approve executable commands. Offline policy tests do not establish runtime timing
+or efficiency evidence.
+
+Local verification of this policy slice used base
+`4c54b9bacd62e924f378ec745ef6d32415ad6079` in the existing isolated task
+worktree. The offline focused preparation/supervision suites passed 10 tests
+(exit 0); workspace nextest passed 177 tests (exit 0). Offline workspace Cargo
+test/build, formatter, clippy with warnings denied, docs-sync/docs-check and
+diff whitespace checks passed (exit 0). Generated roadmap/index content did not
+change; the Adaptive source registry now includes the supervision module.
+
+`CARGO_NET_OFFLINE=true just check` exited 1: 295 Python tests ran, with 294
+passing and the existing private Unix-socket grader test failing at `listener.bind`
+with `PermissionError: Operation not permitted`. The remaining Rust gate commands
+were run independently after that stop; the combined gate remains unresolved.
+`CARGO_NET_OFFLINE=true just security` exited 1: dependency provenance passed,
+but cargo-deny could not acquire its advisory database lock on the read-only mount.
+No gate was weakened or cache/mount bypassed. GitHub main observation exited 128
+because github.com could not resolve; remote freshness and live issue state remain
+unverified. Git metadata is read-only, so the result is an uncommitted review diff;
+these local results do not establish exact-head CI/Security acceptance.

@@ -188,3 +188,60 @@ fn unknown_intent_blocked_plan_and_irrelevant_requests_do_not_acquire() {
     );
     assert!(!f.run(&[], Limits::default()).unresolved.is_empty());
 }
+
+#[test]
+fn obligation_evidence_distinguishes_acquisition_from_coverage_and_refusal() {
+    let f = Fixture::new();
+    let native = NativeSurface::default();
+    let mut plan = plan_workflow(
+        &assess(&RoutingFacts {
+            known_operations: vec![TaskKind::Inspect],
+            ..Default::default()
+        }),
+        None,
+        &native,
+        &CapabilitySurface::default(),
+        &ResourceCatalog::default(),
+    );
+    let result = f.run(&["a.rs"], Limits::default());
+    let evidence = result.context_evidence(&plan);
+    assert!(evidence.iter().all(|entry| entry.covered.is_none()));
+    assert!(
+        evidence
+            .iter()
+            .any(|entry| entry.obligation == ContextObligation::RelevantFiles
+                && entry.files == 1
+                && entry.acquisition == AcquisitionEvidence::AcquiredUnreviewed)
+    );
+    assert!(evidence.iter().any(
+        |entry| entry.obligation == ContextObligation::RepositoryState
+            && entry.files == 0
+            && entry.acquisition == AcquisitionEvidence::NotAcquired
+    ));
+    assert_eq!(evidence, result.context_evidence(&plan));
+    assert!(!format!("{evidence:?}").contains("a.rs"));
+    // Locally changed bytes are evidence, not proof of clean repository state.
+    fs::write(f.0.join("a.rs"), "fn changed() {}\n").unwrap();
+    let changed = f.run(&["a.rs"], Limits::default());
+    assert_ne!(changed.snippets[0].sha256, result.snippets[0].sha256);
+    assert_eq!(changed.context_evidence(&plan), evidence);
+    let empty = f.run(&[], Limits::default());
+    assert!(
+        empty
+            .context_evidence(&plan)
+            .iter()
+            .all(|entry| entry.files == 0
+                && entry.covered.is_none()
+                && entry.acquisition == AcquisitionEvidence::NotAcquired)
+    );
+    for result in [f.run(&["missing"], Limits::default()), {
+        plan.status = codex_smart_core::workflow::PlanStatus::Blocked;
+        prepare(&f.0, &plan, &native, &[], Limits::default())
+    }] {
+        let evidence = result.context_evidence(&plan);
+        assert!(!evidence.is_empty());
+        assert!(evidence.iter().all(|entry| entry.files == 0
+            && entry.covered.is_none()
+            && entry.acquisition == AcquisitionEvidence::Refused(result.failure.unwrap())));
+    }
+}

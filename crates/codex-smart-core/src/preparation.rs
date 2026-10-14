@@ -57,7 +57,55 @@ pub struct Preparation {
     pub failure: Option<Failure>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AcquisitionEvidence {
+    NotAcquired,
+    AcquiredUnreviewed,
+    Refused(Failure),
+}
+
+/// Enum-only review view. `covered: None` means semantic coverage is unknown.
+/// File counts describe acquisition only, never satisfaction of an obligation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ContextEvidence {
+    pub obligation: ContextObligation,
+    pub acquisition: AcquisitionEvidence,
+    pub files: usize,
+    pub covered: Option<bool>,
+}
+
 impl Preparation {
+    /// Enumerate the plan's obligations independently of acquisition success.
+    /// No review authority is inferred from source bytes or caller nomination.
+    pub fn context_evidence(&self, plan: &WorkflowPlan) -> Vec<ContextEvidence> {
+        let Some(archetype) = plan.selection.archetype else {
+            return Vec::new();
+        };
+        let obligations: BTreeSet<_> = builtin(archetype).context.iter().copied().collect();
+        obligations
+            .into_iter()
+            .map(|obligation| {
+                let files = if self.failure.is_some() {
+                    0
+                } else {
+                    self.snippets
+                        .iter()
+                        .filter(|s| s.request.obligation == obligation)
+                        .count()
+                };
+                ContextEvidence {
+                    obligation,
+                    acquisition: match self.failure {
+                        Some(failure) => AcquisitionEvidence::Refused(failure),
+                        None if files > 0 => AcquisitionEvidence::AcquiredUnreviewed,
+                        None => AcquisitionEvidence::NotAcquired,
+                    },
+                    files,
+                    covered: None,
+                }
+            })
+            .collect()
+    }
     /// Inspect readiness and obligations without exposing paths or source payloads.
     pub fn summary(&self) -> String {
         format!(

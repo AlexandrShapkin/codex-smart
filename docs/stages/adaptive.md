@@ -75,3 +75,13 @@ existing validation recipe. [Architecture](../architecture.md#bounded-native-pre
 owns limits, fail-safe behavior and remaining runtime joins. Production passthrough,
 measurement acceptance and stage status remain unchanged; hard supervised deadlines,
 semantic sufficiency and approved validation execution remain follow-up work.
+
+### Supervision policy increment
+
+The preparation supervision policy and deterministic per-obligation acquisition
+report are implemented offline. Runtime admission always refuses; no hard deadline,
+worker process or semantic coverage authority is implemented. Validation argv is
+entirely deferred pending approved command contracts. The
+[architecture boundary](../architecture.md#supervised-preparation-boundary-policy-only-slice)
+owns limitations and the next worker/protocol slice. This does not advance stage
+acceptance, live issue state, production routing or measurement evidence.
