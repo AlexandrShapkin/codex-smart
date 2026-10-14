@@ -2,8 +2,8 @@
 
 The representative 40-run campaign has now completed and its frozen measured baseline
 evidence `ffd8fbbc...` is accepted for #14. The historical 42-job campaign remains unexecuted. No
-overall winner or savings claim is accepted from this sample; #15 production telemetry
-remains separate.
+overall winner or savings claim is accepted from this sample. #15's normalized aggregate
+telemetry is accepted; a production runtime collector remains unimplemented.
 
 ## Representative measured baseline — 2026-10-13
 
@@ -63,6 +63,12 @@ submission and all three passed production grading. Immutable execution evidence
 `908a97f1...` records the exact trace/submission hashes and is now accepted as the
 profile-mapping execution proof. The later adaptive campaign still requires its own explicit
 authorization. No adaptive winner or savings claim exists yet.
+
+The [split-host operator runbook](adaptive-operations.md) provides the explicit
+plan/preflight, execution, transfer, independent grading, authenticated escalation,
+finalization and archive commands. Its benchmark-only orchestrator requires reviewed
+source/plan digests, preserves spent attempt ledgers, and never launches a model from
+default/offline diagnostics. It introduces no campaign authorization or savings claim.
 
 The first offline-testable live-runner slice in `scripts/benchmark_adaptive_campaign.py`
 records each attempt before launch, spends interrupted attempts, and permits a second
@@ -162,9 +168,11 @@ failed at startup; the first writable-host smoke subsequently reached a real tur
 
 `scripts/benchmark.py` is a low-level harness/library and synthetic validation CLI.
 Its legacy `--real` path is disabled; `--codex` and `--model` live options are removed.
-The only production-facing real entry is `scripts/benchmark_campaign.py`, which is
-currently blocked by the unverified grading isolation contract. CLI inspection and
-executable identity validation are benchmark setup, never product runtime behavior.
+`scripts/benchmark_campaign.py` retains the immutably blocked historical campaign
+entry. The separately reviewed representative/split-host and adaptive runners have
+their own frozen preflight and explicit authorization gates described here and in
+the [host contract](benchmark-host.md). CLI inspection and executable identity
+validation are benchmark setup, never product runtime behavior.
 
 The [official non-interactive documentation](https://learn.chatgpt.com/docs/non-interactive-mode)
 defines `codex exec --json` and the sample `turn.completed.usage` fields. Local 0.162.1
@@ -257,7 +265,8 @@ The representative execution, independent grading, private evidence preservation
 normalized baseline acceptance are complete. #14 acceptance criteria are satisfied. Legacy remains unavailable
 because exact provenance is absent, and the historical 42-job campaign remains
 unexecuted by design. A separate decision-applying adapter is still required before any
-Router v2 measurement. #15 remains separate and begins only after #14 acceptance.
+Router v2 measurement. #15's normalized aggregate telemetry is accepted (#73);
+production runtime collection remains separate and unimplemented.
 
 ## Historical initial campaign preflight
 
@@ -605,6 +614,11 @@ before owner acceptance. No merge or further live invocation is authorized here.
 
 ## Representative development design (separate frozen plan)
 
+The design and preparation chronology below preserves earlier requirements and
+diagnostics. The accepted measured baseline and current adaptive status are recorded
+at the top of this document; earlier candidate/runtime requirements are not instructions
+to replace an installed snapshot or repeat a spent execution.
+
 The primary question is whether a thin deterministic policy/capability layer can
 preserve or improve **completed development-task quality** while reducing unnecessary
 context/tool/token cost versus an equivalent native Codex workflow. Retrieval alone
@@ -719,7 +733,8 @@ validation; it executes no tools/models and creates no artifacts. The explicit
 controls locally. That host subprocess path verifies grader correctness, not grader
 security isolation; it must never be used for model submissions. The coverage validator
 has no real mode. The prepared representative entry is
-described in [the host/runner contract](benchmark-host.md); it remains blocked.
+described in [the host/runner contract](benchmark-host.md); its qualified technical
+readiness and representative baseline are accepted, without authorizing any new run.
 The historical entry accepts only its immutably blocked preliminary contract.
 
 ### Call budget and provenance
@@ -787,9 +802,10 @@ runtime before checking exact Codex and staged Rust/Cargo/Go/Python identities; 
 `PATH` toolchains are not accepted. It injects those staged paths through the frozen
 Codex shell-environment policy. Credential-free readiness evidence `ea86c70f...` verifies
 config parsing, Rust/Go/Python compile/run both directly and inside the exact Codex `:workspace` sandbox and the final no-authorization refusal with
-zero model calls. Technical readiness is true; execution authorization is still separate. Coverage remains reviewable independently, both
-campaigns remain unexecuted, and benchmark status stays partial until measured evidence
-exists. #14 stays open; #15 separate.
+zero model calls. Technical readiness is true; execution authorization is still separate.
+Coverage remains reviewable independently. The representative baseline was subsequently
+accepted (#72), as was aggregate telemetry (#73); the historical campaign remains
+unexecuted. These readiness probes themselves spent no campaign executions.
 
 ### Structural workload realism amendment
 
@@ -876,22 +892,26 @@ offline locked builds and no registry dependencies. A qualified host must demons
 that precise Cargo workflow within the final isolation boundary. This documentation
 adds an inventory requirement, not a verified runtime or a host fallback.
 
-Campaign execution history is unchanged: both campaigns remain unexecuted. Technical representative readiness is now true after accepting production submission-
+This amendment itself did not execute a campaign. Technical representative readiness
+became true after accepting production submission-
 grading evidence `199ec772...`, wiring mandatory staged-runtime verification into the
 runner and pinning credential-free readiness evidence `ea86c70f...`.
 Readiness is not authorization: the plan path remains non-executing and the real path
 still requires explicit authorization after all identity/auth/runtime gates. The
 historical seven-component manifest/preliminary 42-job plan and smoke evidence remain
-byte-identical. #14 stays open until measured evidence exists; #15 separate.
+byte-identical. Subsequent representative measurement and aggregate telemetry acceptance
+are recorded at the top of this document; the historical campaign remains unexecuted.
 
 ### Representative runner contract preparation
 
-#56 merged as `707c5f080af279cd99f54bfab564c3fe92798709`; active stage stays benchmark.
+#56 merged as `707c5f080af279cd99f54bfab564c3fe92798709` during the benchmark stage;
+the active stage is now adaptive.
 The matrix and representative runner contract are accepted. A separate-host receipt,
 agent isolation, constrained grading backend and production submission grader are all
 reviewed and accepted; the runner requires a prepared fully rehashed grading runtime.
-Technical readiness is true, while measured comparative evidence remains absent because
-no campaign execution has been authorized or performed. See [the typed qualification
+Technical readiness is true, and the subsequently executed representative baseline
+is accepted (#72). This does not establish Router/Adaptive comparative acceptance.
+See [the typed qualification
 and execution contract](benchmark-host.md). The historical development host remains
 non-qualified.
 
@@ -908,6 +928,7 @@ Historical preliminary campaign bytes, 42-job budget, smoke and failed evidence 
 unchanged. The representative budget remains 40, two repetitions, vanilla/native, seed
 14, retries zero, timeout 120 seconds. A separate one-execution representative smoke is
 now frozen outside that budget; it cannot execute without distinct operator authorization.
-Technical readiness is verified, but neither the representative smoke nor either campaign
-has been executed. #14 remains open and partial until measured evidence exists; #15
-remains separate.
+Technical readiness was verified during preparation; the representative smoke and
+campaign subsequently executed, and the baseline (#72) and aggregate telemetry (#73)
+are accepted. The historical campaign remains unexecuted; no new execution is authorized
+by these completed preparation steps.

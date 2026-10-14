@@ -663,6 +663,54 @@
       "stages": [
         "workflow"
       ]
+    },
+    {
+      "path": "docs/adaptive-operations.md",
+      "title": "Adaptive split-host operator runbook",
+      "owner": "benchmark",
+      "role": "current",
+      "stages": [
+        "adaptive",
+        "benchmark"
+      ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-14-adaptive-orchestrator-audit.md",
+      "title": "Adaptive orchestrator adversarial audit — 2026-10-14",
+      "owner": "benchmark",
+      "role": "historical",
+      "stages": [
+        "adaptive",
+        "benchmark"
+      ]
+    },
+    {
+      "path": "docs/production-routing-readiness.md",
+      "title": "Production routing integration readiness",
+      "owner": "architecture",
+      "role": "current",
+      "stages": [
+        "adaptive"
+      ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-14-infrastructure-reconciliation.md",
+      "title": "Infrastructure and governance reconciliation — 2026-10-14",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/diagnostics/2026-10-14-integration-stabilization.md",
+      "title": "Integration and infrastructure stabilization — 2026-10-14",
+      "owner": "engineering",
+      "role": "historical",
+      "stages": [
+        "workflow",
+        "adaptive"
+      ]
     }
   ]
 }

@@ -10,6 +10,7 @@ import datetime
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import re
 import stat
@@ -162,7 +163,16 @@ def agent_preflight(codex, code_mode_host, runtime_root, inventory_dir,
     return campaign, runtime, adapter
 
 
-def _artifact_root(run_id, resume):
+def _artifact_root(run_id, resume, *, destination=None):
+    if destination is not None:
+        path = _safe_path(destination)
+        if (".." in path.parts or path.is_relative_to(ROOT)
+                or not path.parent.is_dir()):
+            raise AdaptiveCampaignRefusal("external adaptive artifact destination required")
+        if resume:
+            return _safe_path(path, directory=True)
+        path.mkdir(mode=0o700)  # Exclusive; never adopt an existing campaign directory.
+        return path
     try:
         return _safe_path(split._artifact_root(run_id, resume), directory=True)
     except split.SplitHostRefusal as error:
@@ -173,17 +183,28 @@ def _write_json(path, value, *, exclusive=True):
     path = _safe_path(path)
     if exclusive:
         split._write_json_exclusive(path, value)
+        path.chmod(0o600)
+        if path.name == "started.json":
+            with path.open("rb") as stream:
+                os.fsync(stream.fileno())
+            descriptor = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
     else:
         if path.exists() and not _regular_file(path):
             raise AdaptiveCampaignRefusal("unsafe adaptive summary artifact")
         with path.open("w") as stream:
             stream.write(json.dumps(value, indent=2, sort_keys=True) + "\n")
+        path.chmod(0o600)
 
 
 def _write_text_exclusive(path, value):
     path = _safe_path(path)
     with path.open("x") as stream:
         stream.write(value)
+    path.chmod(0o600)
 
 
 def _attempt_dir(job_dir, ordinal):
@@ -403,15 +424,22 @@ def run_initial(
     authorized=False,
     resume=False,
     execute_fn=b.execute,
+    agent_artifacts=None,
+    planned_decisions=None,
 ):
     if authorized is not True:
         raise AdaptiveCampaignRefusal(
             "explicit adaptive lifecycle execution authorization required"
         )
+    if planned_decisions is not None and (
+        type(planned_decisions) is not dict
+        or set(planned_decisions) != {_job_id(*job) for job in jobs()}
+    ):
+        raise AdaptiveCampaignRefusal("complete reviewed decision matrix required")
     campaign, runtime, adapter = agent_preflight(
         codex, code_mode_host, runtime_root, inventory_dir, adapter, adapter_sha256
     )
-    artifacts = _artifact_root(run_id, resume)
+    artifacts = _artifact_root(run_id, resume, destination=agent_artifacts)
     _started_count(artifacts)
     launched = 0
     completed = 0
@@ -426,7 +454,12 @@ def run_initial(
                 not resume
             ):
                 raise AdaptiveCampaignRefusal("existing or invalid initial attempt")
-            _load_started(attempt_dir, scenario_id, repetition, seed, 1)
+            started = _load_started(attempt_dir, scenario_id, repetition, seed, 1)
+            if planned_decisions is not None and any(
+                started[key] != planned_decisions[job_id][key]
+                for key in ("profile", "reasoning", "model_key")
+            ):
+                raise AdaptiveCampaignRefusal("started ledger differs from reviewed plan")
             if _load_attempt_result(attempt_dir, scenario_id, repetition, seed, 1) is not None:
                 completed += 1
             else:
@@ -437,6 +470,8 @@ def run_initial(
         decision = adaptive._adapter_output(
             adapter, adaptive.SCENARIO_POLICY[scenario_id]
         )
+        if planned_decisions is not None and decision != planned_decisions.get(job_id):
+            raise AdaptiveCampaignRefusal("controller decision differs from reviewed plan before launch")
         _execute_attempt(
             artifacts=artifacts,
             scenario=scenario,
@@ -745,6 +780,7 @@ def grade_round(
     output_dir,
     *,
     authorized=False,
+    resume=False,
 ):
     if authorized is not True:
         raise AdaptiveCampaignRefusal(
@@ -755,14 +791,24 @@ def grade_round(
     source = _safe_path(agent_artifacts, directory=True)
     _validate_grading_bundle(source)
     target = Path(output_dir)
-    if not target.is_absolute() or target.exists() or target.is_symlink():
+    if not target.is_absolute() or (target.exists() and not resume) or target.is_symlink():
         raise AdaptiveCampaignRefusal("unsafe adaptive grading paths")
     _safe_path(target)
     adaptive.load_contract()
     if not adaptive.profile_mapping_verified():
         raise AdaptiveCampaignRefusal("adaptive profile mapping evidence is not accepted")
     runtime = _grading_runtime(qualification, runtime_root, inventory_dir)
-    target.mkdir(mode=0o700)
+    if target.exists():
+        _safe_path(target, directory=True)
+    else:
+        target.mkdir(mode=0o700)
+
+    allowed = {"summary.json", *(_job_id(*job) + ".json" for job in jobs())}
+    if any(entry.name not in allowed or not _regular_file(entry) for entry in target.iterdir()):
+        raise AdaptiveCampaignRefusal("unexpected partial grading output")
+    if any(not (source / entry.stem / f"attempt-{attempt}").is_dir()
+           for entry in target.iterdir() if entry.name != "summary.json"):
+        raise AdaptiveCampaignRefusal("partial grading row without started input")
 
     campaign = representative.load()
     rows = []
@@ -779,7 +825,11 @@ def grade_round(
         result = _load_attempt_result(
             attempt_dir, scenario_id, repetition, seed, attempt, transfer=True
         )
-        if result is None:
+        path = target / f"{job_id}.json"
+        if path.exists():
+            row = _load_grade_row(target, path.name, _sha256(path), attempt)
+            _match_grade(row, _load_started(attempt_dir, scenario_id, repetition, seed, attempt), result)
+        elif result is None:
             row = {
                 "schema_version": 1,
                 "measurement_id": adaptive.load_contract()["measurement_id"],
@@ -808,8 +858,8 @@ def grade_round(
             row = _grade_attempt(
                 result, attempt_dir, scenario, qualification, runtime
             )
-        path = target / f"{job_id}.json"
-        _write_json(path, row)
+        if not path.exists():
+            _write_json(path, row)
         hashes[path.name] = _sha256(path)
         rows.append(row)
 
@@ -825,8 +875,60 @@ def grade_round(
         "production_grading_reference": split.PRODUCTION_GRADING_REFERENCE,
         "runtime_inventory_reference": runtime.inventory_reference,
     }
-    _write_json(target / "summary.json", summary)
+    if (target / "summary.json").exists():
+        actual, _ = _load_grade_round(target, attempt)
+        if actual != summary:
+            raise AdaptiveCampaignRefusal("existing grading summary mismatch")
+    else:
+        _write_json(target / "summary.json", summary)
     return summary | {"summary_sha256": _sha256(target / "summary.json")}
+
+
+def _load_grade_row(root, name, digest, attempt):
+    if (type(name) is not str or not re.fullmatch(r"[a-z0-9-]+\.json", name)
+            or name == "summary.json" or type(digest) is not str
+            or not re.fullmatch(r"[0-9a-f]{64}", digest)):
+        raise AdaptiveCampaignRefusal("unsafe adaptive grade filename")
+    file = root / name
+    if not _regular_file(file) or _sha256(file) != digest:
+        raise AdaptiveCampaignRefusal("adaptive grade row hash mismatch")
+    row = json.loads(file.read_text())
+    required_row = {
+        "schema_version", "measurement_id", "job_id", "scenario_id",
+        "repetition", "seed", "attempt", "profile", "reasoning",
+        "model_key", "model", "agent_success", "quality_pass",
+        "failure_reason", "grader_reason", "grading_seconds",
+        "trace_sha256", "submission_sha256", "host_qualification_reference",
+        "production_grading_reference", "runtime_inventory_reference",
+    }
+    job = next((job for job in jobs() if _job_id(*job) + ".json" == name), None)
+    if (type(row) is not dict or set(row) != required_row or job is None
+            or type(row["schema_version"]) is not int or row["schema_version"] != 1
+            or row["measurement_id"] != adaptive.load_contract()["measurement_id"]
+            or row["job_id"] != _job_id(*job)
+            or row["scenario_id"] != job[0]
+            or type(row["repetition"]) is not int or row["repetition"] != job[1]
+            or type(row["seed"]) is not int or row["seed"] != job[2]
+            or type(row["attempt"]) is not int or row["attempt"] != attempt
+            or type(row["agent_success"]) is not bool
+            or type(row["quality_pass"]) is not bool
+            or (row["quality_pass"] and (not row["agent_success"] or row["failure_reason"] is not None))
+            or (not row["quality_pass"] and not isinstance(row["failure_reason"], str))
+            or (row["failure_reason"] is not None and row["failure_reason"] not in {
+                "quality-failure", "interrupted-no-result", "timeout", "launch-failure",
+                "agent-failure", "process-failure", "trace-invalid",
+                "submission-export-refused",
+            })
+            or (row["grader_reason"] is not None and (
+                type(row["grader_reason"]) is not str
+                or len(row["grader_reason"]) > 256))
+            or type(row["grading_seconds"]) not in (int, float)
+            or not math.isfinite(row["grading_seconds"]) or row["grading_seconds"] < 0
+            or row["host_qualification_reference"] != split.GRADING_HOST_RECEIPT
+            or row["production_grading_reference"] != split.PRODUCTION_GRADING_REFERENCE
+            or row["runtime_inventory_reference"] != split.RUNTIME_INVENTORY_REFERENCE):
+        raise AdaptiveCampaignRefusal("adaptive grade row identity mismatch")
+    return row
 
 
 def _load_grade_round(path, attempt, expected_sha256=None):
@@ -873,49 +975,7 @@ def _load_grade_round(path, attempt, expected_sha256=None):
         raise AdaptiveCampaignRefusal("unexpected adaptive grade artifact")
     rows = {}
     for name, digest in summary["row_sha256"].items():
-        if (type(name) is not str or not re.fullmatch(r"[a-z0-9-]+\.json", name)
-                or name == "summary.json" or type(digest) is not str
-                or not re.fullmatch(r"[0-9a-f]{64}", digest)):
-            raise AdaptiveCampaignRefusal("unsafe adaptive grade filename")
-        file = root / name
-        if not _regular_file(file) or _sha256(file) != digest:
-            raise AdaptiveCampaignRefusal("adaptive grade row hash mismatch")
-        row = json.loads(file.read_text())
-        required_row = {
-            "schema_version", "measurement_id", "job_id", "scenario_id",
-            "repetition", "seed", "attempt", "profile", "reasoning",
-            "model_key", "model", "agent_success", "quality_pass",
-            "failure_reason", "grader_reason", "grading_seconds",
-            "trace_sha256", "submission_sha256", "host_qualification_reference",
-            "production_grading_reference", "runtime_inventory_reference",
-        }
-        job = next((job for job in jobs() if _job_id(*job) + ".json" == name), None)
-        if (type(row) is not dict or set(row) != required_row or job is None
-                or type(row["schema_version"]) is not int or row["schema_version"] != 1
-                or row["measurement_id"] != adaptive.load_contract()["measurement_id"]
-                or row["job_id"] != _job_id(*job)
-                or row["scenario_id"] != job[0]
-                or type(row["repetition"]) is not int or row["repetition"] != job[1]
-                or type(row["seed"]) is not int or row["seed"] != job[2]
-                or type(row["attempt"]) is not int or row["attempt"] != attempt
-                or type(row["agent_success"]) is not bool
-                or type(row["quality_pass"]) is not bool
-                or (row["quality_pass"] and (not row["agent_success"] or row["failure_reason"] is not None))
-                or (not row["quality_pass"] and not isinstance(row["failure_reason"], str))
-                or (row["failure_reason"] is not None and row["failure_reason"] not in {
-                    "quality-failure", "interrupted-no-result", "timeout", "launch-failure",
-                    "agent-failure", "process-failure", "trace-invalid",
-                    "submission-export-refused",
-                })
-                or (row["grader_reason"] is not None and (
-                    type(row["grader_reason"]) is not str
-                    or len(row["grader_reason"]) > 256))
-                or type(row["grading_seconds"]) not in (int, float)
-                or not math.isfinite(row["grading_seconds"]) or row["grading_seconds"] < 0
-                or row["host_qualification_reference"] != split.GRADING_HOST_RECEIPT
-                or row["production_grading_reference"] != split.PRODUCTION_GRADING_REFERENCE
-                or row["runtime_inventory_reference"] != split.RUNTIME_INVENTORY_REFERENCE):
-            raise AdaptiveCampaignRefusal("adaptive grade row identity mismatch")
+        row = _load_grade_row(root, name, digest, attempt)
         rows[row["job_id"]] = row
     if (len(rows) != summary["graded_or_terminal_rows"]
             or set(rows) != {name[:-5] for name in summary["row_sha256"]}
@@ -976,6 +1036,7 @@ def run_retry(
     initial_grades_sha256=None,
     authorized=False,
     execute_fn=b.execute,
+    agent_artifacts=None,
 ):
     if authorized is not True:
         raise AdaptiveCampaignRefusal(
@@ -986,7 +1047,7 @@ def run_retry(
     campaign, runtime, adapter = agent_preflight(
         codex, code_mode_host, runtime_root, inventory_dir, adapter, adapter_sha256
     )
-    artifacts = _artifact_root(run_id, resume=True)
+    artifacts = _artifact_root(run_id, resume=True, destination=agent_artifacts)
     _started_count(artifacts)
     summary, grades = _load_grade_round(initial_grades, 1, initial_grades_sha256)
     if summary["missing_jobs"]:
@@ -1106,12 +1167,12 @@ def _median(values):
 
 
 def finalize(agent_artifacts, initial_grades, retry_grades, output_dir, *,
-             initial_grades_sha256=None, retry_grades_sha256=None):
+             initial_grades_sha256=None, retry_grades_sha256=None, resume=False):
     if not isinstance(initial_grades_sha256, str) or not isinstance(retry_grades_sha256, str):
         raise AdaptiveCampaignRefusal("trusted adaptive grade summary digests required")
     source = _safe_path(agent_artifacts, directory=True)
     target = Path(output_dir)
-    if not target.is_absolute() or target.exists() or target.is_symlink():
+    if not target.is_absolute() or (target.exists() and not resume) or target.is_symlink():
         raise AdaptiveCampaignRefusal("unsafe adaptive finalize paths")
     _safe_path(target)
     retry_summary_path = source / "retry-agent-summary.json"
@@ -1239,9 +1300,20 @@ def finalize(agent_artifacts, initial_grades, retry_grades, output_dir, *,
 
     if total_executions > 40 or total_executions != _started_count(source):
         raise AdaptiveCampaignRefusal("adaptive final execution count exceeds budget")
-    target.mkdir(mode=0o700)
+    if target.exists():
+        _safe_path(target, directory=True)
+        allowed = {"summary.json", *(_job_id(*job) + ".json" for job in jobs())}
+        if any(entry.name not in allowed or not _regular_file(entry) for entry in target.iterdir()):
+            raise AdaptiveCampaignRefusal("unexpected partial finalization output")
+    else:
+        target.mkdir(mode=0o700)
     for row in rows:
-        _write_json(target / f"{_job_id(row['scenario_id'], row['repetition'], row['seed'])}.json", row)
+        path = target / f"{_job_id(row['scenario_id'], row['repetition'], row['seed'])}.json"
+        if path.exists():
+            if json.dumps(json.loads(path.read_text()), sort_keys=True) != json.dumps(row, sort_keys=True):
+                raise AdaptiveCampaignRefusal("existing finalization row mismatch")
+        else:
+            _write_json(path, row)
     summary = {
         "schema_version": 1,
         "kind": "adaptive-lifecycle-measurement",
@@ -1301,7 +1373,11 @@ def finalize(agent_artifacts, initial_grades, retry_grades, output_dir, *,
         "baseline_evidence_reference": adaptive.BASELINE_EVIDENCE,
         "split_host_topology_reference": adaptive.SPLIT_HOST_REFERENCE,
     }
-    _write_json(target / "summary.json", summary)
+    if (target / "summary.json").exists():
+        if json.dumps(json.loads((target / "summary.json").read_text()), sort_keys=True) != json.dumps(summary, sort_keys=True):
+            raise AdaptiveCampaignRefusal("existing finalization summary mismatch")
+    else:
+        _write_json(target / "summary.json", summary)
     return summary
 
 
@@ -1404,6 +1480,7 @@ def main(argv=None):
                 args.agent_artifacts, args.grade_round, qualification,
                 args.runtime_root, args.inventory_dir, args.output_dir,
                 authorized=args.authorize_execution,
+                resume=args.resume,
             )
         elif args.export_grading_bundle:
             result = export_grading_bundle(args.agent_artifacts, args.output_dir)
@@ -1421,6 +1498,7 @@ def main(argv=None):
                 args.retry_grades, args.output_dir,
                 initial_grades_sha256=trusted_initial_sha256,
                 retry_grades_sha256=trusted_retry_sha256,
+                resume=args.resume,
             )
         else:
             result = plan()

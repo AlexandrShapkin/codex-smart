@@ -5,10 +5,11 @@ isolation evidence (`ae2840a9...`), the constrained grading backend (`af25f513..
 production submission-grading evidence (`199ec772...`) are accepted. The representative
 runner is wired to require a fully rehashed reviewed grading runtime before its explicit
 authorization gate, and the frozen technical readiness flag is now true. This does not
-execute or authorize the campaign: both plans remain unexecuted, the offline plan reports
-`model_execution_enabled=false`, and the real entry still requires explicit operator
-authorization plus all runtime/identity gates. Active work remains #14 until measured
-evidence exists; #15 remains separate.
+authorize a new campaign: the representative 40-job campaign completed and its baseline
+`ffd8fbbc...` is accepted (#72); the historical 42-job plan remains unexecuted. Offline
+plans report `model_execution_enabled=false`, and real entries require explicit operator
+authorization plus all runtime/identity gates. #15's aggregate telemetry is accepted
+(#73); production routing and comparative adaptive measurement remain separate work.
 
 ## Qualification boundary
 
@@ -110,8 +111,9 @@ normalized credential-free candidate is frozen as
 `agent-execution-isolation-candidate-v1.json`, reference `ae2840a9...`, and that exact
 reference is now accepted by `agent-execution-isolation-v1.json`. Acceptance is still
 conjunctive: the qualified-host receipt must carry the same component reference, and
-the frozen campaign readiness gate remains false. No real credential or model call was
-used for these probes.
+agent-isolation evidence alone cannot satisfy the remaining qualification/runtime and
+authorization gates. The accepted technical readiness described below is separate.
+No real credential or model call was used for these probes.
 
 The accepted receipt refers to one composed boundary and inventory; any future
 receipt must preserve the same review discipline. Review actual resource limits,
@@ -197,8 +199,8 @@ Observed token keys are input, cached input, output and reasoning. Fresh input, 
 and full tool-call count remain null; never subtract or derive them. Parser-invalid
 usage stays null. Normalization whitelists fields; arbitrary event payloads, prompts,
 source, stderr and private paths cannot enter normalized records. Raw traces/stderr
-remain local under private gitignored artifact directories. No measured records are
-committed by this slice.
+remain local under private gitignored artifact directories. Accepted normalized baseline
+and aggregate telemetry evidence are committed separately; raw records stay private.
 
 Distinguish qualification/preflight refusal (zero attempts and model calls), launch/
 process/timeout failure, agent terminal failure, invalid trace, grading refusal and
@@ -226,13 +228,13 @@ remain 10/10 references, 20/20 wrong controls and 9/9 security controls with zer
 calls and no real credentials. The offline plan remains non-executing; the real entry
 still refuses before artifacts/model execution unless exact Codex/toolchains, agent auth
 runtime, full grading-runtime rehash and explicit authorization all pass. Historical 42
-jobs and representative 40 primary executions remain unexecuted; successful IaC smoke
-and historical failed evidence remain unchanged. Before spending the 40-execution
-representative budget, `representative-smoke-v1.json` freezes a separate one-execution
+jobs remain unexecuted. The representative campaign subsequently completed as described
+below; successful IaC smoke and historical failed evidence remain unchanged.
+`representative-smoke-v1.json` freezes the separate one-execution
 `python-billing`/`vanilla` smoke. The smoke reuses the complete production preflight, is
 excluded from comparative metrics, has retries zero and requires its own explicit
-`--authorize-smoke-execution` flag. #14 stays open until measured evidence exists; #15
-separate.
+`--authorize-smoke-execution` flag. #14's baseline and #15's aggregate telemetry are
+accepted; this historical readiness promotion did not perform those later measurements.
 
 A split-host representative topology is also staged for the measured campaign because
 `srv0` cannot reach the model endpoint from its current egress. This is not a proxy or
