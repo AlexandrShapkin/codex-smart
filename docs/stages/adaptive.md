@@ -153,3 +153,7 @@ The proposed [native inspection trust qualification](../decisions/0010-native-in
 for #119 records NO-GO for production admission, the independent root/reviewer,
 current identity and clock/state gaps, and the offline negative-scenario matrix.
 It adds no runtime authority or stage acceptance.
+
+The [operator/reviewer trust-root and offline-channel follow-up](../decisions/0011-operator-reviewer-authority.md)
+(#121) compares two bootstrap choices and remains NO-GO for enrollment and
+production admission until independent channel, host state and authority evidence exist.

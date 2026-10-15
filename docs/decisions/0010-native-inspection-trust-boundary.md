@@ -6,6 +6,9 @@ Architecture owns this proposed contract; engineering owns any future offline ad
 under #94. Independent security/owner review is required before implementation.
 Adaptive remains active. This document implements no collector or runtime join.
 
+The bounded [#121 operator/reviewer authority follow-up](0011-operator-reviewer-authority.md)
+qualifies two offline bootstrap choices and preserves actual enrollment NO-GO.
+
 ## Evidence inventory
 
 References below are exact source lines at the base SHA, not claims of host qualification.
