@@ -729,6 +729,15 @@
       "stages": [
         "adaptive"
       ]
+    },
+    {
+      "path": "docs/decisions/0011-operator-reviewer-authority.md",
+      "title": "ADR-0011: Operator and reviewer authority qualification",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "adaptive"
+      ]
     }
   ]
 }
