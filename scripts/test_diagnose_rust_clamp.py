@@ -1,5 +1,8 @@
 import errno
 import json
+from pathlib import Path
+import sys
+import tempfile
 import subprocess
 import unittest
 from unittest.mock import patch
@@ -49,6 +52,34 @@ class DiagnosticsTests(unittest.TestCase):
             self.assertEqual([r['control_ok'] for r in result['controls']], [not broken] * 3)
             if broken:
                 self.assertTrue(all(not r['quality_pass'] for r in result['controls']))
+
+    def test_selected_control_and_real_constrained_compiler(self):
+        # A real child under a zero file-size limit fails to write its output.
+        # This is a synthetic constraint, not evidence about historical CI hosts.
+        if sys.platform != 'linux':
+            self.skipTest('Linux resource limits required')
+        with tempfile.TemporaryDirectory() as tmp:
+            compiler = Path(tmp) / 'rustc'
+            compiler.write_text('#!' + sys.executable + '\n'
+                                'import resource\n'
+                                'resource.setrlimit(resource.RLIMIT_FSIZE, (0, 0))\n'
+                                'try:\n'
+                                '    with open("test", "wb") as f: f.write(b"x"); f.flush()\n'
+                                'except OSError:\n'
+                                '    raise SystemExit(7)\n')
+            compiler.chmod(0o700)
+            child = subprocess.run(
+                [sys.executable, '-B', diagnostic.__file__, '--control', 'wrong'],
+                env={'PATH': tmp}, capture_output=True, timeout=30)
+            self.assertEqual(child.returncode, 1)
+            result = json.loads(child.stdout)
+        self.assertEqual(len(result['controls']), 1)
+        row = result['controls'][0]
+        self.assertFalse(row['control_ok'])
+        self.assertEqual(len(row['commands']), 1)
+        self.assertEqual(row['commands'][0]['phase'], 'compile')
+        self.assertEqual(row['commands'][0]['exit_code'], 7)
+        self.assertEqual(row['commands'][0]['stderr'], [])
 
     def test_signals_and_timeouts_do_not_validate_negative_controls(self):
         for failure in (-9, 'timeout'):
