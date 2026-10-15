@@ -116,8 +116,9 @@ reason to weaken verification. Run installed `just nextest` where available.
 Inspect new files as well as tracked diffs. Never run live benchmark calls to validate
 repository workflow changes; the Python tests use isolated fixtures/fake hosts.
 
-Commit only on the task branch with small Conventional Commits. With explicit
-permission to push and open a PR, use native Git/gh and the existing PR template:
+Commit only on the task branch with small Conventional Commits. With
+in-scope task authority to push and open a PR (standing only once effective),
+use native Git/gh and the existing PR template; separate merge gates apply:
 
 ```bash
 git push --set-upstream origin chore/my-task
@@ -128,31 +129,61 @@ gh run list --repo AlexandrShapkin/codex-smart --commit FULL_PROPOSED_SHA --json
 
 ### Review and merge authorization
 
+This section defines bounded standing engineering authority under
+[Issue #127](https://github.com/AlexandrShapkin/codex-smart/issues/127).
+It becomes effective only after owner-authorized acceptance into GitHub `main`.
+Bootstrap remains under the preceding main rules: separate personal owner merge
+consent for this PR at its full head SHA, plus all other gates. This proposal does
+not authorize its own merge or PR #125. The explicit owner prohibition on merging
+PR #125 remains effective until the owner expressly lifts it.
+
+Once effective, owner-provided standing authority covers ordinary bounded
+codex-smart engineering within agreed issue/contract scope: task branches/worktrees,
+commits, pushes, PRs, independent review, bounded check retries, Draft → Ready,
+merge, postmerge verification and issue closeout. These steps and ordinary head
+changes require no repeated personal owner approval. All safeguards below remain.
+
+Separate explicit owner authority is required for production activation/deployment;
+release/distribution; live benchmark campaigns or unplanned expenses;
+secrets/credentials/auth or sensitive infrastructure; branch protection or mandatory
+security-gate changes; destructive data loss or irreversible operations; material
+escalation of authority/security boundaries; and any more specifically contracted
+approval. A scoped one-shot owner decision may authorize an exception, but cannot
+waive technical/security gates. An express prohibition requires an express owner
+decision lifting it.
+Individual owner veto, limitation or revocation overrides general delegation.
+Uncertain eligibility or authority fails closed.
+
+Record the public effective normative source (this section pinned to its accepted
+main commit), version, owner-provided scope/eligibility and non-sensitive evidence
+of authority and current limitations/revocations. Check that evidence remains valid
+for the proposed action. Keep private chat private; record only a non-sensitive
+attestation/reference sufficient to establish authority, without disclosing private
+messages. If provenance cannot be established safely, stop. Assistant-written
+GitHub comments, even through the linked owner account, are evidence transcription,
+not personal owner decisions; account attribution alone establishes no authority.
+This governance does not provision runtime/operator/reviewer credentials or alter
+[ADR 0008](decisions/0008-deterministic-workflows.md) or security boundaries.
+
 Record base SHA, full 40-character proposed PR head SHA, scope/issue, exact local
-results and unresolved limits. Four distinct gates apply; none substitutes for another:
+results and unresolved limits. Four independent gates apply; none substitutes for another:
 
 | Gate | Required evidence |
 | --- | --- |
-| Independent technical/security review | An independently performed technical/security verdict by a reviewer distinct from the implementer (including ChatGPT independently reviewing Codex CLI work), with reviewer identity, scope, findings and unresolved limits, anchored to the exact full PR head SHA. The implementer's own report is not independent evidence. |
-| GitHub Actions status checks | Successful **CI / check** and **Security / review**, status contexts `check` and `review` from GitHub Actions app ID **15368**, for the exact proposed head and applicable integration checks. `Security / review` is a machine status check, not a human or formal GitHub review. |
-| Formal GitHub approving reviews | Whatever live branch protection requires. The current baseline is `required_approving_review_count=0`: no GitHub-enforced formal approving review, not a waiver of independent technical/security acceptance or project owner merge authorization. Stronger current requirements always apply. |
-| Explicit owner merge authorization | A separately established owner decision explicitly authorizing merge of one identified PR at one full head SHA, in first-person chat or a clearly attributable owner-authored GitHub action such as a comment/review. Record the decision and its provenance separately from technical acceptance and check evidence. |
-
-A GitHub comment authored by ChatGPT through the linked owner account is a
-transcription of evidence, not an independently owner-authored source of authority.
-Account attribution alone does not establish that the owner made the decision.
-An owner-authored formal review supplies merge authority only if it also explicitly
-expresses the PR/head-specific intent to merge; formal approval alone is insufficient.
+| Independent technical/security review | Explicit ACCEPT by a reviewer distinct from the implementer (including ChatGPT independently reviewing Codex CLI work), with reviewer identity, scope, findings and unresolved limits, anchored to the exact full PR head SHA. The implementer's own report is not independent evidence. |
+| GitHub Actions status checks | Successful **CI / check** and **Security / review**, status contexts `check` and `review` from GitHub Actions app ID **15368**, for the exact proposed head and applicable synthetic integration checks. `Security / review` is a machine status check, not a human or formal GitHub review. |
+| Formal GitHub reviews and protection | All current formal reviews, unresolved review blockers and live protection requirements must permit integration. The recorded baseline `required_approving_review_count=0` waives neither independent acceptance nor authority; stronger current requirements always apply. |
+| Valid scoped authority | Effective standing authority covering this ordinary action, with no applicable exception, veto or revocation; otherwise separate explicit owner authority for the identified exception/action and any PR/head binding it requires. Bootstrap requires personal PR/full-head consent under preceding main rules. |
 
 | Example | Decision |
 | --- | --- |
-| Owner says “I authorize merging PR #N at FULL_HEAD_SHA”, with an actual PR number and full 40-character head SHA | Owner authorization for that PR/head only; all other gates still apply. |
-| Generic or forward-looking blanket consent, such as “merge future green PRs” | No PR/head-specific owner authorization. |
-| Green CI alone or successful Security/review status | Neither independent technical/security acceptance nor owner merge authorization. |
-| Independent ChatGPT technical/security review of separate Codex CLI implementation | May satisfy technical/security acceptance when scoped to the exact head, but never grants owner merge authorization. |
-| Owner authorization for an earlier head SHA | Invalid for the changed head. |
-| Owner approval of an architecture, stage or implementation approach | Does not authorize merging a PR. |
-| Assistant posts “owner approved” through the linked GitHub account | Transcription only; retain the separately established first-party owner decision. |
+| Effective standing authority, covered ordinary PR, all four gates satisfied | Eligible without a new personal owner decision for each step or head. |
+| Stale head or base; missing checks; unresolved blockers; unknown rules | DENY until fresh evidence satisfies every gate. |
+| Special operation outside standing scope | DENY under standing authority; obtain separate explicit scoped owner authority and satisfy all other gates. |
+| Owner veto/revocation, including the PR #125 merge ban | DENY; general delegation cannot override it. |
+| Assistant-authored GitHub comment says “owner approved” | DENY as an authority source; establish independent owner provenance. |
+| Green checks, independent ACCEPT or formal approval alone | DENY; none alone satisfies all four gates. |
+| One-shot owner consent for PR #N at FULL_HEAD_SHA | Authority only within that explicit scope; a changed head requires renewed consent if that consent is the authority being relied on. |
 
 ### Draft, Ready and merge gates
 
@@ -163,28 +194,30 @@ is not remote evidence. Push runs verify the branch commit; pull-request runs al
 test GitHub's synthetic merge commit. Record their actual SHAs and relationship to
 the proposed head/base; stale or unrelated runs do not establish acceptance.
 
-Any changed PR head invalidates the owner merge authorization and the earlier-head
-review/check evidence for the new head. Obtain new independent acceptance, rerun
-applicable checks and obtain a new explicit owner decision for the full new SHA.
-A changed base, branch protection or CI configuration requires live re-evaluation
-of integration safety and applicable checks, including strict up-to-date protection;
-renew the independent technical/security acceptance and owner decision when the change is decision-relevant.
+Every commit changing the PR head requires new exact-head independent ACCEPT and
+applicable checks. Ordinary covered PRs do not require renewed personal owner merge
+consent. Re-evaluate any changed base, branch protection or CI configuration,
+including strict up-to-date protection and applicable synthetic integration checks;
+renew independent acceptance when the integration change is decision-relevant.
 Stronger current rules always apply; a recorded baseline cannot weaken them.
 
-Immediately before merge, verify the live PR head, base, branch protection, required
-formal reviews and current check evidence. Merge only after the specific owner
-authorization and all project/live protection gates are satisfied. Bind the merge
-operation's `expected_head_sha` to the authorized full PR head SHA; if the tool cannot
-enforce that precondition, do not merge through it. A head mismatch or failed/unknown
-gate stops integration. Do not synthesize approving reviews, bypass protection or
-auto-merge.
+Immediately before merge, re-read the actual PR head and base SHA, strict/live
+branch protection, all formal reviews, required checks and unresolved blockers,
+and confirm current scoped authority. Unknown, stale or conflicting state stops
+integration. Bind the merge call's `expected_head_sha` (or equivalent enforced
+precondition) to the reviewed full PR head SHA; if the tool cannot enforce it,
+do not merge through it. This guards the head only, not an atomic base-SHA
+compare-and-swap. Re-evaluate a changed base and its integration evidence before
+proceeding; an earlier base observation does not prove current integration safety.
+Do not synthesize approving reviews, bypass protection or use auto-merge.
 
 ### Postmerge evidence and issue closeout
 
 After an authorized merge, read GitHub `main` again and record the actual full main
 SHA, the merge commit and its relationship to the authorized PR/head. Require
 successful mandatory CI/check and Security/review checks for the actual main SHA,
-with run URLs/IDs, attempt numbers, SHAs and conclusions. PR-head or synthetic-merge
+with run URLs/IDs, attempt numbers, SHAs and conclusions. Collect this independent
+postmerge machine evidence even when all premerge gates passed. PR-head or synthetic-merge
 success alone does not prove postmerge success. If main advances, distinguish the
 actual merge result from the newer main and collect the applicable evidence for each.
 
@@ -196,11 +229,12 @@ or uncertainty blocks clean closeout and requires investigation rather than repe
 retries until green.
 
 Close the issue only after its acceptance and Definition of Done (DoD) are satisfied,
-with immutable evidence identifying the reviewed/authorized head, owner decision,
-base/protection observation, merge/main SHA and exact-SHA check attempts. Use
-SHA-pinned source references and stable run/decision references, retaining chat
-provenance when a GitHub comment transcribes it. Missing evidence keeps the issue
-open; partial delivery requires explicit residual acceptance and an owning follow-up.
+with immutable evidence identifying the reviewed head, applicable authority
+source/version and scope, base/protection observation, merge/main SHA and exact-SHA
+check attempts. Use SHA-pinned source references and stable run/decision references,
+retaining non-sensitive authority/revocation provenance without private chat
+disclosure or attributing assistant transcription to the owner. Missing evidence
+keeps the issue open; partial delivery requires explicit residual acceptance and an owning follow-up.
 These rules do not retroactively reinterpret the decisions for #119/#120.
 GitHub Issues own outstanding decisions. Start the next slice in a new verified-main
 worktree; no checkout cleanup is required.

@@ -4,7 +4,7 @@
 
 Start from a verified GitHub `main` commit in a new task branch/worktree using the authoritative [workflow](docs/workflow.md#start-a-codex-task). Preserve existing dirty or outdated checkouts. Inside the isolated task, run `just context [STAGE]` and `just issues`; read the owning contract and relevant ADRs before editing. Keep changes within one acceptance slice and preserve the thin launcher and safety contracts.
 
-Use `feat/<scope>`, `fix/<scope>`, `docs/<scope>` or `chore/<scope>` branches and small Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`). Inspect all diffs, including new files. Push, merge, release and publish only with authorization; never auto-merge by default.
+Use `feat/<scope>`, `fix/<scope>`, `docs/<scope>` or `chore/<scope>` branches and small Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`). Inspect all diffs, including new files. Use the scoped authority in the workflow below for pushes and merges; release/publication requires separate explicit authority. Never auto-merge.
 
 ## Issue governance
 
@@ -34,7 +34,7 @@ Update documentation at its canonical owner in `docs/documents.json`; update sta
 
 ## PRs and closeout
 
-Use the PR template to connect the problem, scope, approach and validation to the owning issue/stage. Report safety/compatibility effects, risks, known limits and follow-ups. Follow the normative [review and merge authorization gates](docs/workflow.md#review-and-merge-authorization) for independent technical/security acceptance, machine checks, live formal-review requirements and a separate owner decision for one PR at one full head SHA, including Draft/Ready and postmerge evidence. Zero required formal approvals does not waive owner authorization.
+Use the PR template to connect the problem, scope, approach and validation to the owning issue/stage. Report safety/compatibility effects, risks, known limits and follow-ups. Follow the normative [review and merge authorization gates](docs/workflow.md#review-and-merge-authorization) for independent technical/security acceptance, machine checks, live formal-review requirements and valid scoped authority, including Draft/Ready and independent exact-main postmerge evidence. Standing authority applies only after owner-authorized acceptance into main; bootstrap retains personal PR/full-head merge consent. Covered routine steps and head changes need no repeated personal owner approval, but every changed head needs new independent ACCEPT and checks. Exceptions, veto/revocation and the PR #125 merge ban remain binding. Zero required formal approvals waives no other gate.
 
 Close an issue only when its acceptance is satisfied and linked PR/commit/check evidence is recorded. Partial delivery needs explicit residual acceptance and an owning follow-up; stage transfers replace ownership labels. After authorized merge, verify GitHub `main` again and start the next slice in a new worktree.
 
