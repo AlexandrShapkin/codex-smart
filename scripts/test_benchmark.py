@@ -3,10 +3,76 @@ import json
 from pathlib import Path
 import shutil
 import tempfile
+import sys
+import math
+import traceback
 import unittest
 from unittest.mock import patch
 
 import benchmark as b
+
+
+def validated_rust_report(raw, control):
+    """Reject arbitrary child JSON; return newly built, bounded safe metadata."""
+    def require(condition):
+        if not condition:
+            raise ValueError('diagnostic-invalid')
+
+    def keys(value, expected):
+        require(type(value) is dict and set(value) == set(expected))
+
+    def integer(value, low, high):
+        require(type(value) is int and low <= value <= high)
+        return int(value)
+
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            require(key not in result)
+            result[key] = value
+        return result
+
+    require(type(raw) is str and len(raw) <= 8192)
+    require(len(raw.encode('utf-8')) <= 8192)
+    report = json.loads(raw, object_pairs_hook=unique)
+    keys(report, ('scenario', 'controls'))
+    require(report['scenario'] == 'rust-clamp')
+    require(type(report['controls']) is list and len(report['controls']) == 1)
+    row = report['controls'][0]
+    keys(row, ('control', 'quality_pass', 'control_ok', 'commands'))
+    require(row['control'] == control and control in ('correct', 'wrong'))
+    require(type(row['quality_pass']) is bool and type(row['control_ok']) is bool)
+    require(type(row['commands']) is list and len(row['commands']) <= 2)
+    commands = []
+    for index, command in enumerate(row['commands']):
+        keys(command, ('phase', 'exit_code', 'timed_out', 'timeout_seconds',
+                       'launch_error', 'stderr', 'duration_ms'))
+        phase = 'compile' if index == 0 else 'test'
+        require(command['phase'] == phase)
+        code = command['exit_code']
+        if code is not None:
+            code = integer(code, -2147483648, 2147483647)
+        require(type(command['timed_out']) is bool)
+        require(type(command['timeout_seconds']) is int and command['timeout_seconds'] == 25)
+        launch = command['launch_error']
+        require(launch is None or type(launch) is str and launch in (
+            'tool-missing', 'memory-pressure', 'process-pressure', 'storage-pressure', 'os-error'))
+        labels = command['stderr']
+        allowed = ('memory-pressure', 'storage-pressure', 'process-pressure',
+                   'compiler-error', 'assertion-failed')
+        require(type(labels) is list and len(labels) <= len(allowed))
+        require(all(type(label) is str and label in allowed for label in labels))
+        commands.append({'phase': phase, 'exit_code': code, 'timed_out': command['timed_out'],
+                         'timeout_seconds': 25, 'launch_error': launch,
+                         'stderr': [label for label in allowed if label in labels],
+                         'duration_ms': integer(command['duration_ms'], 0, 86400000)})
+    if row['control_ok']:
+        require(row['quality_pass'] == (control == 'correct') and len(commands) == 2)
+        require([c['exit_code'] for c in commands] == [0, 0 if control == 'correct' else 101])
+        require(all(not c['timed_out'] and c['launch_error'] is None for c in commands))
+    return {'scenario': 'rust-clamp', 'controls': [{
+        'control': control, 'quality_pass': row['quality_pass'],
+        'control_ok': row['control_ok'], 'commands': commands}]}
 
 
 class BenchmarkTests(unittest.TestCase):
@@ -149,7 +215,153 @@ class BenchmarkTests(unittest.TestCase):
                         d = Path(tmp)
                         b.setup(s,d)
                         b.materialize(b.fixture(s)[kind],d)
-                        self.assertEqual(b.grade(s,d),expected, (s['id'],kind))
+                        if s['id'] == 'rust-clamp':
+                            self.assert_rust_grade(s, d, expected)
+                        else:
+                            self.assertEqual(b.grade(s,d),expected, (s['id'],kind))
+
+    def assert_rust_grade(self, scenario, workspace, expected):
+        execute = b.execute
+        observations = []
+
+        def observed(*args, **kwargs):
+            result = execute(*args, **kwargs)
+            # Keep only validated metadata from the actual frozen grade invocation.
+            code = result.get('exit_status')
+            duration = result.get('duration')
+            if (type(code) is not int or not -2147483648 <= code <= 2147483647
+                    or type(result.get('timeout')) is not bool
+                    or type(duration) not in (int, float) or not math.isfinite(duration)
+                    or duration < 0):
+                raise ValueError('outer-metadata-invalid')
+            observations.append({'exit_code': code, 'timeout': result['timeout'],
+                                 'duration_ms': round(min(86400, duration) * 1000)})
+            return result
+
+        try:
+            with patch.object(b, 'execute', side_effect=observed):
+                passed = b.grade(scenario, workspace)
+        except (OSError, ValueError):
+            raise self.failureException('rust-clamp grade: outer-error; inner=UNKNOWN') from None
+        self.assertEqual(len(observations), 1, 'rust-clamp grade: observation-invalid')
+        outer = observations[0]
+        message = 'rust-clamp grade: inner=UNKNOWN; ' + json.dumps(outer, sort_keys=True)
+        self.assertFalse(outer['timeout'], message)
+        self.assertIn(outer['exit_code'], (0, 1), message)
+        self.assertEqual(passed, expected, message)
+        # Exit 1 cannot distinguish an oracle rejection from an inner compile/OS/
+        # timeout failure. This integration assertion alone proves no such cause.
+
+    def test_supplementary_rust_controls(self):
+        if shutil.which('rustc') is None:
+            self.skipTest('rustc unavailable')
+        for control in ('correct', 'wrong'):
+            with self.subTest(control=control):
+                self.assert_rust_control(control)
+
+    def assert_rust_control(self, control):
+        # Observe this invocation, never rerun a failed Boolean grade as evidence.
+        try:
+            result = b.execute([sys.executable, '-B',
+                                str(Path(__file__).with_name('diagnose_rust_clamp.py')),
+                                '--control', control], b.ROOT, timeout=30)
+        except OSError:
+            raise self.failureException('rust-clamp control: outer-launch-error') from None
+        if result['timeout']:
+            self.fail('rust-clamp control: outer-timeout (30 seconds)')
+        try:
+            report = validated_rust_report(result.get('stdout'), control)
+        except (ValueError, TypeError, RecursionError):
+            raise self.failureException('rust-clamp control: diagnostic-invalid') from None
+        # Only reconstructed allowlisted metadata can reach an assertion.
+        message = 'rust-clamp control: ' + json.dumps(report, sort_keys=True)
+        self.assertEqual(result['exit_status'], 0, message)
+        self.assertTrue(report['controls'][0]['control_ok'], message)
+
+    def test_rust_control_failures_are_not_negative_control_success(self):
+        for result, label in [
+            ({'timeout': True}, 'outer-timeout'),
+            ({'timeout': False, 'exit_status': -9, 'stdout': 'PRIVATE'},
+             'diagnostic-invalid'),
+            ({'timeout': False, 'exit_status': 1, 'stdout': json.dumps({
+                'controls': [{'control': 'wrong', 'control_ok': False,
+                              'commands': [{'phase': 'compile', 'exit_code': 1}]}]})},
+             'diagnostic-invalid'),
+        ]:
+            with self.subTest(label=label), patch.object(b, 'execute', return_value=result) as execute:
+                with self.assertRaises(AssertionError) as raised:
+                    self.assert_rust_control('wrong')
+                self.assertIn(label, str(raised.exception))
+                self.assertNotIn('PRIVATE', str(raised.exception))
+                execute.assert_called_once()
+        with patch.object(b, 'execute', side_effect=OSError('PRIVATE')):
+            with self.assertRaisesRegex(AssertionError, 'outer-launch-error') as raised:
+                self.assert_rust_control('correct')
+            rendered = ''.join(traceback.format_exception(raised.exception))
+            self.assertNotIn('PRIVATE', rendered)
+
+    def test_rust_diagnostic_json_is_bounded_and_allowlisted(self):
+        report = {'scenario': 'rust-clamp', 'controls': [{
+            'control': 'wrong', 'quality_pass': False, 'control_ok': False,
+            'commands': [{'phase': 'compile', 'exit_code': 7, 'timed_out': False,
+                          'timeout_seconds': 25, 'launch_error': None, 'stderr': [],
+                          'duration_ms': 1}]}]}
+        self.assertEqual(validated_rust_report(json.dumps(report), 'wrong'), report)
+        adversarial = []
+        for target, field, value in [
+            ('report', 'PRIVATE', 'PRIVATE'),
+            ('report', 'scenario', 'PRIVATE'),
+            ('row', 'control', 'PRIVATE'),
+            ('row', 'quality_pass', 'PRIVATE'),
+            ('command', 'stderr', ['PRIVATE']),
+            ('command', 'launch_error', 'PRIVATE'),
+            ('command', 'duration_ms', 'PRIVATE'),
+            ('command', 'exit_code', {'PRIVATE': True}),
+            ('command', 'phase', 'PRIVATE'),
+        ]:
+            changed = copy.deepcopy(report)
+            obj = (changed if target == 'report' else changed['controls'][0]
+                   if target == 'row' else changed['controls'][0]['commands'][0])
+            obj[field] = value
+            adversarial.append(json.dumps(changed))
+        adversarial.extend(['PRIVATE' * 2000, '{"scenario":"PRIVATE","scenario":"rust-clamp"}',
+                            '["PRIVATE"]', '"PRIVATE"'])
+        for raw in adversarial:
+            with self.subTest(case=adversarial.index(raw)):
+                result = {'timeout': False, 'exit_status': 1, 'stdout': raw}
+                with patch.object(b, 'execute', return_value=result):
+                    with self.assertRaisesRegex(AssertionError, 'diagnostic-invalid') as raised:
+                        self.assert_rust_control('wrong')
+                self.assertNotIn('PRIVATE', ''.join(traceback.format_exception(raised.exception)))
+        with patch.object(b, 'execute', return_value={
+                'timeout': False, 'exit_status': 1, 'stdout': json.dumps(report)}):
+            with self.assertRaisesRegex(AssertionError, 'compile'):
+                self.assert_rust_control('wrong')
+
+    def test_rust_grade_observes_original_call_and_fails_closed_on_outer_errors(self):
+        scenario = next(s for s in self.m['scenarios'] if s['id'] == 'rust-clamp')
+        for code, timeout, expected, fails in [
+            (0, False, True, False), (1, False, False, False),
+            (1, False, True, True), (-9, False, False, True),
+            (1, True, False, True), (2, False, False, True),
+        ]:
+            with self.subTest(code=code, timeout=timeout, expected=expected):
+                result = {'exit_status': code, 'timeout': timeout, 'duration': .125,
+                          'stdout': 'PRIVATE', 'stderr': 'PRIVATE'}
+                with patch.object(b, 'execute', return_value=result) as execute:
+                    if fails:
+                        with self.assertRaisesRegex(AssertionError, 'inner=UNKNOWN') as raised:
+                            self.assert_rust_grade(scenario, Path('/synthetic'), expected)
+                        self.assertNotIn('PRIVATE', ''.join(traceback.format_exception(raised.exception)))
+                    else:
+                        self.assert_rust_grade(scenario, Path('/synthetic'), expected)
+                    execute.assert_called_once_with(
+                        [shutil.which('python3'), '-B', str(b.ROOT / 'graders.py'),
+                         'rust-clamp', '/synthetic'], b.ROOT, timeout=30)
+        with patch.object(b, 'execute', side_effect=OSError('PRIVATE')):
+            with self.assertRaisesRegex(AssertionError, 'inner=UNKNOWN') as raised:
+                self.assert_rust_grade(scenario, Path('/synthetic'), False)
+            self.assertNotIn('PRIVATE', ''.join(traceback.format_exception(raised.exception)))
 
     def test_fake_failures_and_missing_usage(self):
         for mode, reason in [('failure','process-failure'),('timeout','timeout'),
@@ -239,7 +451,6 @@ class BenchmarkTests(unittest.TestCase):
                 b.run(self.s,'vanilla',14,0,forbidden,artifacts=artifacts)
 
     def test_execution_timeout_and_exit(self):
-        import sys
         with tempfile.TemporaryDirectory() as tmp:
             self.assertEqual(b.execute([sys.executable,'-c','raise SystemExit(2)'],tmp)['exit_status'],2)
             self.assertTrue(b.execute([sys.executable,'-c','import time; time.sleep(5)'],tmp,timeout=0.05)['timeout'])

@@ -731,6 +731,43 @@ report before assigning a compilation, timeout, host-resource or oracle cause.
 Issue #92 remains open pending that host evidence; no campaign or model execution
 is authorized by this diagnostic.
 
+`scripts/test_benchmark.py` retains the original `setup` → `materialize` →
+`grade` integration for both Rust correct/wrong fixtures, as well as all non-Rust
+controls. A capturing proxy delegates the actual `b.execute` call unchanged and
+retains only bounded outer exit code, timeout and duration. Outer timeout, signal,
+launch error or unexpected exit fails even the wrong control. An ordinary exit 1
+from the pinned grader has inner cause **UNKNOWN**: the original Boolean integration
+expectation for the wrong fixture cannot distinguish oracle rejection from inner
+compilation, OS or timeout failure. A failed correct control remains a failed test;
+no subsequent diagnostic can replace that result.
+
+A separate supplementary test invokes the existing observer for each Rust
+correct/wrong control (`--control correct|wrong`) under a 30-second outer deadline.
+Its compile/test records describe only those separate invocations, not the frozen
+`grade()` call. Diagnostic stdout is limited to 8192 UTF-8 bytes before JSON parsing;
+exact keys, scalar types, integer bounds and fixed enum values are validated, then
+only reconstructed allowlisted metadata is rendered. Unexpected content fails as
+`diagnostic-invalid` without quoting raw output or chained parse exceptions.
+Compile failure, launch error, inner timeout, unexpected test exit and signal leave
+these supplementary controls invalid. The supplementary wrong control requires
+successful compilation and test exit 101, so a broken compiler cannot validate it.
+
+This is test-level observation and supplementary diagnostic coverage only. The
+production frozen grader, `benchmark.py::grade`, campaign and source pins remain
+unchanged; their inner classification loss remains unresolved. CI may still fail
+intermittently. Issue #92 is not fully resolved without affected-host evidence and,
+if needed, separate approval for a contract/repinning change. Supplementary observer
+startup adds overhead inside its own outer deadline, not the original grade call.
+
+Regression coverage includes synthetic inner timeout/signal/OS errors, outer timeout
+and incomplete diagnostics, plus an isolated fake compiler child with Linux
+`RLIMIT_FSIZE=0`: inability to write an output yields compile exit 7 and never
+validates the wrong control. That constrained reproduction demonstrates classification,
+not the cause of either historical Ubuntu failure. Expected test exit 101 is the
+existing trusted-fixture convention, not general proof of an assertion failure for
+arbitrary programs. Captured subprocess output remains subject to the original
+capture behavior; only emitted diagnostic metadata is bounded and sanitized.
+
 ### Independent controls and leakage
 
 [Representative graders](../benchmarks/representative_graders.py) use trusted oracles

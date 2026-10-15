@@ -1,4 +1,5 @@
 """Explicit local trusted controls for #92; never accepts submitted source."""
+import argparse
 import errno
 import json
 import subprocess
@@ -57,17 +58,21 @@ def observe(run, records, argv, **kwargs):
         records.append(row)
 
 
-def diagnose():
+def diagnose(control=None):
+    if control not in (None, 'correct', 'baseline', 'wrong'):
+        raise ValueError('unknown trusted control')
     campaign.load()  # Verify frozen campaign source pins before execution.
     scenario = next(s for s in benchmark.load_manifest()['scenarios'] if s['id'] == 'rust-clamp')
     fixture = benchmark.fixture(scenario)
     rows = []
     run = subprocess.run
-    for control, files, expected in (
+    for name, files, expected in (
         ('correct', fixture['files'] | fixture['solution'], True),
         ('baseline', fixture['files'], False),
         ('wrong', fixture['files'] | fixture['wrong'], False),
     ):
+        if control is not None and name != control:
+            continue
         records = []
         def observed(argv, **kwargs):
             return observe(run, records, argv, **kwargs)
@@ -83,14 +88,17 @@ def diagnose():
         compiled = bool(records and records[0]['exit_code'] == 0)
         executed = (len(records) == 2 and not records[1]['timed_out']
                     and records[1]['exit_code'] == (0 if expected else 101))
-        rows.append({'control': control, 'quality_pass': passed,
+        rows.append({'control': name, 'quality_pass': passed,
                      'control_ok': compiled and executed and passed == expected,
                      'commands': records})
     return {'scenario': 'rust-clamp', 'controls': rows}
 
 
 def main():
-    result = diagnose()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--control', choices=('correct', 'baseline', 'wrong'))
+    args = parser.parse_args()
+    result = diagnose(args.control)
     print(json.dumps(result, sort_keys=True, indent=2))
     return 0 if all(row['control_ok'] for row in result['controls']) else 1
 
