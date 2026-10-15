@@ -29,8 +29,17 @@ validity interval capped at 300 seconds. Missing, declared, mismatched or expire
 records stay Unknown. AcceptedInspection describes only that reviewed observation;
 health, semantic sufficiency and execution authority remain unknown/ungranted.
 No NativeSurface projection, receipt collection, tool probe or CLI join is added.
-The future adapter must establish independent provenance, canonical receipt hashing,
-current identity and trusted clock inputs; the pure contract cannot authenticate them.
+[#114](https://github.com/AlexandrShapkin/codex-smart/issues/114) adds pure v1
+canonical SHA-256 hashing and an opt-in `assess_canonical` helper; existing `assess`
+behavior is unchanged. The exact domain is `codex-smart/native-inspection/receipt/v1`
+followed by NUL, then a one-byte read-files/search/git tag (1/2/3), four fixed
+32-byte source/configuration/tool/verifier digests, and unsigned big-endian 64-bit
+observation/expiry seconds. The receipt digest itself is excluded.
+A self-computed hash and copied ReviewRecord do not independently authenticate an
+observation or justify IndependentlyReviewed. The independent collector/attestation
+boundary, current identity collection and trusted clock inputs are still missing.
+No NativeSurface.Verified, runtime readiness, health, model execution or validation
+rights follow from hashing; Adaptive stage acceptance remains outstanding.
 
 ## Target state
 
