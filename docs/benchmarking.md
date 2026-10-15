@@ -732,41 +732,85 @@ Issue #92 remains open pending that host evidence; no campaign or model executio
 is authorized by this diagnostic.
 
 `scripts/test_benchmark.py` retains the original `setup` → `materialize` →
-`grade` integration for both Rust correct/wrong fixtures, as well as all non-Rust
-controls. A capturing proxy delegates the actual `b.execute` call unchanged and
-retains only bounded outer exit code, timeout and duration. Outer timeout, signal,
-launch error or unexpected exit fails even the wrong control. An ordinary exit 1
-from the pinned grader has inner cause **UNKNOWN**: the original Boolean integration
-expectation for the wrong fixture cannot distinguish oracle rejection from inner
-compilation, OS or timeout failure. A failed correct control remains a failed test;
-no subsequent diagnostic can replace that result.
+`b.grade` integration for both Rust fixtures. For this call alone,
+`scripts/rust_grade_trace.py` snapshots a private startup module and injects it
+through the outer Python child's `PYTHONPATH`, retaining the exact frozen grader
+file, argv, cwd, compile/oracle environments and 25/30-second deadlines.
+Existing campaign source pins are checked before activation. No campaign source,
+pin or historical result changes. This helper is never imported by production
+or the frozen harness.
 
-A separate supplementary test invokes the existing observer for each Rust
-correct/wrong control (`--control correct|wrong`) under a 30-second outer deadline.
-Its compile/test records describe only those separate invocations, not the frozen
-`grade()` call. Diagnostic stdout is limited to 8192 UTF-8 bytes before JSON parsing;
-exact keys, scalar types, integer bounds and fixed enum values are validated, then
-only reconstructed allowlisted metadata is rendered. Unexpected content fails as
-`diagnostic-invalid` without quoting raw output or chained parse exceptions.
-Compile failure, launch error, inner timeout, unexpected test exit and signal leave
-these supplementary controls invalid. The supplementary wrong control requires
-successful compilation and test exit 101, so a broken compiler cannot validate it.
+The startup hook checks the exact grader path, hash and Rust scenario. It wraps
+only the two expected `subprocess.run` calls made directly by that grader,
+forwarding the same arguments and returning the identical result or exception.
+A scoped Popen proxy records successful launch separately from later I/O failure;
+both proxies are confined to the synchronous trusted grader process.
+The snapshot directory/files are private and read-only during execution; it does
+not import helper code from the fixture or inherited `PYTHONPATH`. This is a
+trusted-fixture test mechanism, not an isolation boundary against hostile code
+running as the same user. Injection replaces inherited Python startup search
+configuration and adds imports, timing and descriptor overhead; equivalence is
+limited to the forwarded compiler/oracle invocation semantics, not all Python
+startup behavior or timing. No retry or increased deadline compensates for it.
 
-This is test-level observation and supplementary diagnostic coverage only. The
-production frozen grader, `benchmark.py::grade`, campaign and source pins remain
-unchanged; their inner classification loss remains unresolved. CI may still fail
-intermittently. Issue #92 is not fully resolved without affected-host evidence and,
-if needed, separate approval for a contract/repinning change. Supplementary observer
-startup adds overhead inside its own outer deadline, not the original grade call.
+A dedicated nonblocking pipe transports at most four fixed-schema records, each
+at most 1024 bytes: phase start/end, return code, duration, inner timeout, fixed
+launch-error and resource/compiler markers, and a Boolean oracle assertion marker.
+The metadata fd is non-inheritable before either tool launches. No stdout/stderr,
+source, argv, path or environment value is transported. Marker searches use bounded
+samples; resource text is only a hint, and signals never establish OOM. Oracle
+rejection requires successful compilation, test exit 101, the exact trusted oracle
+assertion text and the Rust harness's `test oracle ... FAILED` marker. A panic or
+exit 101 alone cannot validate a wrong control.
 
-Regression coverage includes synthetic inner timeout/signal/OS errors, outer timeout
-and incomplete diagnostics, plus an isolated fake compiler child with Linux
-`RLIMIT_FSIZE=0`: inability to write an output yields compile exit 7 and never
-validates the wrong control. That constrained reproduction demonstrates classification,
-not the cause of either historical Ubuntu failure. Expected test exit 101 is the
-existing trusted-fixture convention, not general proof of an assertion failure for
-arbitrary programs. Captured subprocess output remains subject to the original
-capture behavior; only emitted diagnostic metadata is bounded and sanitized.
+The parent retains partial records after an outer timeout/kill, without waiting
+for pipe EOF or rerunning the grader. Missing/start-only evidence leaves the phase
+unknown/in flight; malformed, oversized or unexpected metadata fails closed.
+Before rendering, the parent checks the 8192-byte input bound and reconstructs
+strictly allowlisted fields. Outer exit/signal, duration and deadline are retained;
+cleanup remains UNKNOWN because the frozen executor provides no independent
+process-group-empty proof. Selected Rust toolchain identity remains UNKNOWN:
+a successful rustc process launch demonstrates launcher availability, not the identity selected
+by a possible rustup shim in the grader's reduced environment. Host identity is
+explicitly not probed and is never substituted for selected identity.
+
+Both original positive and negative assertions now require complete same-call
+compile/oracle evidence as well as the expected frozen Boolean grade. A broken
+compiler, missing hook, launch failure, timeout or signal cannot validate a negative
+control. Separate supplementary controls still describe only their own invocations;
+they cannot replace or explain away the original assertion. This change provides
+classification for future test runs, not a cause for the historical Ubuntu failure.
+Issue #92 still needs affected-host evidence and independent review. No model or
+campaign execution is authorized.
+
+Regression coverage includes positive/negative original-call controls, unchanged
+subprocess arguments/results/exceptions, compiler launch/nonzero/signal, simulated
+inner timeout and resource errors, real outer process-group timeout with partial
+records, oracle non-assertion exit 101 and signal, bounded privacy/schema rejection,
+unrelated Python launch exclusion, and a bounded Linux `RLIMIT_FSIZE=0` compiler
+failure. Captured subprocess output remains subject to the frozen capture behavior;
+only transported/rendered metadata is bounded and sanitized.
+
+Local implementation evidence (2026-10-16, supplied base
+`784e409966da57cc486312b57298db30692517f4`): the first focused two-test run
+failed the negative control because assertion text was sought only in stderr;
+Rust's harness captures it in stdout. After correction, focused runs passed
+38, then 39 tests; the final focused suite passed **40 tests**. Offline nextest
+passed **225/225**. Documentation ownership/link checks and `git diff --check`
+passed. GitHub main freshness could not be checked because DNS was unavailable;
+the supplied base and clean starting branch were verified locally. Security
+provenance passed (30 registry packages), but `cargo deny --frozen` could not
+acquire the advisory database lock on a read-only path. No permission bypass or
+advisory refresh was attempted. The first full check overlapped implementation
+edits: its 312-test Python run ended with three `trace-invalid` errors because
+the loaded decoder predated the snapshotted hook schema change. It is not
+final-source evidence. The fresh final-source `CARGO_NET_OFFLINE=true just check`
+ran **313 Python tests: 312 passed, one error**. The unchanged submission-grader
+private Unix-socket test was denied at `listener.bind` with `EPERM`; a focused
+one-test confirmation reproduced the same denial. The gate stopped before its
+Rust steps. The same offline Rust steps were then run separately: formatting,
+clippy with warnings denied, **225 Cargo tests**, and workspace build all passed.
+No tests or gates were skipped or weakened. These tests do not reproduce or diagnose the historical CI host.
 
 ### Independent controls and leakage
 

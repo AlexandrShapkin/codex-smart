@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 
 import benchmark as b
+import rust_grade_trace as rust_trace
 
 
 def validated_rust_report(raw, control):
@@ -225,7 +226,12 @@ class BenchmarkTests(unittest.TestCase):
         observations = []
 
         def observed(*args, **kwargs):
-            result = execute(*args, **kwargs)
+            with rust_trace.capture(args[0]) as trace_state:
+                result = execute(*args, **kwargs)
+            try:
+                inner = rust_trace.decode(trace_state['raw'])
+            except (ValueError, TypeError, RecursionError, UnicodeError):
+                raise ValueError('trace-invalid') from None
             # Keep only validated metadata from the actual frozen grade invocation.
             code = result.get('exit_status')
             duration = result.get('duration')
@@ -235,7 +241,10 @@ class BenchmarkTests(unittest.TestCase):
                     or duration < 0):
                 raise ValueError('outer-metadata-invalid')
             observations.append({'exit_code': code, 'timeout': result['timeout'],
-                                 'duration_ms': round(min(86400, duration) * 1000)})
+                                 'duration_ms': round(min(86400, duration) * 1000),
+                                 'signal': -code if code < 0 else None,
+                                 'deadline_seconds': 30, 'cleanup': 'UNKNOWN',
+                                 'inner': inner})
             return result
 
         try:
@@ -245,12 +254,13 @@ class BenchmarkTests(unittest.TestCase):
             raise self.failureException('rust-clamp grade: outer-error; inner=UNKNOWN') from None
         self.assertEqual(len(observations), 1, 'rust-clamp grade: observation-invalid')
         outer = observations[0]
-        message = 'rust-clamp grade: inner=UNKNOWN; ' + json.dumps(outer, sort_keys=True)
+        message = ('rust-clamp grade: inner=' +
+                   ('observed' if outer['inner']['commands'] else 'UNKNOWN') + '; ' +
+                   json.dumps(outer, sort_keys=True))
         self.assertFalse(outer['timeout'], message)
         self.assertIn(outer['exit_code'], (0, 1), message)
         self.assertEqual(passed, expected, message)
-        # Exit 1 cannot distinguish an oracle rejection from an inner compile/OS/
-        # timeout failure. This integration assertion alone proves no such cause.
+        self.assertTrue(rust_trace.valid_control(outer['inner'], expected), message)
 
     def test_supplementary_rust_controls(self):
         if shutil.which('rustc') is None:
@@ -341,7 +351,7 @@ class BenchmarkTests(unittest.TestCase):
     def test_rust_grade_observes_original_call_and_fails_closed_on_outer_errors(self):
         scenario = next(s for s in self.m['scenarios'] if s['id'] == 'rust-clamp')
         for code, timeout, expected, fails in [
-            (0, False, True, False), (1, False, False, False),
+            (0, False, True, True), (1, False, False, True),
             (1, False, True, True), (-9, False, False, True),
             (1, True, False, True), (2, False, False, True),
         ]:
