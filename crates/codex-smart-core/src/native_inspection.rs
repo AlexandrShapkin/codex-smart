@@ -3,6 +3,7 @@
 //! The caller must acquire the reviewed record independently of the candidate and
 //! project configuration. This API checks consistency, not authenticity or time.
 use crate::playbook::NativeCapability;
+use sha2::{Digest as _, Sha256};
 
 /// Opaque SHA-256 bytes. Diagnostics intentionally omit identity values.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -20,9 +21,8 @@ pub struct Identity {
 pub struct Receipt {
     pub identity: Identity,
     pub verifier: Digest,
-    /// Independently computed digest of the canonical receipt payload, excluding
-    /// this digest field and including its interval and observation. The future
-    /// adapter owns canonicalization.
+    /// SHA-256 of the v1 canonical payload (see [`canonical_digest`]), excluding
+    /// this field. Integrity alone does not authenticate an observation.
     pub receipt: Digest,
     /// Caller-supplied seconds in a single trusted clock domain.
     pub observed_at: u64,
@@ -54,6 +54,7 @@ pub enum Reason {
     MissingIdentity,
     IdentityMismatch,
     ReviewMismatch,
+    CanonicalMismatch,
     InvalidInterval,
     FutureObservation,
     Expired,
@@ -85,6 +86,66 @@ impl Assessment {
 
 /// Hard ceiling, not a cache default or permission to reuse an observation.
 pub const MAX_LIFETIME_SECONDS: u64 = 300;
+
+/// SHA-256 domain/version prefix, including the terminating NUL byte.
+/// This exact byte sequence is part of the v1 wire contract.
+pub const CANONICAL_DOMAIN_V1: &[u8] = b"codex-smart/native-inspection/receipt/v1\0";
+
+/// Hash the fixed-format v1 payload, excluding `receipt.receipt`:
+/// domain prefix; one byte capability (read-files=1, search=2, git=3);
+/// source, configuration, tool, verifier (32 bytes each, in that order);
+/// observed_at, expires_at (8 bytes each, unsigned big endian).
+/// No lengths, padding, text formatting or implicit Rust enum representation.
+/// Unsupported capabilities have no encoding. This is integrity, not authenticated
+/// provenance: a self-computed hash and copied review record prove no observation.
+pub fn canonical_digest(receipt: &Receipt) -> Result<Digest, Reason> {
+    let capability = match receipt.identity.capability {
+        NativeCapability::ReadFiles => 1,
+        NativeCapability::Search => 2,
+        NativeCapability::Git => 3,
+        NativeCapability::Edit | NativeCapability::Build | NativeCapability::Tests => {
+            return Err(Reason::UnsupportedCapability);
+        }
+    };
+    let mut hash = Sha256::new();
+    hash.update(CANONICAL_DOMAIN_V1);
+    hash.update([capability]);
+    for digest in [
+        receipt.identity.source,
+        receipt.identity.configuration,
+        receipt.identity.tool,
+        receipt.verifier,
+    ] {
+        hash.update(digest.0);
+    }
+    hash.update(receipt.observed_at.to_be_bytes());
+    hash.update(receipt.expires_at.to_be_bytes());
+    Ok(Digest(hash.finalize().into()))
+}
+
+/// Opt-in canonical integrity check plus the existing inspection binding checks.
+/// Independent review/current identity/trusted time remain external obligations;
+/// this helper never creates or upgrades provenance, readiness or execution rights.
+pub fn assess_canonical(
+    current: Identity,
+    candidate: Option<&Receipt>,
+    review: Option<&ReviewRecord>,
+    now: u64,
+) -> Assessment {
+    let assessment = assess(current, candidate, review, now);
+    if assessment != Assessment::AcceptedInspection {
+        return assessment;
+    }
+    // `assess` has already required a candidate and matched the complete review.
+    let Some(candidate) = candidate else {
+        return Assessment::Unknown(Reason::MissingReceipt);
+    };
+    match canonical_digest(candidate) {
+        Ok(digest) if digest == candidate.receipt => Assessment::AcceptedInspection,
+        Ok(_) => Assessment::Unknown(Reason::CanonicalMismatch),
+        Err(reason) => Assessment::Unknown(reason),
+    }
+}
 
 /// Deterministic, inspection-only assessment. `current` must be independently
 /// observed; `now` must come from the same trusted clock as the reviewed interval.
