@@ -33,6 +33,67 @@ to explicitly requested Codex launches; see [ADR-0007](decisions/0007-owned-exec
 and [the command/transport matrix](tool-compatibility.md). No handshake or installer is
 part of normal startup. Hash verification narrows execution races without eliminating them.
 
+## Linux target and libc ABI qualification
+
+This is the canonical qualification matrix for [Issue #116](https://github.com/AlexandrShapkin/codex-smart/issues/116).
+The existing execution-platform claim above remains **Linux**. Qualification
+evidence is narrower than that claim; Unknown below means missing evidence, not
+unsupported or withdrawn support. The [distribution contract](distribution.md)
+separately describes a planned initial Linux x86_64 distribution, not a released
+target matrix. Neither README nor the Cargo target predicates establish ABI proof.
+
+| Target / candidate concern | Existing evidence and qualification limit |
+| --- | --- |
+| `x86_64-unknown-linux-gnu` | Tested host/CI environment for the existing pin; [tooling](tooling.md) records the x86_64 Linux host and `.github/workflows/ci.yml` uses Ubuntu 24.04 with Rust 1.98.0 and no cross-target matrix. This does not qualify libc 0.2.190. |
+| `x86_64-unknown-linux-musl` | Unknown; GNU results do not establish musl ABI compatibility, including static/dynamic linking differences. |
+| `aarch64-unknown-linux-gnu`, `aarch64-unknown-linux-musl` | Unknown; architecture and libc environment need separate evidence. |
+| 32-bit Linux GNU/musl targets (for example `i686-unknown-linux-gnu`, `i686-unknown-linux-musl`, `armv7-unknown-linux-gnueabihf`) | Unknown; word size, calling convention, layout and time64 cfg selection are candidate review concerns, not asserted support or observed failures. |
+| Other Linux triples/configurations | Unknown; no inference from the tested x86_64 GNU environment. |
+
+The accepted direct pin remains `libc =0.2.189`, default features disabled, in
+the [process-helper manifest](../crates/codex-smart-process/Cargo.toml).
+[ADR-0009](decisions/0009-child-descriptor-isolation.md) owns the child-only hook
+contract. The [helper](../crates/codex-smart-process/src/lib.rs) uses
+`SYS_close_range`, `CLOSE_RANGE_CLOEXEC`, `c_ulong` casts and variadic `syscall`;
+its errno/spawn-error handling is part of the review boundary. Linux-wide Cargo
+cfg predicates select code; they do not prove it works on every Linux ABI.
+
+The owner-reported [#105 investigation](https://github.com/AlexandrShapkin/codex-smart/issues/105)
+matched libc 0.2.190's upstream checksum and 445 source files, but stopped before
+target ABI qualification. A source/provenance checksum match establishes matching
+bytes relative to the reference, **not ABI compatibility**. The old Dependabot
+[#96](https://github.com/AlexandrShapkin/codex-smart/pull/96) was closed without
+merge; neither that closure nor source matching authorizes adoption.
+
+Before proposing libc 0.2.190, collect the following evidence for each relevant
+target/configuration and obtain independent PR/security review:
+
+1. Record the exact source revisions/checksums, Rust version, target triple,
+   target features/cfgs, libc implementation/version, linking mode and runtime
+   kernel. Compare 0.2.189 with 0.2.190 under those cfgs: macros/constants, extern
+   signatures and symbol selection, syscall numbers/argument widths, and affected
+   type sizes, alignments and field offsets. Trace GNU/musl, architecture and
+   32-bit/time64 changes to reachable use; explicitly justify any inapplicable
+   change rather than assuming the host cfg covers it.
+2. Build the actual helper/worker and run isolated runtime regressions on that
+   target (native hardware or an explicitly identified representative runtime).
+   Rust cross-compilation alone is **not runtime ABI validation**. Use the existing
+   [worker regressions](../crates/codex-smart-cli/tests/preparation_worker.rs):
+   deliberate inheritable low/high descriptors must be removed only in the
+   supervised child while parent flags remain unchanged; unsanitized direct
+   launches must still refuse with exit 17, including proc-directory descriptors.
+   Retain helper syscall-refusal and failed-exec transport negatives, plus worker
+   identity, malformed-protocol, deadline and cleanup regressions. Do not sanitize
+   away the descriptors in negative inheritance tests.
+3. Attach per-target static findings and actual runtime results/limitations to
+   the adoption review. Independent review must assess the unsafe hook and any
+   ABI/layout/time64 changes; retain Unknown where evidence is missing. An x86_64
+   GNU pass cannot establish that all Linux is validated. Resolve uncovered scope
+   explicitly before adoption without silently narrowing the public Linux claim.
+
+This matrix records documentation debt and required evidence only. It adds no
+qualification results, dependency update, release/deployment or model execution.
+
 ## Delivered policies and future runtime: two deterministic planes
 
 The pure Router v2, Playbooks and Adaptive policies below are implemented. Public
