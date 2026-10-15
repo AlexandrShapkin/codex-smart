@@ -34,7 +34,7 @@ Update documentation at its canonical owner in `docs/documents.json`; update sta
 
 ## PRs and closeout
 
-Use the PR template to connect the problem, scope, approach and validation to the owning issue/stage. Report safety/compatibility effects, risks, known limits and follow-ups. CI `check` and Security `review` must pass on the exact final SHA before owner acceptance; do not present a local pass as remote evidence.
+Use the PR template to connect the problem, scope, approach and validation to the owning issue/stage. Report safety/compatibility effects, risks, known limits and follow-ups. Follow the normative [review and merge authorization gates](docs/workflow.md#review-and-merge-authorization) for independent technical/security acceptance, machine checks, live formal-review requirements and a separate owner decision for one PR at one full head SHA, including Draft/Ready and postmerge evidence. Zero required formal approvals does not waive owner authorization.
 
 Close an issue only when its acceptance is satisfied and linked PR/commit/check evidence is recorded. Partial delivery needs explicit residual acceptance and an owning follow-up; stage transfers replace ownership labels. After authorized merge, verify GitHub `main` again and start the next slice in a new worktree.
 
