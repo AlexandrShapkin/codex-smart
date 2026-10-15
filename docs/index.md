@@ -29,6 +29,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [ADR-0007: Explicit Codex artifact pins and honest offline evidence](../docs/decisions/0007-owned-executable-pins.md) | architecture | contract | tools |
 | [Deterministic workflow playbooks and bounded adaptive execution](../docs/decisions/0008-deterministic-workflows.md) | architecture | contract | playbooks, adaptive, automation, distribution, hardening, stable |
 | [ADR-0009: Child-only descriptor isolation for the supervised worker](../docs/decisions/0009-child-descriptor-isolation.md) | architecture | contract | adaptive |
+| [ADR-0010: Native inspection trust boundary](../docs/decisions/0010-native-inspection-trust-boundary.md) | architecture | contract | adaptive |
 | [Development](../docs/development.md) | engineering | current | workflow |
 | [Post-bootstrap correction gate — 2026-10-06](../docs/diagnostics/2026-10-06-baseline.md) | engineering | historical | baseline |
 | [Configuration and transaction slice — 2026-10-06](../docs/diagnostics/2026-10-06-config.md) | engineering | historical | baseline |

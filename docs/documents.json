@@ -720,6 +720,15 @@
       "stages": [
         "adaptive"
       ]
+    },
+    {
+      "path": "docs/decisions/0010-native-inspection-trust-boundary.md",
+      "title": "ADR-0010: Native inspection trust boundary",
+      "owner": "architecture",
+      "role": "contract",
+      "stages": [
+        "adaptive"
+      ]
     }
   ]
 }
