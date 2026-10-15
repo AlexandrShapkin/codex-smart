@@ -144,6 +144,37 @@ Account attribution alone does not establish that the owner made the decision.
 An owner-authored formal review supplies merge authority only if it also explicitly
 expresses the PR/head-specific intent to merge; formal approval alone is insufficient.
 
+**Permitted form of owner authorization.** No GitHub `APPROVE` event, signature or
+formal approval by a second reviewer is needed unless live protection requires
+one. The owner decision must identify (1) the repository (explicitly or from
+unambiguous current context) and single PR number, (2) the
+**complete 40-character PR head SHA**, and (3) an unambiguous intent to
+**authorize its merge into `main`**. The decision may be conditional on named
+mandatory gates completing successfully; the operator must verify every
+condition before acting. Permission to review, publish, mark Ready, accept an
+ADR or implement a stage does not itself authorize merge.
+
+Two first-party channels are acceptable: an explicit owner-authored message in
+the current ChatGPT conversation, or a GitHub PR comment/review demonstrably
+written by the owner independently of ChatGPT/connector automation. GitHub
+account attribution **alone** cannot distinguish owner authorship from
+assistant actions on a linked account. If GitHub-message origin cannot be
+established independently, treat authority as **Unknown** and request a direct
+owner decision. A direct owner ChatGPT decision needs **no duplicate GitHub
+approval/comment** to become valid; an assistant may transcribe the decision
+to the PR/Issue for continuity only when it labels the originating chat
+decision and clearly distinguishes transcription from owner authorship.
+
+For each authorized merge, record the decision channel, actual owner statement
+(or a minimal non-sensitive excerpt), PR number, full SHA, conditions and
+available date/reference alongside the checks. Do not publish private chat
+content, credentials or personal identifiers. In a later chat without
+verifiable origin evidence, do not treat a GitHub transcription as fresh
+owner permission; obtain a new direct decision. Explicit withdrawal before
+merge revokes authorization. A changed head SHA always requires a new
+decision; a changed base, protection or other decision-relevant gate requires
+reassessment and renewed consent where necessary.
+
 | Example | Decision |
 | --- | --- |
 | Owner says “I authorize merging PR #N at FULL_HEAD_SHA”, with an actual PR number and full 40-character head SHA | Owner authorization for that PR/head only; all other gates still apply. |
