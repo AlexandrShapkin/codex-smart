@@ -148,3 +148,8 @@ refusal, timeout, protocol/private-output failure and uncertainty rendering; the
 existing pure supervision suite covers unreapable-child cleanup uncertainty.
 No model/retry/escalation/validation/delegation or measurement is activated. Independent
 technical review remains required; Adaptive stays active and #94/#95 remain residual owners.
+
+The proposed [native inspection trust qualification](../decisions/0010-native-inspection-trust-boundary.md)
+for #119 records NO-GO for production admission, the independent root/reviewer,
+current identity and clock/state gaps, and the offline negative-scenario matrix.
+It adds no runtime authority or stage acceptance.

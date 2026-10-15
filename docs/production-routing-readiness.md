@@ -332,3 +332,8 @@ and provide trusted time on every use. These missing adapters and actual native 
 remain #94; this contract adds no trusted preparation, validation execution, model
 execution or production admission. Synthetic fake-environment tests establish only
 the binding/refusal policy, without probing the host.
+
+The proposed [native inspection trust qualification](decisions/0010-native-inspection-trust-boundary.md)
+for #119 records NO-GO for production admission, the independent root/reviewer,
+current identity and clock/state gaps, and the offline negative-scenario matrix.
+It adds no runtime authority or stage acceptance.
