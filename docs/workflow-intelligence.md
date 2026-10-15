@@ -99,6 +99,45 @@ No reviewed price table exists, so estimated cost remains unknown rather than in
 Failed attempts remain in denominators; quality equivalence is required before any savings
 claim. Price alone cannot select a policy that compromises required quality.
 
+Issue #129 adds `validation_policy::evaluate`, a separate pure offline contract
+for one typed validation specification. It reuses recipe readiness and
+obligations, requires a known unambiguous task and High-risk Strong/High, and
+compares the full candidate with separate reviewed and current specifications
+(executable path/pin/version, source/config identities, argv, scope/cwd,
+operation, budgets and profile/reasoning). Caller-only provenance,
+absent/mismatched identities or approvals, stale/future observations and
+rollback against the supplied previous clock fail closed. Approval and current
+observation have independent validity intervals, each capped at 300 seconds,
+with observed_at <= now < expires_at. This is separate from recipe readiness,
+executable identity, execution authority and validation success.
+
+The strongest status is `ConditionallyPolicyAdmissible`: it assumes externally
+verified provenance and clock inputs, but authenticates none of them. Forging
+the provenance enum and copying a specification cannot create attestation.
+Every status reports admitted=false, attested=false, runtime_ready=false and
+execution_authorized=false. No authorized trust root is established. There is
+no trusted ingress, launch conversion, product caller or execution adapter;
+ordinary run/plan/prepare behavior is unchanged.
+
+The fixed policy permits at most 32 arguments / 4096 aggregate argument bytes
+and 1024 bytes per path, with at most 16 ready recipe checks. The explicit
+descriptor schema_version must equal SCHEMA_V1 (1); executable version is
+separate. All three specifications undergo the same bounded structure
+validation before comparison. Invalid approval/current evidence has distinct
+typed reasons from valid but mismatched specifications. Arguments have
+restrictive ASCII word, long-flag or relative path roles; absolute executable,
+scope and cwd paths reject dot components, repeated separators and platform
+ambiguity. Cwd containment is lexical and component-bounded. Budgets require
+positive wall time (at most 60 seconds), CPU time (at most wall time),
+input/output (each at most 1 MiB), memory (at most 512 MiB) and processes (at
+most 8). These are policy ceilings, not installed resource controls. Exact
+review must establish tool-specific argument semantics: lexical safety cannot
+prove a flag harmless or stop an approved tool interpreting words as code.
+Filesystem identity, symlinks, mounts, runtime version, isolation, clock
+integrity and replay history are not inspected. Sensitive input types omit
+Debug and results contain only fixed enums; no argv/path/source/prompt payload
+is returned.
+
 ## Reusable preparation and automation
 
 Recurring workflows may reuse repository facts, verified toolchain availability
