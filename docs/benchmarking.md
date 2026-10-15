@@ -709,6 +709,28 @@ verify the functional contract; lifecycle metadata states requested work, not ob
 proof that an agent actually performed each step. Future trace review must distinguish
 those. Declarative tasks do not deploy infrastructure or contact a CI service.
 
+### Issue #92 trusted rust-clamp diagnostics
+
+Run `python3 -B scripts/diagnose_rust_clamp.py` explicitly on the affected host
+for the historical `rust-clamp` fixture. It verifies existing campaign source pins and the initial fixture snapshot, then
+runs only the repository-authored correct, baseline and wrong controls with the
+unchanged grader and 25-second command limit. It emits at most two command records
+per control: compile/test phase, exit code (including negative signal codes),
+timeout flag/limit, bounded duration and fixed stderr labels from the first 8192
+bytes. No argv, paths, stdout, raw stderr or source is emitted. Labels are hints,
+not proof of host resource exhaustion; a signal alone cannot establish OOM.
+Compiler failures/timeouts never qualify negative controls as working. Expected
+negative test failures use the Rust test harness exit code 101; unknown failures
+stay unsuccessful diagnostics. No retries or relaxed quality/limits are added.
+
+This separate diagnostic leaves the frozen grader, campaign and historical evidence
+untouched. Existing subprocess output capture and isolation boundaries are unchanged;
+it is a trusted-control host tool, not a submission runner. Ubuntu 24.04's intermittent
+rejection is not reproduced by fake-process tests. Retain a fresh sanitized host
+report before assigning a compilation, timeout, host-resource or oracle cause.
+Issue #92 remains open pending that host evidence; no campaign or model execution
+is authorized by this diagnostic.
+
 ### Independent controls and leakage
 
 [Representative graders](../benchmarks/representative_graders.py) use trusted oracles
