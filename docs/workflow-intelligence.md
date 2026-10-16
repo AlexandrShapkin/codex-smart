@@ -518,7 +518,14 @@ U8(profile) || U8(reasoning)
 ```
 
 `STR16(s) = BE16(byte_length(s)) || ASCII(s)` with nonempty `21..7e`
-bytes. `argc` is 0..32; each arg kind is precisely
+bytes. Decode each nested STR16 by first requiring both length bytes
+(**Truncated** if incomplete); if the declared length exceeds its
+applicable cap, return **MalformedValue** before reading any payload,
+even when all payload bytes are absent. If a positive in-range length
+is declared, require its complete payload (**Truncated** if incomplete)
+before testing ASCII; a fully present zero length is **MalformedValue**.
+These checks precede later S members in their written order.
+`argc` is 0..32; each arg kind is precisely
 1=Word, 2=Flag, 3=Path. Aggregate arg-text bytes <=4096, paths
 (executable, scope, cwd and Path arguments) <=1024 bytes each; no hidden
 terminators. After **each completely decoded** arg text, add its byte length
@@ -526,8 +533,10 @@ to the running aggregate with checked addition and reject immediately with
 **MalformedValue** at the first total >4096, before reading the next arg.
 If an arg text is itself incomplete, **Truncated** takes precedence over
 that arg's unrealized aggregate addition; later missing arg members never
-supersede an already detected aggregate overflow. `version` is the **three u32 values** from
-`version::Version`, not a semantic-version string. Operation enum maps:
+supersede an already detected aggregate overflow.
+
+`version` is the **three u32 values** from `version::Version`, not a
+semantic-version string. Operation enum maps:
 1=ReadOnlyInvariant, 2=RelevantTests, 3=BuildOrStaticCheck,
 4=CallerCompatibility, 5=ImpactReview, 6=SecurityReview,
 7=CiConfigurationCheck, 8=DependencyValidation,
@@ -621,9 +630,12 @@ private, non-serializing parsed record. Exact deterministic first failure:
    tag is **Truncated**. Once framing ends, any absent required tag is
    **MissingField** (before value decoding).
 4. Decode framed values in **ascending tag order**. **Truncated** for a
-   partial nested integer/string; **MalformedValue** for wrong fixed width,
-   forbidden ASCII, zero fixed identity, malformed nested S, excessive
-   per-field length, invalid enum or noncanonical number. Within S first
+   partial nested integer or STR16 length prefix; after a complete STR16
+   length prefix, **MalformedValue** for an excessive declared length
+   outranks missing/incomplete payload. In-range incomplete payload is
+   **Truncated** before semantic checks. **MalformedValue** also applies
+   to wrong fixed width, forbidden ASCII, zero fixed identity, malformed
+   nested S, invalid enum or noncanonical number. Within S first
    require both schema-version bytes (**Truncated** if incomplete);
    a complete non-v1 schema discriminator is **UnsupportedSchema**
    immediately, even if subsequent S members are absent. For schema v1
@@ -642,11 +654,13 @@ missing fields outrank bad earlier *values*, but do not outrank bad earlier
 wrong complete domain outranks missing version bytes, incomplete TLV header
 outranks its invalid tag byte, complete invalid tag outranks missing value
 bytes, and complete unsupported S schema outranks missing S members.
-Within S inspect v1 members in their displayed order, applying the
-per-argument aggregate limit immediately after each complete arg, not
-only after all `argc` arguments. A complete second arg causing aggregate
-overflow wins over a missing third arg; an incomplete second arg remains
-Truncated. No recursion, unbounded allocation or payload-bearing exception/log messages; diagnostics
+Within S inspect v1 members in their displayed order: after a complete
+STR16 prefix, check its length cap before requiring payload; then apply
+the per-argument aggregate limit after each complete arg, not only after
+all `argc` arguments. A complete second arg causing aggregate overflow
+wins over a missing third arg; an incomplete second arg remains Truncated.
+No recursion, unbounded allocation or payload-bearing exception/log
+messages; diagnostics
 are enum-only and do not emit argv, paths, proof bytes or secrets.
 
 **ParseOnly is not an approval.** Independent proof authentication, reviewer
@@ -867,6 +881,9 @@ CASES = [
  ("V27", D+b"\x00",b"",b"", "Truncated"),
  ("V28", change(18,S_AGG_OVERFLOW),b"",b"", "MalformedValue"),
  ("V29", change(18,S_TRUNC_ARG),b"",b"", "Truncated"),
+ ("V30", change(18,b"\x00\x01\x04\x01"),b"",b"", "MalformedValue"),
+ ("V31", change(18,b"\x00\x01\x04\x00"),b"",b"", "Truncated"),
+ ("V32", change(18,b"\x00\x01\x04"),b"",b"", "Truncated"),
 ]
 for name,e,ex,pol,expected in CASES:
     try: actual=parse(e,ex,pol)[0]
@@ -928,8 +945,11 @@ f224303817cc78770d4ff88fc6e40f49305c675da4aa3a30080135ce7706dccb
 | V27 | Supply matching D and only the first header-version byte `00` | Truncated |
 | V28 | In S, declare 3 args; decode complete Word texts of 3000 then 2000 bytes, with third arg absent | MalformedValue: aggregate exceeds 4096 before later truncation |
 | V29 | In S, declare 3 args; decode complete 3000-byte Word, then 2000-byte Word length with only 1000 bytes supplied | Truncated: incomplete second arg precedes its aggregate addition |
+| V30 | Replace S with schema `00 01`, declared executable STR16 length 1025 (`04 01`) and no payload | MalformedValue: length exceeds 1024 before missing payload |
+| V31 | Replace S with schema `00 01`, declared executable STR16 length 1024 (`04 00`) and no payload | Truncated: in-range declared payload absent |
+| V32 | Replace S with schema `00 01`, just first executable STR16 length byte `04` | Truncated: incomplete length prefix |
 
-The deterministic reference output is `vectors 30 OK`; each vector is
+The deterministic reference output is `vectors 33 OK`; each vector is
 built independently from E0, and no test asserts authenticated success.
 One-byte data mutation with a recomputed unkeyed digest is **not** proof of
 tamper resistance; authenticated protection requires independently trusted
