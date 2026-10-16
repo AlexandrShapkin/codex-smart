@@ -599,21 +599,32 @@ A proposed bounded decoder must return only a fixed enum and optionally a
 private, non-serializing parsed record. Exact deterministic first failure:
 
 1. **Oversize** if either checked total exceeds its inclusive limit.
-2. **Truncated** for a partial D/header; otherwise **UnsupportedDomain**
-   for complete wrong D, then **UnsupportedVersion** for complete non-v1 header.
+2. Inspect the domain before any version bytes. With fewer than `len(D)`
+   bytes, return **Truncated**. If all `len(D)` bytes are present and D
+   differs, return **UnsupportedDomain**, even if both version bytes are
+   absent. For matching D but fewer than two version bytes, return
+   **Truncated**; for a complete non-v1 version, **UnsupportedVersion**.
 3. Scan all TLV framing and tags in **wire order**, without interpreting
-   values. The first tag outside `01..1a` is **UnknownField**; a
-   repeated seen tag is **DuplicateField**, an unseen smaller tag is
-   **OutOfOrder**, and any partial TLV tag/length/value is **Truncated**.
-   Bytes after complete tag `1a` are **TrailingPayload**. Once framing
-   ends, any absent required tag is **MissingField** (before value decoding).
+   values. After a completed tag `1a`, any further byte is
+   **TrailingPayload**. Otherwise require the complete three-byte
+   tag-plus-BE16-length header before classifying its tag: an incomplete
+   header is **Truncated**, even if its first byte is an unknown tag.
+   With a complete header, first check for **UnknownField** (tag outside
+   `01..1a`), then **DuplicateField** (already seen), then
+   **OutOfOrder** (unseen smaller tag), *before* checking whether all
+   value bytes are present; a partial value of an otherwise admissible
+   tag is **Truncated**. Once framing ends, any absent required tag is
+   **MissingField** (before value decoding).
 4. Decode framed values in **ascending tag order**. **Truncated** for a
    partial nested integer/string; **MalformedValue** for wrong fixed width,
    forbidden ASCII, zero fixed identity, malformed nested S, excessive
-   per-field length, invalid enum or noncanonical number. **UnsupportedSchema**
-   for complete S with schema !=1. **UnsupportedProofSuite** for nonzero
-   field `19`, after all field widths and values are valid. Suite 0
-   with nonempty proof is **MalformedValue**.
+   per-field length, invalid enum or noncanonical number. Within S first
+   require both schema-version bytes (**Truncated** if incomplete);
+   a complete non-v1 schema discriminator is **UnsupportedSchema**
+   immediately, even if subsequent S members are absent. For schema v1
+   decode remaining members in their displayed order. **UnsupportedProofSuite**
+   applies to nonzero field `19` after all field widths and values are
+   valid. Suite 0 with nonempty proof is **MalformedValue**.
 5. Only after successful parsing, compute the three digests exactly as
    above and return **ParseOnly**. Bytes are never silently canonicalized:
    re-encode and byte-compare before returning ParseOnly.
@@ -622,7 +633,11 @@ When multiple faults exist, priority is: size, header, first TLV framing/tag
 fault in wire order, MissingField, then first invalid value in tag order,
 then unsupported proof suite and nonempty fixture proof. In particular,
 missing fields outrank bad earlier *values*, but do not outrank bad earlier
-*framing*. Within S inspect members in their displayed order. No recursion,
+*framing*. The header, TLV and S schema tie-breaks above are normative:
+wrong complete domain outranks missing version bytes, incomplete TLV header
+outranks its invalid tag byte, complete invalid tag outranks missing value
+bytes, and complete unsupported S schema outranks missing S members.
+Within S inspect v1 members in their displayed order. No recursion,
 unbounded allocation or payload-bearing exception/log messages; diagnostics
 are enum-only and do not emit argv, paths, proof bytes or secrets.
 
@@ -828,6 +843,11 @@ CASES = [
  ("V20", change(18,b"\x00\x02"+S[2:]),b"",b"", "UnsupportedSchema"),
  ("V21", change(24,b"\x66"*32),b"",b"", "ParseOnly"),
  ("V22", change(24,b"\x00"*32),b"",b"", "MalformedValue"),
+ ("V23", D[:-1]+b"?",b"",b"", "UnsupportedDomain"),
+ ("V24", change(18,b"\x00\x02"),b"",b"", "UnsupportedSchema"),
+ ("V25", E0[:len(D)+2]+b"\x1b",b"",b"", "Truncated"),
+ ("V26", E0[:len(D)+2]+b"\x1b\x00\x01",b"",b"", "UnknownField"),
+ ("V27", D+b"\x00",b"",b"", "Truncated"),
 ]
 for name,e,ex,pol,expected in CASES:
     try: actual=parse(e,ex,pol)[0]
@@ -882,8 +902,13 @@ f224303817cc78770d4ff88fc6e40f49305c675da4aa3a30080135ce7706dccb
 | V20 | Change S.schema_version from BE16(1) to BE16(2) | UnsupportedSchema |
 | V21 | Change context digest tag `18` to 32 bytes `66` | ParseOnly; separate current K must reject |
 | V22 | Replace context digest with 32 zero bytes | MalformedValue |
+| V23 | Wrong complete D (replace terminal NUL by `?`), with both version bytes absent | UnsupportedDomain, not Truncated |
+| V24 | Replace S with only the two-byte non-v1 schema `00 02` and no remaining S members | UnsupportedSchema, not Truncated |
+| V25 | Supply a lone unknown tag `1b` after H, omitting both length bytes | Truncated, not UnknownField |
+| V26 | Supply unknown tag `1b` and complete length `00 01` after H, but omit the value | UnknownField, not Truncated |
+| V27 | Supply matching D and only the first header-version byte `00` | Truncated |
 
-The deterministic reference output is `vectors 23 OK`; each vector is
+The deterministic reference output is `vectors 28 OK`; each vector is
 built independently from E0, and no test asserts authenticated success.
 One-byte data mutation with a recomputed unkeyed digest is **not** proof of
 tamper resistance; authenticated protection requires independently trusted
