@@ -521,7 +521,12 @@ U8(profile) || U8(reasoning)
 bytes. `argc` is 0..32; each arg kind is precisely
 1=Word, 2=Flag, 3=Path. Aggregate arg-text bytes <=4096, paths
 (executable, scope, cwd and Path arguments) <=1024 bytes each; no hidden
-terminators. `version` is the **three u32 values** from
+terminators. After **each completely decoded** arg text, add its byte length
+to the running aggregate with checked addition and reject immediately with
+**MalformedValue** at the first total >4096, before reading the next arg.
+If an arg text is itself incomplete, **Truncated** takes precedence over
+that arg's unrealized aggregate addition; later missing arg members never
+supersede an already detected aggregate overflow. `version` is the **three u32 values** from
 `version::Version`, not a semantic-version string. Operation enum maps:
 1=ReadOnlyInvariant, 2=RelevantTests, 3=BuildOrStaticCheck,
 4=CallerCompatibility, 5=ImpactReview, 6=SecurityReview,
@@ -637,8 +642,11 @@ missing fields outrank bad earlier *values*, but do not outrank bad earlier
 wrong complete domain outranks missing version bytes, incomplete TLV header
 outranks its invalid tag byte, complete invalid tag outranks missing value
 bytes, and complete unsupported S schema outranks missing S members.
-Within S inspect v1 members in their displayed order. No recursion,
-unbounded allocation or payload-bearing exception/log messages; diagnostics
+Within S inspect v1 members in their displayed order, applying the
+per-argument aggregate limit immediately after each complete arg, not
+only after all `argc` arguments. A complete second arg causing aggregate
+overflow wins over a missing third arg; an incomplete second arg remains
+Truncated. No recursion, unbounded allocation or payload-bearing exception/log messages; diagnostics
 are enum-only and do not emit argv, paths, proof bytes or secrets.
 
 **ParseOnly is not an approval.** Independent proof authentication, reviewer
@@ -696,6 +704,15 @@ def spec():
             + b"\x02" + b"".join(n(v, 8) for v in (30, 15, 1024, 1024, 1048576, 1))
             + b"\x03\x02")
 S = spec()
+# S schema + executable STR16 + pin + three versions + two identities,
+# immediately before its argc. The compound variants keep argc=3 but
+# change the first two Word arguments; the third is deliberately absent.
+S_ARG_PREFIX = 2 + len(s(b"/bin/true")) + 32 + 12 + 64
+assert S[S_ARG_PREFIX] == 3
+S_AGG_OVERFLOW = (S[:S_ARG_PREFIX] + b"\x03"
+                  + b"\x01" + s(b"A"*3000) + b"\x01" + s(b"B"*2000))
+S_TRUNC_ARG = (S[:S_ARG_PREFIX] + b"\x03"
+               + b"\x01" + s(b"A"*3000) + b"\x01" + n(2000,2) + b"B"*1000)
 # Full reviewed risk/recipe K: Inspect, caller High, selected High,
 # effective High, Clear, zero reasons, Ready recipe, one Ready RelevantTests
 # check requiring the native capability Tests (6).
@@ -762,7 +779,7 @@ def parse_spec(p):
         if kind not in (1,2,3): fail("MalformedValue")
         arg=string(1024 if kind==3 else 4096)
         used+=len(arg)
-    if used>4096: fail("MalformedValue")
+        if used>4096: fail("MalformedValue")
     string(1024); string(1024)
     if get(1)[0] not in range(1,11): fail("MalformedValue")
     for _ in range(6): get(8)
@@ -848,6 +865,8 @@ CASES = [
  ("V25", E0[:len(D)+2]+b"\x1b",b"",b"", "Truncated"),
  ("V26", E0[:len(D)+2]+b"\x1b\x00\x01",b"",b"", "UnknownField"),
  ("V27", D+b"\x00",b"",b"", "Truncated"),
+ ("V28", change(18,S_AGG_OVERFLOW),b"",b"", "MalformedValue"),
+ ("V29", change(18,S_TRUNC_ARG),b"",b"", "Truncated"),
 ]
 for name,e,ex,pol,expected in CASES:
     try: actual=parse(e,ex,pol)[0]
@@ -907,8 +926,10 @@ f224303817cc78770d4ff88fc6e40f49305c675da4aa3a30080135ce7706dccb
 | V25 | Supply a lone unknown tag `1b` after H, omitting both length bytes | Truncated, not UnknownField |
 | V26 | Supply unknown tag `1b` and complete length `00 01` after H, but omit the value | UnknownField, not Truncated |
 | V27 | Supply matching D and only the first header-version byte `00` | Truncated |
+| V28 | In S, declare 3 args; decode complete Word texts of 3000 then 2000 bytes, with third arg absent | MalformedValue: aggregate exceeds 4096 before later truncation |
+| V29 | In S, declare 3 args; decode complete 3000-byte Word, then 2000-byte Word length with only 1000 bytes supplied | Truncated: incomplete second arg precedes its aggregate addition |
 
-The deterministic reference output is `vectors 28 OK`; each vector is
+The deterministic reference output is `vectors 30 OK`; each vector is
 built independently from E0, and no test asserts authenticated success.
 One-byte data mutation with a recomputed unkeyed digest is **not** proof of
 tamper resistance; authenticated protection requires independently trusted
