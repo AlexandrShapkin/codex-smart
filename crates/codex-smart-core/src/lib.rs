@@ -15,6 +15,7 @@ pub mod preparation_worker;
 pub mod process;
 pub mod routing;
 pub mod tool_lock;
+pub mod validation_approval_decode;
 pub mod validation_inspection;
 pub mod validation_policy;
 pub mod version;
