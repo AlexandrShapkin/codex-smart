@@ -388,6 +388,437 @@ authorized implementation; #94/#95 retain runtime/measurement acceptance. Adapti
 remains active. This proposal adds no source/tests/config/runtime/benchmark/model
 execution, credentials, CLI or governance authority, and authorizes no enrollment.
 
+## Canonical validation approval envelope v1 — offline byte contract (#137)
+
+This section narrows the **proposed** #135 approval-ingress boundary to a single
+byte representation; it does not change the existing Rust
+`validation_policy::Specification`, `Approval`, `CurrentAssumptions` or
+`WorkflowPlan::inspect_validation` interfaces. It specifies neither a
+production decoder nor an approved signing algorithm. Its fixture's proof suite
+is deliberately unauthenticated. Native inspection receipt v1 is a separate
+domain and format. #94 stays open; Adaptive 0.5 stays ACTIVE / production NO-GO.
+
+### Bytes, framing and limits
+
+All byte strings below are binary, not hex strings or JSON. Concatenation
+`||` is exact byte concatenation. No whitespace, BOM, newline, base64,
+percent-encoding, compression, Unicode normalization, implicit defaults or
+alternate serialization is accepted. Define:
+
+- `D = ASCII("codex-smart/validation-approval-envelope/v1") || 00`.
+  The `00` is **one NUL byte**. Header `H = D || BE16(1)`; `BE16`,
+  `BE32` and `BE64` are fixed-width unsigned **big-endian** integers,
+  with no sign, varint, padding or textual spelling. Even though D contains
+  "v1", the two version bytes are mandatory and must be exactly `00 01`.
+- `TLV(tag, value) = U8(tag) || BE16(byte_length(value)) || value`.
+  Exactly one field for each tag `01` through `19`, in *strictly increasing*
+  tag order. No container field count, optional fields or extensions.
+- `S` is the exact nested Specification representation below.
+  `P = H || TLV(01,v01) || ... || TLV(18,v18)` is the **body preimage**.
+  `E = P || TLV(19,proof_bytes)` is the **entire envelope**.
+  Field 19 is mandatory even when the proof is empty.
+- `spec_digest = SHA256(ASCII("codex-smart/validation-specification/v1") || 00 || S)`.
+  `body_digest = SHA256(ASCII("codex-smart/validation-approval-body/v1") || 00 || P)`.
+  `wire_digest = SHA256(ASCII("codex-smart/validation-approval-wire/v1") || 00 || E)`.
+  Every digest is 32 raw bytes. All three domain separators and the exact
+  prefix inclusion are normative; there is no double hashing or hex-decoding
+  step. Body digest **excludes the entire field 19 tag, length and value**,
+  but includes the two-byte proof-suite selector in field 18. Wire digest
+  includes the entire proof field. Neither digest authenticates origin.
+- Maximum `len(E) = 16,384` bytes inclusive; maximum
+  `len(E) + len(external_proof_input) + len(independent_policy_input)
+  = 65,536` bytes inclusive. These totals count all supplied bytes;
+  never count a separately supplied proof twice. For this v1 layout proof
+  field 19 is *inside* E; any independently transported additional proof is
+  separate input and does not alter E or its body digest. Bound each
+  individual input before concatenation/allocation, use checked addition,
+  and reject oversize **before** parsing or consulting authority. Field 19
+  is at most 4,096 bytes, including for future suites. Current suite 0
+  requires zero proof bytes. A future nonzero suite and external proof framing
+  require separate technical/security approval, not parser permissiveness.
+
+The only strings permitted are nonempty ASCII bytes `21..7e` (printable
+non-space; no NUL). A string is **not** case-folded, trimmed, decoded as a
+filesystem path or normalized; equal identifiers mean identical bytes.
+Top-level string values use their TLV length, while nested strings use
+`BE16(length) || bytes`. Repository identity has the additional lexical form
+`[a-z0-9_.-]{1,64}/[a-z0-9_.-]{1,64}`, and policy ID is
+`[a-z0-9_.-]{1,64}`. Those bytes are labels to bind to an independently
+verified repository/policy, not self-authenticating authority. Absolute
+scope/executable/cwd paths and argv obey the *existing* pure validation
+policy's separate lexical and semantic gates; representation validity alone
+does not establish safe argv, scope or identity.
+
+### Required ordered envelope fields
+
+Every tag is mandatory. Raw identity values must have the stated length,
+without textual names, inferred defaults or all-zero substitutions. All
+identities, epochs, timestamps and decisions remain attacker-controlled
+assertions until independently authenticated and compared to protected state.
+
+| Tag | Value type | Meaning |
+| --- | --- | --- |
+| `01` | U8: 1=ApproveForInspectionOnly, 2=Deny | Reviewed decision; Deny never admits |
+| `02` | ASCII repo label, at most 129 bytes | Reviewed repository identity |
+| `03` | U8=1 | Capability: validation inspection only |
+| `04` | ASCII absolute scope, at most 1,024 bytes | Approved scope; byte-equal to S.scope |
+| `05` | ASCII policy ID, at most 64 bytes | Independently provisioned policy identity |
+| `06` | BE64 | Policy epoch, strictly positive |
+| `07` | 32 raw bytes | Root identifier |
+| `08` | 32 raw bytes | Operator identifier |
+| `09` | 32 raw bytes | Reviewer identifier |
+| `0a` | BE64 | Reviewer delegation epoch, strictly positive |
+| `0b` | BE64 | Revocation generation; zero allowed |
+| `0c` | 16 raw bytes | Unique observation ID |
+| `0d` | 16 raw bytes | Session ID |
+| `0e` | 16 raw bytes | One-use ID |
+| `0f` | 16 raw bytes | Clock-domain ID |
+| `10` | BE64 | Observed-at time in authenticated clock domain |
+| `11` | BE64 | Expires-at time in the same domain |
+| `12` | S (defined below) | **Full** reviewed Specification, not only its digest |
+| `13` | 32 raw bytes | Asserted independently current **full** Specification digest (`spec_digest` algorithm) |
+| `14` | 32 raw bytes | Asserted current source identity |
+| `15` | 32 raw bytes | Asserted current effective-configuration identity |
+| `16` | 32 raw bytes | Asserted current selected tool and dependency-closure identity |
+| `17` | 32 raw bytes | Asserted current verifier binary/schema/policy identity |
+| `18` | BE16; only 0 currently defined | Proof suite: 0=offline parse-only fixture, all nonzero=UnsupportedProofSuite |
+| `19` | 0..4096 opaque bytes; suite 0 requires empty | Proof bytes; final field; never included in body_digest |
+
+Nonzero 32-byte/16-byte identities are required for the format; this detects
+obvious invalid fixtures, **not** credible identities. Field 13 is an asserted
+digest of the current Specification, not a second representation of the
+approved Specification: future independent collection must compare its own
+complete current Specification with S and compare its computed digest to 13.
+Fields 14 and 15 must agree with S.source_identity and
+S.configuration_identity, respectively, for a *binding decision*, but
+disagreement does not create an alternative parse of E. Field 16 covers more
+than S.executable_pin; field 17 has no equivalent in existing Specification
+and must be independently checked. Field 04 must equal S.scope before even a
+hypothetical inspection-only acceptance.
+
+### Nested Specification S (one exact encoding)
+
+The bytes of tag 12 are **exactly**, without nested tags or trailing bytes:
+
+```text
+BE16(schema_version = 1)
+STR16(executable) || raw32(executable_pin)
+BE32(version.major) || BE32(version.minor) || BE32(version.patch)
+raw32(source_identity) || raw32(configuration_identity)
+U8(argc) || (U8(arg_kind) || STR16(arg_text)) repeated argc times in order
+STR16(scope) || STR16(cwd) || U8(operation)
+BE64(wall_seconds) || BE64(cpu_seconds) || BE64(input_bytes)
+|| BE64(output_bytes) || BE64(memory_bytes) || BE64(processes)
+U8(profile) || U8(reasoning)
+```
+
+`STR16(s) = BE16(byte_length(s)) || ASCII(s)` with nonempty `21..7e`
+bytes. `argc` is 0..32; each arg kind is precisely
+1=Word, 2=Flag, 3=Path. Aggregate arg-text bytes <=4096, paths
+(executable, scope, cwd and Path arguments) <=1024 bytes each; no hidden
+terminators. `version` is the **three u32 values** from
+`version::Version`, not a semantic-version string. Operation enum maps:
+1=ReadOnlyInvariant, 2=RelevantTests, 3=BuildOrStaticCheck,
+4=CallerCompatibility, 5=ImpactReview, 6=SecurityReview,
+7=CiConfigurationCheck, 8=DependencyValidation,
+9=DocumentationCheck, 10=ReleaseRehearsal.
+Profile: 1=Economy, 2=Standard, 3=Strong.
+Reasoning: 1=Medium, 2=High. No other discriminant is defined.
+
+The existing Rust `ValidationObligation` has **ten** variants, not eleven.
+Each budget has its own BE64; format decoding accepts exact integers, while
+the existing pure policy separately requires wall 1..60, CPU 1..wall,
+input/output 1..1,048,576, memory 1..536,870,912, processes 1..8.
+A well-formed S can therefore fail structural policy, risk floor or semantic
+argv review; its bytes must not be rewritten or "fixed up" by the decoder.
+The v1 schema in S is mandatory and is independent from the envelope header
+version; neither may silently upgrade the other.
+
+### Decoder precedence, trust boundary and non-authority
+
+A proposed bounded decoder must return only a fixed enum and optionally a
+private, non-serializing parsed record. Exact deterministic first failure:
+
+1. **Oversize** if either checked total exceeds its inclusive limit.
+2. **Truncated** if D/header, a tag/length/value, a nested integer/string
+   or a mandatory value is cut short; otherwise **UnsupportedDomain** for
+   complete wrong D, then **UnsupportedVersion** for complete non-v1 header.
+3. Scan TLVs left to right. A tag outside `01..19` is **UnknownField**.
+   A repeated previously seen tag is **DuplicateField**; an unseen tag
+   less than the preceding one is **OutOfOrder**. A gap is tolerated only
+   during scanning and becomes **MissingField** at end (or once no later
+   tag can fill it). **TrailingPayload** means any bytes after complete
+   tag 19, even if those bytes resemble a valid TLV.
+4. **MalformedValue** for wrong fixed widths, forbidden ASCII, zero fixed
+   identity, malformed nested S, excessive per-field lengths, invalid enum
+   discriminant or noncanonical numeric representation. **UnsupportedSchema**
+   for complete S with schema !=1. **UnsupportedProofSuite** for nonzero
+   field 18 (after framing/value validation). Suite 0 with nonempty proof
+   is **MalformedValue**.
+5. Only after successful parsing, compute the three digests exactly as
+   above and return **ParseOnly**. Bytes are never silently canonicalized:
+   re-encode and byte-compare before returning ParseOnly.
+
+When multiple faults exist, apply top-level size first, then header, then
+first malformed TLV in wire order; missing/unsupported-suite checks occur
+only after complete traversal. A malformed TLV precedes a late missing-field
+report. Within S inspect members in their displayed order. No recursion,
+unbounded allocation or payload-bearing exception/log messages; diagnostics
+are enum-only and do not emit argv, paths, proof bytes or secrets.
+
+**ParseOnly is not an approval.** Independent proof authentication, reviewer
+delegation and actual root/operator authority, policy authorization/epochs,
+decision, complete current snapshot, trusted clock and bounded freshness,
+protected rollback/revocation/replay store, stable held snapshots and atomic
+consume must *all* be established by separate independently reviewed
+mechanisms. With known authenticated contradictions, future ingress
+`Rejected(reason)`; with absent/unobservable prerequisites,
+`Unknown(reason)`; only fully checked evidence can ever be
+`AcceptedForInspectionOnly`, which still authorizes **zero execution**.
+Body digest is an unkeyed binding target for a *future reviewed* proof
+scheme. For a future operator-pinned **exact-envelope** allowlist, compare
+the independently delivered `wire_digest`, not merely body_digest;
+changing proof bytes leaves body_digest unchanged but changes wire_digest.
+Neither suite 0, digest equality, a declared key nor fake test policy
+constitutes cryptographic authenticity or reviewer authority. Trusted
+clock, independent identity collector, enrollment, revocation, replay,
+rollback and TOCTOU protection remain UNKNOWN. No existing runtime
+implements this parser, proof or ingress.
+
+### Reproducible byte-level offline vectors
+
+The fixture script below specifies complete positive bytes by construction,
+and each mutation is independent of all other mutations. It prints SHA-256
+goldens and verifies the size/format constraints with no external library or
+key. The table reports **format-only** expected results, not authenticated
+ingress, and gives the exact mutation to apply to `E0`. An identity or
+epoch change with structurally valid bytes must remain ParseOnly (different
+digest); a separately held *original* trusted snapshot would later reject
+the binding. Rejecting such a change as malformed would conflate decoding
+with trust.
+
+The following standard-library script is a fully specified reference builder and
+bounded *offline format-only* checker. Save its contents as a temporary Python
+file and run with `python3 -B`; expected output is pinned below. No product
+source, real signing key, trusted policy or verifier is invoked.
+
+```python
+# Offline reference vectors only. NOT a product parser, authority or crypto verifier.
+import hashlib
+import re
+
+D = b"codex-smart/validation-approval-envelope/v1\x00"
+def n(v, size): return v.to_bytes(size, "big")
+def t(tag, raw): return bytes([tag]) + n(len(raw), 2) + raw
+def s(raw): return n(len(raw), 2) + raw
+def hash_d(domain, raw): return hashlib.sha256(domain + b"\x00" + raw).digest()
+def spec():
+    return (n(1, 2) + s(b"/bin/true") + b"\x11"*32
+            + n(1, 4) + n(2, 4) + n(3, 4)
+            + b"\x22"*32 + b"\x33"*32 + b"\x03"
+            + b"\x01" + s(b"check") + b"\x02" + s(b"--offline")
+            + b"\x03" + s(b"src") + s(b"/work") + s(b"/work/repo")
+            + b"\x02" + b"".join(n(v, 8) for v in (30, 15, 1024, 1024, 1048576, 1))
+            + b"\x03\x02")
+S = spec()
+spec_hash = hash_d(b"codex-smart/validation-specification/v1", S)
+F = [
+    (1,b"\x01"), (2,b"example/repo"), (3,b"\x01"), (4,b"/work"),
+    (5,b"offline-v1"), (6,n(7,8)), (7,b"A"*32), (8,b"O"*32),
+    (9,b"R"*32), (10,n(7,8)), (11,n(3,8)),
+    (12,b"X"*16), (13,b"S"*16), (14,b"U"*16), (15,b"T"*16),
+    (16,n(100,8)), (17,n(400,8)), (18,S), (19,spec_hash),
+    (20,b"\x22"*32), (21,b"\x33"*32), (22,b"\x44"*32),
+    (23,b"\x55"*32), (24,n(0,2)), (25,b""),
+]
+def build(fields=F, version=1, domain=D):
+    return domain + n(version,2) + b"".join(t(k,v) for k,v in fields)
+E0 = build()
+def change(k,v): return build([(tag,v if tag==k else raw) for tag,raw in F])
+def remove(k): return build([(tag,raw) for tag,raw in F if tag!=k])
+def insert_before(before,k,v):
+    out=[]
+    for tag,raw in F:
+        if tag==before: out.append((k,v))
+        out.append((tag,raw))
+    return build(out)
+def swap(a,b):
+    f=list(F); ia=next(i for i,x in enumerate(f) if x[0]==a)
+    ib=next(i for i,x in enumerate(f) if x[0]==b)
+    f[ia],f[ib]=f[ib],f[ia]
+    return build(f)
+
+class Invalid(Exception): pass
+def fail(name): raise Invalid(name)
+def text_value(v,limit=None):
+    if not v or (limit is not None and len(v)>limit) or not all(33<=c<=126 for c in v):
+        fail("MalformedValue")
+def read(p,count,pos):
+    if pos+count>len(p): fail("Truncated")
+    return p[pos:pos+count],pos+count
+def parse_spec(p):
+    ix=0
+    def get(count):
+        nonlocal ix
+        raw,ix=read(p,count,ix)
+        return raw
+    def string(limit=None):
+        length=int.from_bytes(get(2),"big")
+        if limit is not None and length>limit: fail("MalformedValue")
+        raw=get(length)
+        text_value(raw)
+        return raw
+    if int.from_bytes(get(2),"big")!=1: fail("UnsupportedSchema")
+    string(1024)
+    if get(32)==b"\0"*32: fail("MalformedValue")
+    for _ in range(3): get(4)
+    for _ in range(2):
+        if get(32)==b"\0"*32: fail("MalformedValue")
+    argc=get(1)[0]
+    if argc>32: fail("MalformedValue")
+    used=0
+    for _ in range(argc):
+        kind=get(1)[0]
+        if kind not in (1,2,3): fail("MalformedValue")
+        arg=string(1024 if kind==3 else 4096)
+        used+=len(arg)
+    if used>4096: fail("MalformedValue")
+    string(1024); string(1024)
+    if get(1)[0] not in range(1,11): fail("MalformedValue")
+    for _ in range(6): get(8)
+    if get(1)[0] not in (1,2,3): fail("MalformedValue")
+    if get(1)[0] not in (1,2): fail("MalformedValue")
+    if ix!=len(p): fail("MalformedValue")
+def parse(e, external=b"", policy=b""):
+    if len(e)>16384 or len(e)+len(external)+len(policy)>65536:
+        fail("Oversize")
+    if len(e)<len(D): fail("Truncated")
+    if not e.startswith(D): fail("UnsupportedDomain")
+    if len(e)<len(D)+2: fail("Truncated")
+    if e[len(D):len(D)+2]!=b"\x00\x01": fail("UnsupportedVersion")
+    ix=len(D)+2
+    last=0; seen=set(); fields={}
+    while ix<len(e):
+        if last==25: fail("TrailingPayload")
+        if len(e)-ix<3: fail("Truncated")
+        tag=e[ix]; size=int.from_bytes(e[ix+1:ix+3],"big")
+        ix+=3
+        if not 1<=tag<=25: fail("UnknownField")
+        if tag in seen: fail("DuplicateField")
+        if tag<last: fail("OutOfOrder")
+        raw,ix=read(e,size,ix)
+        seen.add(tag); last=tag; fields[tag]=raw
+    if len(fields)!=25: fail("MissingField")
+    for tag in range(1,26):
+        if tag not in fields: fail("MissingField")
+        v=fields[tag]
+        if tag in (1,3):
+            if len(v)!=1 or (tag==1 and v[0] not in (1,2)) or (tag==3 and v!=b"\x01"):
+                fail("MalformedValue")
+        if tag in (2,4,5):
+            text_value(v,129 if tag==2 else (1024 if tag==4 else 64))
+            if tag==2 and not re.fullmatch(rb"[a-z0-9_.-]{1,64}/[a-z0-9_.-]{1,64}",v):
+                fail("MalformedValue")
+            if tag==5 and not re.fullmatch(rb"[a-z0-9_.-]{1,64}",v):
+                fail("MalformedValue")
+        if tag in (6,10,11,16,17):
+            if len(v)!=8 or (tag in (6,10) and v==b"\x00"*8): fail("MalformedValue")
+        if tag in (7,8,9,19,20,21,22,23):
+            if len(v)!=32 or v==b"\x00"*32: fail("MalformedValue")
+        if tag in (12,13,14,15):
+            if len(v)!=16 or v==b"\x00"*16: fail("MalformedValue")
+        if tag==18: parse_spec(v)
+        if tag==24 and len(v)!=2: fail("MalformedValue")
+        if tag==25 and len(v)>4096: fail("MalformedValue")
+    if fields[24]!=b"\x00\x00": fail("UnsupportedProofSuite")
+    if fields[25]: fail("MalformedValue")
+    reencoded=build([(k,fields[k]) for k in range(1,26)])
+    if e!=reencoded: fail("MalformedValue")
+    return ("ParseOnly",hash_d(b"codex-smart/validation-approval-body/v1",
+                              e[:len(e)-3-len(fields[25])]).hex(),
+            hash_d(b"codex-smart/validation-approval-wire/v1",e).hex())
+
+CASES = [
+ ("V00", E0, b"", b"", "ParseOnly"),
+ ("V01", E0+b"x"*(16385-len(E0)),b"",b"", "Oversize"),
+ ("V02", E0,b"",b"x"*(65537-len(E0)), "Oversize"),
+ ("V03", insert_before(4,3,b"\x01"),b"",b"", "DuplicateField"),
+ ("V04", insert_before(25,26,b""),b"",b"", "UnknownField"),
+ ("V05", remove(2),b"",b"", "MissingField"),
+ ("V06", swap(3,4),b"",b"", "OutOfOrder"),
+ ("V07", change(6,b"\x00"+n(7,8)),b"",b"", "MalformedValue"),
+ ("V08", E0+b"\x00",b"",b"", "TrailingPayload"),
+ ("V09", build(version=2),b"",b"", "UnsupportedVersion"),
+ ("V10", D[:-1],b"",b"", "Truncated"),
+ ("V11", E0[:-2]+b"\x00\x01",b"",b"", "Truncated"),
+ ("V12", build(domain=D[:-1]+b"?"),b"",b"", "UnsupportedDomain"),
+ ("V13", change(2,b"example/\xff"),b"",b"", "MalformedValue"),
+ ("V14", change(24,n(1,2)),b"",b"", "UnsupportedProofSuite"),
+ ("V15", change(25,b"\x00"),b"",b"", "MalformedValue"),
+ ("V16", change(1,b"\x02"),b"",b"", "ParseOnly"),
+ ("V17", change(22,b"\x45"*32),b"",b"", "ParseOnly"),
+ ("V18", change(6,n(8,8)),b"",b"", "ParseOnly"),
+ ("V19", change(18,S[:-2]+b"\x02"+S[-1:]),b"",b"", "ParseOnly"),
+ ("V20", change(18,b"\x00\x02"+S[2:]),b"",b"", "UnsupportedSchema"),
+]
+for name,e,ex,pol,expected in CASES:
+    try: actual=parse(e,ex,pol)[0]
+    except Invalid as err: actual=str(err)
+    assert actual==expected,(name,actual,expected)
+print("vectors",len(CASES),"OK")
+print("length(E0)",len(E0),"length(S)",len(S))
+print("spec_digest",spec_hash.hex())
+print("body_digest",parse(E0)[1])
+print("wire_digest",parse(E0)[2])
+print("prefix(E0,hex)", E0[:len(D)+2].hex())
+for name, e, ex, pol, expected in CASES:
+    print(name,len(e),len(ex),len(pol),expected)
+
+```
+
+The exact positive fixture is `E0` (730 bytes) built from the explicit ordered
+`F` values above; nested `S` is 218 bytes. Its mandatory header hex is
+`636f6465782d736d6172742f76616c69646174696f6e2d617070726f76616c2d656e76656c6f70652f7631000001`.
+The golden `spec_digest`, `body_digest`, and `wire_digest` are respectively:
+
+```text
+db38c03a0a016932acd0a2ee195e03af7abae7b76730801658c9a8b05bbfcd67
+86965441fd6d8fd8972229442e35834da4eac839bb9317861d723af4d3af2371
+ff4c09865fe0432cdb9d519024bc60009135459c57ffecec13805e0d507f9a57
+```
+
+| Vector | Independent byte-level mutation relative to E0 | Expected format result |
+| --- | --- | --- |
+| V00 | No mutation, exact 730 bytes; empty external proof and policy | ParseOnly |
+| V01 | Append `x` bytes until len(E)=16385 | Oversize |
+| V02 | Retain E0; external policy is 64807 bytes `x` (combined 65537) | Oversize |
+| V03 | Duplicate `TLV(03,01)` immediately before tag 04 | DuplicateField |
+| V04 | Insert `TLV(1a,empty)` immediately before tag 19 | UnknownField |
+| V05 | Remove entire TLV 02 | MissingField |
+| V06 | Swap complete TLV 03 and TLV 04 | OutOfOrder |
+| V07 | Change tag 06 from 8-byte BE64(7) to 9 bytes `00 || BE64(7)` | MalformedValue |
+| V08 | Append literal `00` after final proof field | TrailingPayload |
+| V09 | Change only the two-byte header version to `00 02` | UnsupportedVersion |
+| V10 | Truncate header to all but final byte of D | Truncated |
+| V11 | Change final TLV 19 length from `00 00` to `00 01`, with no byte appended | Truncated |
+| V12 | Replace final NUL byte of D with ASCII `?` | UnsupportedDomain |
+| V13 | Change repository bytes from `example/repo` to `example/\xff` (length re-encoded) | MalformedValue |
+| V14 | Change proof-suite tag 18 value to BE16(1) | UnsupportedProofSuite |
+| V15 | Change proof tag 19 to one raw `00` byte | MalformedValue |
+| V16 | Change tag 01 from Approve to Deny (`02`) | ParseOnly; later authenticated decision would reject |
+| V17 | Change tag 16 tool-closure identity to 32 bytes `45` | ParseOnly; digest changes, later identity comparison rejects |
+| V18 | Change tag 06 policy epoch from BE64(7) to BE64(8) | ParseOnly; digest changes, protected epoch must be checked |
+| V19 | Change nested S.profile from Strong (`03`) to Standard (`02`) | ParseOnly; spec/body/wire digests change, current/risk binding must be checked |
+| V20 | Change S.schema_version from BE16(1) to BE16(2) | UnsupportedSchema |
+
+The deterministic reference output is `vectors 21 OK`; each vector is
+built independently from E0, and no test asserts authenticated success.
+One-byte data mutation with a recomputed unkeyed digest is **not** proof of
+tamper resistance; authenticated protection requires independently trusted
+proof material and authorization. This offline script is proposed contract
+test evidence only, not an installed parser or tested production ingress.
+All existing #135 scenario requirements and its production NO-GO apply.
+
 ## Reusable preparation and automation
 
 Recurring workflows may reuse repository facts, verified toolchain availability
