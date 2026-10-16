@@ -116,7 +116,7 @@ verified provenance and clock inputs, but authenticates none of them. Forging
 the provenance enum and copying a specification cannot create attestation.
 Every status reports admitted=false, attested=false, runtime_ready=false and
 execution_authorized=false. No authorized trust root is established. There is
-no trusted ingress, launch conversion, product caller or execution adapter;
+no trusted ingress, launch conversion or execution adapter;
 ordinary run/plan/prepare behavior is unchanged.
 
 The fixed policy permits at most 32 arguments / 4096 aggregate argument bytes
@@ -137,6 +137,37 @@ Filesystem identity, symlinks, mounts, runtime version, isolation, clock
 integrity and replay history are not inspected. Sensitive input types omit
 Debug and results contain only fixed enums; no argv/path/source/prompt payload
 is returned.
+
+Issue #133 adds the explicitly invoked typed inspection interface
+`WorkflowPlan::inspect_validation` in `validation_inspection`. It derives the
+existing workflow validation recipe from the separately supplied native surface,
+retains the selected workflow risk floor, and calls `validation_policy::evaluate`
+once when a recipe and current assumptions are available. No recipe or no current
+assumptions yields an enum-only missing-evidence finding. Policy refusals retain
+the original reason; missing approval, unverified evidence and an unready recipe
+map to NeedsEvidence, other policy refusals to Blocked. The strongest structural
+finding still maps to NeedsEvidence and provenance Unknown. There is no operational
+Ready state, candidate payload in the result, or execution authority.
+
+The candidate descriptor, optional separate Approval and optional
+CurrentAssumptions (current specification, provenance and identity/time interval)
+are separate typed arguments. The API authenticates none of them. ExternallyVerifiedAssumption
+remains a hypothetical pure-policy input, even when a caller copies all three
+specifications. Revocation/unverifiable approval must be represented by withholding
+approval or supplying CallerDeclared evidence; no revocation provider is implemented.
+Clock continuity and current identities are supplied assumptions, not host observations.
+Missing prerequisites cannot be repaired by copying a receipt or asserting provenance.
+
+This is the narrow core inspection path only: no new CLI descriptor ingestion,
+flags, file parser, worker protocol or preparation subprocess join is introduced.
+CLI declarations cannot establish independent approval with the accepted infrastructure.
+Explicit callers can exercise positive structural fixtures with separately supplied
+synthetic evidence, never runtime readiness. Existing #100 CLI and normal passthrough
+remain unchanged. The fixed enum result carries no paths, argv, source, worker payload,
+stderr or secrets, and no launch conversion. Policy input bounds are reused rather
+than replaced; no filesystem, host clock, shell, network or model is consulted.
+ADR-0010/0011 trust roots, authentication, authoritative current identity/time,
+revocation and protected state remain unimplemented; Adaptive remains **NO-GO**.
 
 ## Reusable preparation and automation
 
