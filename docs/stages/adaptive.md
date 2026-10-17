@@ -175,3 +175,10 @@ The [configuration contract](../configuration.md#supervised-inspection-accountin
 owns its limits and cleanup uncertainty. Offline fake-Codex tests provide implementation
 evidence; independent review remains required, and #94/#95 and stage acceptance
 remain outstanding. Default inspect and ordinary run retain their existing behavior.
+
+Issue #147 adds an opt-in Linux private durable per-invocation supervised inspection
+receipt, with no retries or execution-policy change. Its private schema, crash
+semantics and storage trust limits are specified in
+[configuration](../configuration.md#private-supervised-attempt-receipts-147).
+Local fake-process evidence does not constitute independent acceptance or advance
+Adaptive stage/campaign acceptance; exact-head review and CI remain separate gates.

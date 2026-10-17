@@ -3,12 +3,22 @@ use codex_smart_core::process::LaunchPlan;
 use std::path::Path;
 
 #[cfg(not(target_os = "linux"))]
-pub fn execute(_: LaunchPlan, _: Option<&Path>, _: u64) -> Result<i32, &'static str> {
+pub fn execute(
+    _: LaunchPlan,
+    _: Option<&Path>,
+    _: u64,
+    _: Option<&Path>,
+) -> Result<i32, &'static str> {
     Err("E_INSPECT_PLATFORM: supervised inspection requires Linux")
 }
 
 #[cfg(target_os = "linux")]
-pub fn execute(plan: LaunchPlan, answer: Option<&Path>, seconds: u64) -> Result<i32, &'static str> {
+pub fn execute(
+    plan: LaunchPlan,
+    answer: Option<&Path>,
+    seconds: u64,
+    ledger: Option<&Path>,
+) -> Result<i32, &'static str> {
     use codex_smart_core::process::ProcessOutcome;
     use std::{fs::OpenOptions, io::Write, os::unix::fs::OpenOptionsExt, time::Duration};
     // Reserve before launching: existing files and symlinks refuse without any call.
@@ -24,6 +34,10 @@ pub fn execute(plan: LaunchPlan, answer: Option<&Path>, seconds: u64) -> Result<
         ),
         None => None,
     };
+    let mut receipt = ledger
+        .map(crate::attempt_ledger::Receipt::start)
+        .transpose()?;
+    let started = std::time::Instant::now();
     let output = plan.supervise(Duration::from_secs(seconds));
     let parsed = parse(&output.stdout);
     let mut status = match output.outcome {
@@ -63,6 +77,12 @@ pub fn execute(plan: LaunchPlan, answer: Option<&Path>, seconds: u64) -> Result<
         "usage": {"input_tokens": usage[0], "cached_input_tokens": usage[1], "output_tokens": usage[2], "cache_write_input_tokens": usage[3], "reasoning_output_tokens": usage[4]},
         "answer_file": answer_status,
     });
+    if let Some(receipt) = receipt.as_mut() {
+        receipt.finish(
+            &report,
+            started.elapsed().as_millis().min(u64::MAX as u128) as u64,
+        )?;
+    }
     println!("{report}");
     Ok(match status {
         "CompletedSuccess" => 0,

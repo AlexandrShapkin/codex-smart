@@ -18,7 +18,9 @@ serde_json = { version = "=1.0.151", default-features = false, features = ["std"
 [lints]
 workspace = true
 
+[target.'cfg(target_os = "linux")'.dependencies]
+rustix = { version = "=1.1.5", features = ["fs", "process", "thread"] }
+
 [target.'cfg(target_os = "linux")'.dev-dependencies]
 sha2 = { version = "=0.11.0", default-features = false }
-rustix = { version = "=1.1.5", features = ["fs", "process", "thread"] }
 codex-smart-process = { version = "=0.1.0", path = "../codex-smart-process" }
