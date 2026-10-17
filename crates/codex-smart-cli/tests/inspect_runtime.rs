@@ -289,3 +289,379 @@ fn inspect_exec_signal_is_propagated_without_replay() {
     assert_eq!(output.status.signal(), Some(15));
     assert_eq!(fs::read_to_string(f.0.join("calls")).unwrap(), "attempt\n");
 }
+
+#[cfg(target_os = "linux")]
+mod supervised {
+    use super::*;
+
+    impl Fixture {
+        fn stream(&self, body: &str) {
+            fs::write(self.0.join("bin/codex"), format!("#!/bin/sh\nif [ \"$1\" = --version ]; then printf 'codex-cli 0.162.1\\n'; exit 0; fi\nif [ \"$1\" = debug ]; then printf '%s' \"$FAKE_CATALOG\"; exit 0; fi\nprintf '%s\\n' \"$@\" > \"$FAKE_ARGS\"\nprintf 'attempt\\n' >> \"$FAKE_CALLS\"\n{body}\n")).unwrap();
+        }
+        fn supervised(&self) -> Command {
+            let mut command = self.command();
+            command.args(["inspect", "--supervised-json", "--timeout-seconds", "1"]);
+            command
+        }
+        fn one_call(&self) {
+            assert_eq!(
+                fs::read_to_string(self.0.join("calls")).unwrap(),
+                "attempt\n"
+            );
+        }
+    }
+    const START: &str =
+        "{\"type\":\"thread.started\",\"thread_id\":\"PRIVATE\"}\n{\"type\":\"turn.started\"}";
+    fn stream_body(end: &str) -> String {
+        format!(
+            "printf '%s\\n' '{START}' '{{\"type\":\"item.completed\",\"item\":{{\"type\":\"agent_message\",\"text\":\"PRIVATE ANSWER\"}}}}' '{end}'\nprintf 'PRIVATE STDERR' >&2"
+        )
+    }
+    fn report(output: &Output) -> serde_json::Value {
+        assert!(!String::from_utf8_lossy(&output.stdout).contains("PRIVATE"));
+        assert!(!stderr(output).contains("PRIVATE"));
+        serde_json::from_slice(&output.stdout).unwrap()
+    }
+
+    #[test]
+    fn supervised_success_usage_private_answer_and_exact_argv() {
+        let f = Fixture::new();
+        f.stream(&stream_body(r#"{"type":"turn.completed","usage":{"input_tokens":12,"cached_input_tokens":0,"output_tokens":7,"cache_write_input_tokens":null,"reasoning_output_tokens":null}}"#));
+        let answer = f.0.join("answer");
+        let output = f
+            .supervised()
+            .arg("--answer-file")
+            .arg(&answer)
+            .arg("PRIVATE TASK")
+            .output()
+            .unwrap();
+        let value = report(&output);
+        assert!(output.status.success());
+        assert_eq!(value["status"], "CompletedSuccess");
+        assert_eq!(
+            value["usage"],
+            serde_json::json!({"input_tokens":12,"cached_input_tokens":0,"output_tokens":7,"cache_write_input_tokens":null,"reasoning_output_tokens":null})
+        );
+        assert_eq!(value["answer_file"], "Written");
+        assert_eq!(fs::read_to_string(&answer).unwrap(), "PRIVATE ANSWER");
+        assert_eq!(
+            fs::metadata(answer).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        assert_eq!(
+            f.argv(),
+            [
+                "--model",
+                "gpt-6-luna",
+                "--config",
+                "model_reasoning_effort=\"medium\"",
+                "exec",
+                "-s",
+                "read-only",
+                "--json",
+                "--ephemeral",
+                "--",
+                "PRIVATE TASK"
+            ]
+        );
+        f.one_call();
+    }
+
+    #[test]
+    fn supervised_missing_usage_is_null_and_failed_turn_is_explicit() {
+        for (terminal, exit, expected) in [
+            (r#"{"type":"turn.completed"}"#, 0, "CompletedSuccess"),
+            (
+                r#"{"type":"turn.failed","error":{"message":"PRIVATE ERROR"}}"#,
+                1,
+                "CompletedFailure",
+            ),
+        ] {
+            let f = Fixture::new();
+            f.stream(&format!("{}\nexit {exit}", stream_body(terminal)));
+            let output = f.supervised().arg("task").output().unwrap();
+            let value = report(&output);
+            assert_eq!(value["status"], expected);
+            assert_eq!(
+                value["usage"],
+                serde_json::json!({"input_tokens":null,"cached_input_tokens":null,"output_tokens":null,"cache_write_input_tokens":null,"reasoning_output_tokens":null})
+            );
+            f.one_call();
+        }
+    }
+
+    #[test]
+    fn supervised_invalid_incomplete_oversize_and_abnormal_streams_never_replay() {
+        for body in [
+            "printf 'PRIVATE INVALID\\n'".to_owned(),
+            format!("printf '%s\\n' '{START}'"),
+            format!("printf '%s\\n' '{START}'; printf '{{\"type\":\"turn.completed\"}}'"),
+            "exec /usr/bin/head -c 1048577 /dev/zero".to_owned(),
+            "exit 3".to_owned(),
+            "kill -TERM $$".to_owned(),
+        ] {
+            let f = Fixture::new();
+            f.stream(&body);
+            let output = f.supervised().arg("task").output().unwrap();
+            let value = report(&output);
+            let expected = if body == "kill -TERM $$" {
+                "Interrupted"
+            } else {
+                "Unknown"
+            };
+            assert_eq!(value["status"], expected);
+            assert!(!output.status.success());
+            f.one_call();
+        }
+    }
+
+    #[test]
+    fn supervised_answer_refuses_existing_file_and_symlink_without_call() {
+        use std::os::unix::fs::symlink;
+        let f = Fixture::new();
+        let target = f.0.join("target");
+        fs::write(&target, "original").unwrap();
+        let link = f.0.join("link");
+        symlink(&target, &link).unwrap();
+        for path in [&target, &link] {
+            let output = f
+                .supervised()
+                .arg("--answer-file")
+                .arg(path)
+                .arg("PRIVATE TASK")
+                .output()
+                .unwrap();
+            assert_eq!(output.status.code(), Some(2));
+            assert!(output.stdout.is_empty());
+            assert!(!stderr(&output).contains("PRIVATE"));
+            f.not_launched();
+            assert_eq!(fs::read_to_string(&target).unwrap(), "original");
+        }
+    }
+
+    #[test]
+    fn supervised_timeout_kills_descendants_and_closes_stdin() {
+        let f = Fixture::new();
+        f.stream("if read -r line; then printf 'PRIVATE INPUT'; exit 4; fi\n/usr/bin/sleep 30 &\nprintf '%s' $! > \"$FAKE_CALLS.pid\"\nwait");
+        let started = Instant::now();
+        let output = f.supervised().arg("task").output().unwrap();
+        assert_eq!(report(&output)["status"], "Timeout");
+        assert_eq!(output.status.code(), Some(124));
+        assert!(started.elapsed() < Duration::from_secs(4));
+        f.one_call();
+        let pid = fs::read_to_string(f.0.join("calls.pid")).unwrap();
+        // A killed descendant may remain a zombie until the host's init reaps it.
+        if let Ok(stat) = fs::read_to_string(format!("/proc/{pid}/stat")) {
+            assert_eq!(stat.split_whitespace().nth(2), Some("Z"));
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn supervised_parent_interrupt_reports_and_reaps_without_replay() {
+        use rustix::process::{Pid, Signal, kill_process};
+        let f = Fixture::new();
+        f.stream("exec /usr/bin/sleep 30");
+        let child = f
+            .supervised()
+            .arg("task")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while !f.0.join("calls").exists() {
+            assert!(Instant::now() < deadline);
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        kill_process(Pid::from_raw(child.id() as i32).unwrap(), Signal::INT).unwrap();
+        let output = child.wait_with_output().unwrap();
+        assert_eq!(report(&output)["status"], "Interrupted");
+        f.one_call();
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn supervised_spawn_failure_is_unknown_without_replay() {
+        use std::os::unix::fs::symlink;
+        let f = Fixture::new();
+        let interpreter = f.0.join("shell");
+        symlink("/bin/sh", &interpreter).unwrap();
+        fs::write(f.0.join("bin/codex"), format!("#!{}\nif [ \"$1\" = --version ]; then printf 'codex-cli 0.162.1\\n'; exit 0; fi\nif [ \"$1\" = debug ]; then printf '%s' \"$FAKE_CATALOG\"; /bin/rm -- \"$FAKE_INTERPRETER\"; exit 0; fi\nprintf attempt >> \"$FAKE_CALLS\"\n", interpreter.display())).unwrap();
+        let output = f
+            .supervised()
+            .env("FAKE_INTERPRETER", interpreter)
+            .arg("task")
+            .output()
+            .unwrap();
+        assert_eq!(report(&output)["status"], "Unknown");
+        assert_eq!(output.status.code(), Some(2));
+        f.not_launched();
+    }
+
+    #[test]
+    fn supervised_protocol_and_usage_fail_closed_without_private_leaks() {
+        for terminal in [
+            r#"{"type":"turn.completed","usage":{"input_tokens":9}}"#,
+            r#"{"type":"turn.completed","usage":{"input_tokens":-1,"cached_input_tokens":"PRIVATE","output_tokens":null,"cache_write_input_tokens":null,"reasoning_output_tokens":null}}"#,
+            "{\"type\":\"turn.completed\"}\n{\"type\":\"turn.completed\"}",
+            "{\"type\":\"turn.completed\"}\nPRIVATE TRAILING",
+        ] {
+            let f = Fixture::new();
+            f.stream(&stream_body(terminal));
+            let output = f.supervised().arg("task").output().unwrap();
+            let value = report(&output);
+            if terminal.contains("9") {
+                assert_eq!(value["status"], "CompletedSuccess");
+                assert_eq!(value["usage"]["input_tokens"], 9);
+                assert!(value["usage"]["cached_input_tokens"].is_null());
+                assert!(value["usage"]["output_tokens"].is_null());
+            } else if terminal.contains("-1") {
+                assert_eq!(value["status"], "CompletedSuccess");
+                assert_eq!(
+                    value["usage"],
+                    serde_json::json!({"input_tokens":null,"cached_input_tokens":null,"output_tokens":null,"cache_write_input_tokens":null,"reasoning_output_tokens":null})
+                );
+            } else {
+                assert_eq!(value["status"], "Unknown");
+            }
+            f.one_call();
+        }
+    }
+
+    #[test]
+    fn supervised_only_options_refuse_in_default_inspect_and_run_stays_passthrough() {
+        let f = Fixture::new();
+        for options in [
+            vec!["--answer-file", "PRIVATE", "task"],
+            vec!["--timeout-seconds", "1", "task"],
+            vec!["--supervised-json", "--timeout-seconds", "0", "task"],
+            vec!["--supervised-json", "--supervised-json", "task"],
+        ] {
+            let output = f.command().arg("inspect").args(options).output().unwrap();
+            assert_eq!(output.status.code(), Some(2));
+            assert!(!stderr(&output).contains("PRIVATE"));
+            f.not_launched();
+        }
+        let output = f
+            .command()
+            .args([
+                "run",
+                "--",
+                "inspect",
+                "--supervised-json",
+                "--answer-file",
+                "PRIVATE",
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        assert_eq!(
+            f.argv(),
+            ["inspect", "--supervised-json", "--answer-file", "PRIVATE"]
+        );
+    }
+
+    #[test]
+    fn supervised_nonzero_completed_stream_is_failure_and_all_native_usage_is_preserved() {
+        let f = Fixture::new();
+        f.stream(&format!("{}\nexit 5", stream_body(r#"{"type":"turn.completed","usage":{"cache_write_input_tokens":4,"reasoning_output_tokens":2}}"#)));
+        let output = f.supervised().arg("task").output().unwrap();
+        let value = report(&output);
+        assert_eq!(value["status"], "CompletedFailure");
+        assert_eq!(value["usage"]["cache_write_input_tokens"], 4);
+        assert_eq!(value["usage"]["reasoning_output_tokens"], 2);
+        assert!(value["usage"]["input_tokens"].is_null());
+        f.one_call();
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn supervised_cleanup_uncertainty_is_unknown() {
+        use rustix::process::{Pid, Signal, kill_process};
+        let f = Fixture::new();
+        f.stream("/usr/bin/setsid /bin/sh -c 'printf %s $$ > \"$FAKE_CALLS.pid\"; exec /usr/bin/sleep 30' &\nwait");
+        let output = f.supervised().arg("task").output().unwrap();
+        // Explicit fixture cleanup of the deliberately escaped test process.
+        let pid = fs::read_to_string(f.0.join("calls.pid"))
+            .unwrap()
+            .parse::<i32>()
+            .unwrap();
+        kill_process(Pid::from_raw(pid).unwrap(), Signal::KILL).unwrap();
+        assert_eq!(report(&output)["status"], "Unknown");
+        f.one_call();
+    }
+
+    #[test]
+    fn supervised_null_stdin_does_not_wait_for_inherited_open_pipe() {
+        let f = Fixture::new();
+        f.stream(&format!(
+            "if read -r line; then printf PRIVATE; exit 4; fi\n{}",
+            stream_body(r#"{"type":"turn.completed"}"#)
+        ));
+        let mut child = f
+            .supervised()
+            .arg("task")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let inherited_writer = child.stdin.take().unwrap();
+        let deadline = Instant::now() + Duration::from_secs(3);
+        loop {
+            if child.try_wait().unwrap().is_some() {
+                break;
+            }
+            assert!(Instant::now() < deadline);
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let output = child.wait_with_output().unwrap();
+        drop(inherited_writer);
+        assert_eq!(report(&output)["status"], "CompletedSuccess");
+        f.one_call();
+    }
+
+    #[test]
+    fn supervised_normal_exit_cleans_lingering_descendants_and_keeps_last_answer() {
+        let f = Fixture::new();
+        f.stream(&format!("printf '%s\\n' '{START}' '{{\"type\":\"item.completed\",\"item\":{{\"type\":\"agent_message\",\"text\":\"PRIVATE FIRST\"}}}}' '{{\"type\":\"item.completed\",\"item\":{{\"type\":\"agent_message\",\"text\":\"PRIVATE LAST\"}}}}' '{{\"type\":\"turn.completed\"}}'\n/usr/bin/sleep 30 &\nprintf '%s' $! > \"$FAKE_CALLS.pid\"\nexit 0"));
+        let answer = f.0.join("answer");
+        let started = Instant::now();
+        let output = f
+            .supervised()
+            .arg("--answer-file")
+            .arg(&answer)
+            .arg("task")
+            .output()
+            .unwrap();
+        assert_eq!(report(&output)["status"], "CompletedSuccess");
+        assert!(started.elapsed() < Duration::from_secs(3));
+        assert_eq!(fs::read_to_string(answer).unwrap(), "PRIVATE LAST");
+        let pid = fs::read_to_string(f.0.join("calls.pid")).unwrap();
+        if let Ok(stat) = fs::read_to_string(format!("/proc/{pid}/stat")) {
+            assert_eq!(stat.split_whitespace().nth(2), Some("Z"));
+        }
+        f.one_call();
+    }
+
+    #[test]
+    fn supervised_catalog_probes_clean_up_their_descendants() {
+        let f = Fixture::new();
+        f.stream(&stream_body(r#"{"type":"turn.completed"}"#));
+        let path = f.0.join("bin/codex");
+        let script = fs::read_to_string(&path).unwrap()
+        .replace("then printf 'codex-cli", "then /usr/bin/sleep 30 &\nprintf '%s' $! > \"$FAKE_CALLS.version.pid\"\nprintf 'codex-cli")
+        .replace("then printf '%s' \"$FAKE_CATALOG\"", "then /usr/bin/sleep 30 &\nprintf '%s' $! > \"$FAKE_CALLS.catalog.pid\"\nprintf '%s' \"$FAKE_CATALOG\"");
+        fs::write(path, script).unwrap();
+        let output = f.supervised().arg("task").output().unwrap();
+        assert_eq!(report(&output)["status"], "CompletedSuccess");
+        for suffix in ["version", "catalog"] {
+            let pid = fs::read_to_string(f.0.join(format!("calls.{suffix}.pid"))).unwrap();
+            if let Ok(stat) = fs::read_to_string(format!("/proc/{pid}/stat")) {
+                assert_eq!(stat.split_whitespace().nth(2), Some("Z"));
+            }
+        }
+        f.one_call();
+    }
+}

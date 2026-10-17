@@ -156,3 +156,67 @@ Preview facts come only from explicit options, not the diagnostic configuration
 fields above. Unknown compatibility never enables automatic model/reasoning changes.
 The existing reasoning argv adapter caps preview arguments at 256 entries/16,384 bytes;
 exceeding bounds refuses before launch without printing their contents.
+
+## Supervised inspection accounting (#145)
+
+`codex-smart inspect --supervised-json [--timeout-seconds 1..120]
+[--answer-file PATH] [existing typed inspect options] [--] "task"` explicitly
+supervises one noninteractive Codex CLI **0.162.1** `exec -s read-only --json
+--ephemeral` attempt on Linux. Existing inspect policy, bundled catalog and
+LaunchPlan executable identity checks apply. Default inspect and `run --` retain
+their existing behavior. No launcher retry, replay, escalation or second model
+attempt is made. Supervised catalog/version probes use the same group cleanup
+with five-second deadlines and 128-byte/2,000,000-byte output caps. They make no
+model call; provider availability remains unknown. Ephemeral mode asks Codex not to persist session files.
+
+The post-spawn deadline defaults to 120 seconds and can only be reduced. Captured
+stdout is capped at 1 MiB; stdin is null and child stderr is discarded. The parent
+handles SIGINT/SIGTERM, kills the original process group before reaping its leader
+(including after normal exit), and allows at most one additional second for
+cleanup. Leader identity stays reserved until group termination. An unreaped child
+remains owned by the process and blocks another supervised launch. These limits
+do not bound OS spawn, executable identity/filesystem checks or answer-file I/O.
+Process groups are supervision, not hostile-process confinement: a descendant
+that changes its group or session can escape group termination. A pipe still open at
+the cleanup deadline yields Unknown; escaped processes that close their inherited
+pipes cannot be detected. SIGKILL of the parent cannot be handled.
+
+After supervision, stdout is one JSON object containing only `status`, `usage`
+(`input_tokens`, `cached_input_tokens`, `cache_write_input_tokens`,
+`output_tokens`, `reasoning_output_tokens`) and the `answer_file`
+status. No event bodies, paths, model answer, prompt, source, identifiers or child
+errors are printed. Counters come only from `turn.completed.usage`, with absent,
+invalid or unavailable counters represented as JSON **null**, never invented zero.
+Explicit reported zero remains zero. Complete JSONL framing, start events and one
+terminal event are required; malformed, truncated, unknown or oversized streams
+fail closed. No usage is inferred from other events or stderr.
+
+| Status | Meaning | Exit |
+| --- | --- | --- |
+| CompletedSuccess | Complete successful turn and successful child exit/cleanup | 0 |
+| CompletedFailure | Complete terminal protocol with failed turn or nonzero child exit | 1 |
+| Timeout | Post-spawn deadline reached and cleanup confirmed | 124 |
+| Interrupted | Parent interrupt or signaled child, with cleanup confirmed | 130 |
+| Unknown | Spawn/identity failure, incomplete protocol, output bound or uncertain cleanup | 2 |
+
+Policy, catalog, arguments, unsupported platforms and answer-file creation can
+refuse before supervision: stdout remains empty and stderr contains only a fixed
+privacy-safe diagnostic. A completion status describes transport/provider outcome,
+not independent validation of the answer or Adaptive stage acceptance.
+
+`--answer-file PATH` requires `--supervised-json`. Before the attempt the launcher
+exclusively creates the file with mode 0600; an existing file or final-component
+symlink refuses without launching. It retains that descriptor and never passes the
+path to Codex. Only the last completed `agent_message` from a complete terminal
+stream and confirmed child outcome is written. Its status is `Written`,
+`Unavailable`, `WriteFailed` or `NotRequested`; write failure makes the overall
+outcome Unknown. An unavailable answer leaves the newly created file empty; an I/O
+failure may leave a partial private file. No automatic deletion/reopening occurs.
+The operator chooses a trusted private parent directory and manages the private
+answer file separately from the aggregate report. Launcher diagnostics never log
+private transport contents; native Codex remains responsible for its own runtime,
+provider behavior and authentication.
+
+Validation uses isolated fake Codex executables without credentials or live model
+calls. Native 0.162.1 `exec --help` and local binary event metadata establish the
+JSONL field names used by the parser; broader version compatibility is unknown.
