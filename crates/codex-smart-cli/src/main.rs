@@ -1,6 +1,7 @@
 #[cfg(target_os = "linux")]
 mod attempt_ledger;
 mod inspect;
+mod inspect_ledger;
 mod inspect_supervised;
 mod plan;
 mod prepare;
@@ -193,9 +194,10 @@ fn execute(mut args: Vec<OsString>) -> Result<i32, &'static str> {
             println!("codex-smart {VERSION}")
         }
         Some("--help" | "-h" | "help") if args.len() == 1 => println!(
-            "codex-smart {VERSION}\nCommands: inspect (opt-in single read-only model attempt; inspect --help), prepare (explicit pinned local worker; prepare --help for required options), plan --intent inspection [--task KIND] [--risk LEVEL] [--safety FACT] [--file RELATIVE_PATH ...] (plan-only; plan --help for values), run [--tool-lock FILE] [--dry-run] [--] [codex args...], doctor [--json] [--codex-config FILE] [--tool-lock FILE], capabilities [--tool-lock FILE], explain [--tool-lock FILE] [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nNo arguments opens interactive Codex; one quoted task starts one Codex exec. See preview-help for typed preview options. Use run -- for exact Codex passthrough. Config transactions default to dry-run; use --file FILE and explicit --apply. Tool pins are explicit; versions/health remain unverified."
+            "codex-smart {VERSION}\nCommands: inspect-ledger --dir PRIVATE_DIRECTORY (offline aggregates; inspect-ledger --help), inspect (opt-in single read-only model attempt; inspect --help), prepare (explicit pinned local worker; prepare --help for required options), plan --intent inspection [--task KIND] [--risk LEVEL] [--safety FACT] [--file RELATIVE_PATH ...] (plan-only; plan --help for values), run [--tool-lock FILE] [--dry-run] [--] [codex args...], doctor [--json] [--codex-config FILE] [--tool-lock FILE], capabilities [--tool-lock FILE], explain [--tool-lock FILE] [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nNo arguments opens interactive Codex; one quoted task starts one Codex exec. See preview-help for typed preview options. Use run -- for exact Codex passthrough. Config transactions default to dry-run; use --file FILE and explicit --apply. Tool pins are explicit; versions/health remain unverified."
         ),
         Some("preview-help") if args.len() == 1 => println!("{}", preview::HELP),
+        Some("inspect-ledger") => return inspect_ledger::execute(&args[1..]),
         Some("inspect") => {
             if args[1..] == [OsString::from("--help")] {
                 println!("{}", inspect::HELP);

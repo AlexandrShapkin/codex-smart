@@ -11,7 +11,7 @@ use std::{
 
 const ERROR: &str = "E_INSPECT_LEDGER: private durable receipt unavailable";
 const START: &[u8] = b"{\"schema\":1,\"type\":\"started\"}\n";
-const LIMIT: usize = 2048;
+pub(crate) const LIMIT: usize = 2048;
 
 pub struct Receipt {
     file: File,
@@ -113,34 +113,67 @@ enum Recovery {
     Terminal,
 }
 
-// Internal interpretation only; never discovers paths, scans, launches or replays.
+#[derive(Debug)]
+pub(crate) struct TerminalSummary {
+    pub status: usize,
+    pub elapsed_ms: u64,
+    pub usage: [Option<u64>; 5],
+}
+pub(crate) const USAGE_KEYS: [&str; 5] = [
+    "input_tokens",
+    "cached_input_tokens",
+    "output_tokens",
+    "cache_write_input_tokens",
+    "reasoning_output_tokens",
+];
+pub(crate) enum Summary {
+    Unfinished,
+    Corrupt,
+    Terminal(TerminalSummary),
+}
+pub(crate) fn summarize(bytes: &[u8]) -> Summary {
+    match parse(bytes) {
+        Ok(Some(summary)) => Summary::Terminal(summary),
+        Ok(None) => Summary::Unfinished,
+        Err(()) => Summary::Corrupt,
+    }
+}
 fn interpret(bytes: &[u8]) -> Recovery {
+    match summarize(bytes) {
+        Summary::Unfinished => Recovery::Unfinished,
+        Summary::Corrupt => Recovery::Corrupt,
+        Summary::Terminal(_) => Recovery::Terminal,
+    }
+}
+
+// Internal interpretation only; never discovers paths, scans, launches or replays.
+fn parse(bytes: &[u8]) -> Result<Option<TerminalSummary>, ()> {
     if bytes.len() > LIMIT || !bytes.starts_with(START) {
-        return Recovery::Corrupt;
+        return Err(());
     }
     let tail = &bytes[START.len()..];
     if tail.is_empty() {
-        return Recovery::Unfinished;
+        return Ok(None);
     }
     if !tail.ends_with(b"\n") {
-        return Recovery::Corrupt;
+        return Err(());
     }
     let Ok(value) = serde_json::from_slice::<serde_json::Value>(&tail[..tail.len() - 1]) else {
-        return Recovery::Corrupt;
+        return Err(());
     };
     // Canonical encoding also rejects duplicate keys, whitespace and extra records.
     if serde_json::to_vec(&value).ok().as_deref() != Some(&tail[..tail.len() - 1]) {
-        return Recovery::Corrupt;
+        return Err(());
     }
     let Some(object) = value.as_object() else {
-        return Recovery::Corrupt;
+        return Err(());
     };
     if object.len() != 4
         || value["schema"] != 1
         || value["type"] != "terminal"
         || value["elapsed_ms"].as_u64().is_none()
     {
-        return Recovery::Corrupt;
+        return Err(());
     }
     let report = &value["report"];
     if report.as_object().map(|v| v.len()) != Some(3)
@@ -153,29 +186,31 @@ fn interpret(bytes: &[u8]) -> Recovery {
             Some("NotRequested" | "Written" | "Unavailable" | "WriteFailed")
         )
     {
-        return Recovery::Corrupt;
+        return Err(());
     }
     let Some(usage) = report["usage"].as_object() else {
-        return Recovery::Corrupt;
+        return Err(());
     };
     if usage.len() != 5
-        || [
-            "input_tokens",
-            "cached_input_tokens",
-            "output_tokens",
-            "cache_write_input_tokens",
-            "reasoning_output_tokens",
-        ]
-        .iter()
-        .any(|key| {
+        || USAGE_KEYS.iter().any(|key| {
             !usage
                 .get(*key)
                 .is_some_and(|v| v.is_null() || v.as_u64().is_some())
         })
     {
-        return Recovery::Corrupt;
+        return Err(());
     }
-    Recovery::Terminal
+    Ok(Some(TerminalSummary {
+        status: match report["status"].as_str().unwrap() {
+            "CompletedSuccess" => 0,
+            "CompletedFailure" => 1,
+            "Timeout" => 2,
+            "Interrupted" => 3,
+            _ => 4,
+        },
+        elapsed_ms: value["elapsed_ms"].as_u64().unwrap(),
+        usage: USAGE_KEYS.map(|key| usage[key].as_u64()),
+    }))
 }
 
 #[cfg(test)]
