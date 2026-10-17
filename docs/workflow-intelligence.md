@@ -682,6 +682,32 @@ clock, independent identity collector, enrollment, revocation, replay,
 rollback and TOCTOU protection remain UNKNOWN. No existing runtime
 implements this parser, proof or ingress.
 
+### Offline evidence comparison (#153)
+
+`validation_approval_decode::compare_evidence` compares a decoded v1 record
+against separate `ReviewEvidence` (exact wire digest and authorization claims),
+current `BindingClaims`, supplied time and an optional prior-use observation.
+These are all untrusted assumptions, including `ExternallyVerifiedAssumption`;
+copying or self-hashing a fixture supplies no independent review. The strongest
+result is the enum-only `NeedsIndependentAuthority`, with no approval conversion
+or runtime caller. Trust-root, genuine provenance, protected state/clock, current
+collection and anti-replay remain Unknown; a prior-use match is only a supplied
+repeat claim, and absent history proves nothing. No state is consumed.
+
+A bounded private projection retains labels and fixed identities, including nested
+S.scope/source/configuration, without argv or raw source. Public format digests
+remain available; comparison uses private decoded copies. First-failure order is:
+Deny; internal scope/spec/source/config conflicts; missing review/current/time;
+review/current label bounds; review wire and claims; current claims; clock domain;
+invalid interval; future observation; expiry; backward supplied time; repeated
+observation or one-use ID. Claim order is specification, repo/scope/policy,
+epoch/root/operator/reviewer/delegation/generation, observation/session/use/clock,
+observation/expiry times, source/config/tool closure/verifier/context. Diagnostics
+carry enums only. Labels are byte-equal with the existing caps; no allocation,
+I/O, authentication or host observation occurs. Matching full spec/context digests
+compares claims only; actual complete current specification/context collection,
+semantic policy and reviewer authorization still require independent proof.
+
 ### Reproducible byte-level offline vectors
 
 The fixture script below specifies complete positive bytes by construction,

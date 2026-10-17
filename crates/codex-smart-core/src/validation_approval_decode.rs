@@ -3,6 +3,9 @@
 //! has no runtime caller and cannot construct validation-policy approval evidence.
 use sha2::{Digest, Sha256};
 
+mod binding;
+pub use binding::*;
+
 const DOMAIN: &[u8] = b"codex-smart/validation-approval-envelope/v1\0";
 const MAX_ENVELOPE: usize = 16_384;
 const MAX_COMBINED: usize = 65_536;
@@ -31,6 +34,7 @@ pub struct ParseOnly {
     pub spec_digest: [u8; 32],
     pub body_digest: [u8; 32],
     pub wire_digest: [u8; 32],
+    binding: binding::Projection,
 }
 impl ParseOnly {
     pub const fn admitted(&self) -> bool {
@@ -100,7 +104,7 @@ fn label(v: &[u8]) -> bool {
         && v.iter()
             .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"_.-".contains(b))
 }
-fn specification(bytes: &[u8]) -> Result<(), Diagnostic> {
+fn specification(bytes: &[u8]) -> Result<binding::Nested, Diagnostic> {
     let mut r = Reader { bytes, pos: 0 };
     if r.short()? != crate::validation_policy::SCHEMA_V1 {
         return Err(UnsupportedSchema);
@@ -110,9 +114,10 @@ fn specification(bytes: &[u8]) -> Result<(), Diagnostic> {
     for _ in 0..3 {
         r.take(4)?;
     }
-    for _ in 0..2 {
-        identity(r.take(32)?, 32)?;
-    }
+    let source = r.take(32)?;
+    identity(source, 32)?;
+    let config = r.take(32)?;
+    identity(config, 32)?;
     let argc = r.byte()?;
     if argc > 32 {
         return Err(MalformedValue);
@@ -129,7 +134,7 @@ fn specification(bytes: &[u8]) -> Result<(), Diagnostic> {
             return Err(MalformedValue);
         }
     }
-    r.string(1024)?;
+    let scope = r.string(1024)?;
     r.string(1024)?;
     if !(1..=10).contains(&r.byte()?) {
         return Err(MalformedValue);
@@ -143,7 +148,7 @@ fn specification(bytes: &[u8]) -> Result<(), Diagnostic> {
     if !(1..=2).contains(&r.byte()?) || r.pos != bytes.len() {
         return Err(MalformedValue);
     }
-    Ok(())
+    Ok(binding::Nested::new(scope, source, config))
 }
 
 /// Decode bounded canonical bytes only. External inputs count toward the size
@@ -205,6 +210,7 @@ pub fn decode(
     }
     // The complete framing pass above proves every slot present.
     let fields = fields.map(|v| v.unwrap_or_default());
+    let mut nested = None;
     for (index, v) in fields.iter().enumerate() {
         let tag = index + 1;
         match tag {
@@ -242,7 +248,9 @@ pub fn decode(
             }
             7..=9 | 19..=24 => identity(v, 32)?,
             12..=15 => identity(v, 16)?,
-            18 => specification(v)?,
+            18 => {
+                nested = Some(specification(v)?);
+            }
             25 if v.len() != 2 => return Err(MalformedValue),
             26 if v.len() > 4096 => return Err(MalformedValue),
             _ => {}
@@ -273,13 +281,21 @@ pub fn decode(
     if &canonical[..pos] != envelope {
         return Err(MalformedValue);
     }
+    let spec_digest = hash(b"codex-smart/validation-specification/v1", fields[17]);
+    let wire_digest = hash(b"codex-smart/validation-approval-wire/v1", envelope);
     Ok(ParseOnly {
-        spec_digest: hash(b"codex-smart/validation-specification/v1", fields[17]),
+        binding: binding::Projection::new(
+            &fields,
+            nested.ok_or(MissingField)?,
+            spec_digest,
+            wire_digest,
+        ),
+        spec_digest,
         body_digest: hash(
             b"codex-smart/validation-approval-body/v1",
             &envelope[..body_end],
         ),
-        wire_digest: hash(b"codex-smart/validation-approval-wire/v1", envelope),
+        wire_digest,
     })
 }
 

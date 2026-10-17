@@ -427,3 +427,282 @@ fn nested_limits_and_representation_not_policy() {
     f[3].1.push(b'x');
     assert_eq!(result(&build(&f), &[], &[]), Err(MalformedValue));
 }
+
+fn claims() -> BindingClaims<'static> {
+    BindingClaims {
+        repository: "example/repo",
+        scope: "/work",
+        policy: "offline-v1",
+        policy_epoch: 7,
+        root: [b'A'; 32],
+        operator: [b'O'; 32],
+        reviewer: [b'R'; 32],
+        delegation_epoch: 7,
+        revocation_generation: 3,
+        observation: [b'X'; 16],
+        session: [b'S'; 16],
+        one_use: [b'U'; 16],
+        clock_domain: [b'T'; 16],
+        observed_at: 100,
+        expires_at: 400,
+        spec_digest: unhex(SPEC),
+        source: [0x22; 32],
+        configuration: [0x33; 32],
+        tool_closure: [0x44; 32],
+        verifier: [0x55; 32],
+        context: unhex(CONTEXT),
+        provenance: crate::validation_policy::Provenance::ExternallyVerifiedAssumption,
+    }
+}
+fn review() -> ReviewEvidence<'static> {
+    ReviewEvidence {
+        wire_digest: unhex(WIRE),
+        authorization: claims(),
+    }
+}
+fn time() -> TimeObservation {
+    TimeObservation {
+        clock_domain: [b'T'; 16],
+        now: 101,
+        last_observed: 100,
+    }
+}
+fn compare(p: &ParseOnly, r: &ReviewEvidence<'_>, c: &BindingClaims<'_>) -> BindingResult {
+    compare_evidence(p, Some(r), Some(c), Some(&time()), None)
+}
+#[test]
+fn binding_matching_claims_never_supply_authority() {
+    let mut parsed = decode(&build(&fixture()), &[], &[]).unwrap();
+    assert_eq!(
+        compare(&parsed, &review(), &claims()),
+        BindingResult::NeedsIndependentAuthority
+    );
+    let mut c = claims();
+    c.provenance = crate::validation_policy::Provenance::CallerDeclared;
+    let mut r = review();
+    r.authorization.provenance = c.provenance;
+    assert_eq!(
+        compare(&parsed, &r, &c),
+        BindingResult::NeedsIndependentAuthority
+    );
+    // Public format digests cannot rewrite the private binding projection.
+    parsed.spec_digest = [99; 32];
+    parsed.body_digest = [99; 32];
+    parsed.wire_digest = [99; 32];
+    assert_eq!(
+        compare(&parsed, &r, &c),
+        BindingResult::NeedsIndependentAuthority
+    );
+    r.wire_digest = parsed.wire_digest;
+    assert_eq!(
+        compare(&parsed, &r, &c),
+        BindingResult::Mismatch(EvidenceKind::Review, BindingField::Wire)
+    );
+}
+#[test]
+fn binding_each_separate_claim_is_compared_in_both_roles() {
+    use BindingField::*;
+    let p = decode(&build(&fixture()), &[], &[]).unwrap();
+    macro_rules! mismatch {
+        ($member:ident, $value:expr, $field:ident) => {{
+            let mut c = claims();
+            c.$member = $value;
+            assert_eq!(
+                compare(&p, &review(), &c),
+                BindingResult::Mismatch(EvidenceKind::Current, $field)
+            );
+            let mut r = review();
+            r.authorization = c;
+            assert_eq!(
+                compare(&p, &r, &claims()),
+                BindingResult::Mismatch(EvidenceKind::Review, $field)
+            );
+        }};
+    }
+    mismatch!(spec_digest, [99; 32], Specification);
+    mismatch!(repository, "example/other", Repository);
+    mismatch!(scope, "/other", Scope);
+    mismatch!(policy, "other", Policy);
+    mismatch!(policy_epoch, 8, PolicyEpoch);
+    mismatch!(root, [99; 32], Root);
+    mismatch!(operator, [99; 32], Operator);
+    mismatch!(reviewer, [99; 32], Reviewer);
+    mismatch!(delegation_epoch, 8, DelegationEpoch);
+    mismatch!(revocation_generation, 4, RevocationGeneration);
+    mismatch!(observation, [99; 16], Observation);
+    mismatch!(session, [99; 16], Session);
+    mismatch!(one_use, [99; 16], OneUse);
+    mismatch!(clock_domain, [99; 16], ClockDomain);
+    mismatch!(observed_at, 99, ObservedAt);
+    mismatch!(expires_at, 399, ExpiresAt);
+    mismatch!(source, [99; 32], Source);
+    mismatch!(configuration, [99; 32], Configuration);
+    mismatch!(tool_closure, [99; 32], ToolClosure);
+    mismatch!(verifier, [99; 32], Verifier);
+    mismatch!(context, [99; 32], Context);
+    let mut r = review();
+    r.wire_digest = unhex(BODY);
+    assert_eq!(
+        compare(&p, &r, &claims()),
+        BindingResult::Mismatch(EvidenceKind::Review, Wire)
+    );
+}
+#[test]
+fn binding_missing_bounds_conflicts_and_precedence() {
+    use BindingResult::*;
+    let p = decode(&build(&fixture()), &[], &[]).unwrap();
+    assert_eq!(
+        compare_evidence(&p, None, None, None, None),
+        Missing(EvidenceKind::Review)
+    );
+    assert_eq!(
+        compare_evidence(&p, Some(&review()), None, None, None),
+        Missing(EvidenceKind::Current)
+    );
+    assert_eq!(
+        compare_evidence(&p, Some(&review()), Some(&claims()), None, None),
+        Missing(EvidenceKind::Time)
+    );
+    for (tag, value, field) in [
+        (4, b"/other".as_slice(), BindingField::Scope),
+        (19, &[99; 32], BindingField::Specification),
+        (20, &[99; 32], BindingField::Source),
+        (21, &[99; 32], BindingField::Configuration),
+    ] {
+        let parsed = decode(&change(tag, value), &[], &[]).unwrap();
+        assert_eq!(
+            compare_evidence(&parsed, None, None, None, None),
+            Conflict(field)
+        );
+    }
+    let mut f = fixture();
+    f[0].1 = vec![2];
+    f[3].1 = b"/other".to_vec();
+    let denied = decode(&build(&f), &[], &[]).unwrap();
+    assert_eq!(compare_evidence(&denied, None, None, None, None), Denied);
+    for (member, cap) in [(0, 129), (1, 1024), (2, 64)] {
+        let over = "X".repeat(cap + 1);
+        let mut c = claims();
+        match member {
+            0 => c.repository = &over,
+            1 => c.scope = &over,
+            _ => c.policy = &over,
+        }
+        assert_eq!(
+            compare(&p, &review(), &c),
+            OversizeEvidence(EvidenceKind::Current)
+        );
+        let r = ReviewEvidence {
+            wire_digest: [99; 32],
+            authorization: c,
+        };
+        assert_eq!(
+            compare(&p, &r, &claims()),
+            OversizeEvidence(EvidenceKind::Review)
+        );
+    }
+}
+#[test]
+fn binding_time_and_repeated_use_are_only_supplied_observations() {
+    use BindingResult::*;
+    let p = decode(&build(&fixture()), &[], &[]).unwrap();
+    for (now, last, expected) in [
+        (99, 0, FutureObservation),
+        (400, 100, Expired),
+        (401, 500, Expired),
+        (101, 102, StaleSuppliedTime),
+        (399, 100, NeedsIndependentAuthority),
+    ] {
+        let t = TimeObservation {
+            now,
+            last_observed: last,
+            ..time()
+        };
+        assert_eq!(
+            compare_evidence(&p, Some(&review()), Some(&claims()), Some(&t), None),
+            expected
+        );
+    }
+    let t = TimeObservation {
+        clock_domain: [99; 16],
+        ..time()
+    };
+    assert_eq!(
+        compare_evidence(&p, Some(&review()), Some(&claims()), Some(&t), None),
+        Mismatch(EvidenceKind::Time, BindingField::ClockDomain)
+    );
+    for (observed, expires) in [(0, 100), (100, 100), (100, 99), (100, 401), (u64::MAX, 1)] {
+        let mut f = fixture();
+        f[15].1 = u64::to_be_bytes(observed).to_vec();
+        f[16].1 = u64::to_be_bytes(expires).to_vec();
+        let bytes = build(&f);
+        let parsed = decode(&bytes, &[], &[]).unwrap();
+        let mut c = claims();
+        c.observed_at = observed;
+        c.expires_at = expires;
+        let r = ReviewEvidence {
+            wire_digest: hash(b"codex-smart/validation-approval-wire/v1", &bytes),
+            authorization: c.clone(),
+        };
+        assert_eq!(compare(&parsed, &r, &c), InvalidInterval);
+    }
+    for (observation, one_use, expected) in [
+        ([b'X'; 16], [99; 16], RepeatedUseClaim),
+        ([99; 16], [b'U'; 16], RepeatedUseClaim),
+        ([99; 16], [99; 16], NeedsIndependentAuthority),
+    ] {
+        let prior = PriorUse {
+            observation,
+            one_use,
+        };
+        assert_eq!(
+            compare_evidence(
+                &p,
+                Some(&review()),
+                Some(&claims()),
+                Some(&time()),
+                Some(&prior)
+            ),
+            expected
+        );
+    }
+}
+
+#[test]
+fn binding_sensitive_types_have_no_debug_or_display() {
+    // Inference becomes ambiguous if either forbidden trait is ever implemented.
+    macro_rules! no_trait {
+        ($ty:ty, $bound:path) => {{
+            trait AmbiguousIfImplemented<A> {
+                fn marker() {}
+            }
+            impl<T: ?Sized> AmbiguousIfImplemented<()> for T {}
+            impl<T: ?Sized + $bound> AmbiguousIfImplemented<u8> for T {}
+            let _ = <$ty as AmbiguousIfImplemented<_>>::marker;
+        }};
+    }
+    macro_rules! private {
+        ($ty:ty) => {
+            no_trait!($ty, std::fmt::Debug);
+            no_trait!($ty, std::fmt::Display);
+        };
+    }
+    private!(ParseOnly);
+    private!(BindingClaims<'static>);
+    private!(ReviewEvidence<'static>);
+    private!(TimeObservation);
+    private!(PriorUse);
+    private!(binding::Projection);
+    private!(binding::Nested);
+    assert!(std::mem::size_of::<ParseOnly>() < 4096);
+    // Diagnostics cannot contain any candidate bytes, even for sensitive labels.
+    let p = decode(&build(&fixture()), &[], &[]).unwrap();
+    let c = BindingClaims {
+        scope: "/private-sensitive-label",
+        ..claims()
+    };
+    assert_eq!(
+        format!("{:?}", compare(&p, &review(), &c)),
+        "Mismatch(Current, Scope)"
+    );
+}
