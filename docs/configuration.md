@@ -255,8 +255,8 @@ missing counters never become zero. Cleanup uncertainty is represented by the ex
 `Unknown` outcome, without claiming a separate confirmed-cleanup signal. There are
 no prompts, answers, source, caller paths, provider events, stderr, timestamps or
 provider identifiers in either record. Receipt names/paths are never printed.
-No receipt retry, automatic recovery launch, directory scan or public recovery CLI
-is introduced. Operators manage retention separately.
+The writer performs no receipt retry, automatic recovery launch or directory scan.
+The separate offline reader below grants no recovery launch. Operators manage retention separately.
 
 The stable private v1 interpretation contract is bounded to 2048 bytes per receipt:
 exactly the start line alone means **Unknown/unfinished**; exactly that line followed
@@ -276,3 +276,76 @@ fsync may still be visible, so observing a valid record is not proof that the pr
 observed successful durability or that storage honors fsync. Filesystem I/O and spawn
 remain outside the supervised deadline. There is no cross-file transaction with the
 optional answer file and no guarantee against hostile same-user/root writers.
+
+## Offline private ledger observation (#150)
+
+`codex-smart inspect-ledger --dir PRIVATE_DIRECTORY` is a Linux-only offline,
+read-only reader of the v1 receipts above. Exactly one `--dir` and its nonempty
+value are required; `inspect-ledger --help` is the only other accepted form.
+It does not load configuration, discover/launch Codex, call a provider, repair,
+delete or write receipts. Unsupported platforms return a fixed error. CLI errors
+and scan refusals exit 2 with fixed ASCII diagnostics, without paths, filenames,
+OS errors or receipt content. No JSON is printed until the entire scan succeeds;
+exit 0 means the bounded observation succeeded, including when receipts are corrupt
+or unfinished. It does not mean any model attempt succeeded.
+
+Traversal matches the writer's at-most-256-component path contract: open root or
+current directory and each normal component with directory/no-follow/close-on-exec
+flags, refuse parent traversal and require final ownership by effective uid and
+exact mode 0700. The directory descriptor stays held. Descriptor-based enumeration
+accepts only 32 lowercase hexadecimal digits followed by `.jsonl`, excluding the
+iterator's `.` and `..`; any other entry refuses the scan. Each candidate is opened
+relative to that descriptor read-only/no-follow/close-on-exec/nonblocking. It must
+be a regular file owned by effective uid, exactly mode 0600, with one link.
+Symlinks, directories, FIFOs and devices are refused without reading their payloads.
+
+Ceilings are 1024 receipts, 2048 bytes per file and 2,097,152 observed bytes total.
+An oversize on-disk file refuses the scan rather than reading or classifying it;
+the canonical v1 parser still classifies oversize supplied evidence as corrupt.
+Read buffers are capped at 2049 bytes, one file at a time. At most 1024 file
+descriptors and metadata records are retained for final verification (plus the
+directory/iterator); host descriptor exhaustion is a fixed scan refusal.
+Pre/post-read and final fstat compare device/inode, mode, uid/gid, link count,
+size, mtime and ctime including nanoseconds; duplicate observed inodes refuse.
+Directory metadata is compared before/after enumeration and against a freshly
+no-follow-resolved supplied path. Detected drift, races, I/O failures, limit or
+sum overflow refuse with no partial output. A five-second monotonic deadline is
+checked cooperatively between operations and before returning the result. Blocking
+filesystem calls are outside a hard time guarantee; this is not a real-time bound.
+
+The output is one compact JSON object plus LF, with exactly these keys:
+
+| Key | Schema-1 value |
+| --- | --- |
+| `schema` | integer `1` |
+| `snapshot_consistency` | literal `"unverified_non_atomic"` |
+| `observed_attempts` | unsigned count of all encountered accepted receipt names |
+| `outcomes` | object with exactly `successful`, `failure`, `timeout`, `interrupted`, `unknown_terminal`, `unfinished`, `corrupt`, each an unsigned count |
+| `usage` | object with exactly `input_tokens`, `cached_input_tokens`, `output_tokens`, `cache_write_input_tokens`, `reasoning_output_tokens`, each a counter object below |
+| `elapsed_ms` | counter object below |
+
+Every counter object has exactly `observed_sum` (checked unsigned 64-bit sum),
+`missing_count` (unsigned count over **all** observed attempts), and `incomplete_sum`
+(boolean, exactly `missing_count != 0`). Zero is a valid observed value. No missing
+counter is silently supplied as zero. Empty observations have zero sums/missing
+counts and false incomplete flags. Any sum exceeding u64 refuses the whole scan.
+Elapsed time is the recorded per-attempt elapsed sum, not wall-clock scan duration
+or complete lifecycle latency.
+
+The shared canonical v1 parser maps `CompletedSuccess`, `CompletedFailure`,
+`Timeout`, `Interrupted`, `Unknown` respectively to the first five outcome keys.
+Exact start-only receipts are unfinished. Empty, malformed, partial, duplicate,
+noncanonical and unknown-schema bounded receipts are corrupt. Each receipt belongs
+to exactly one outcome; their sum equals `observed_attempts`. Corrupt and unfinished
+receipts contribute missing values to all six counters. A valid terminal contributes
+its elapsed time and only its non-null usage counters. Unknown terminal is distinct
+from unfinished/corrupt; none is counted as success.
+
+This is a **bounded observation, not an atomic or complete consistent snapshot**.
+Checks detect some concurrent mutations but cannot prove concurrency absent or
+prevent edits after the last check. Enumeration and per-file observations happen
+at different times; same-user/root and filesystem trust limits from the writer
+still apply, including rollback. Reads may update filesystem access times. There
+are no authenticity, durability, validation quality, lifecycle completion, savings
+or absence-of-model-call claims. Issue #94 runtime integration and #95 comparative
+measurement remain outstanding; this reader does not advance stage acceptance.
