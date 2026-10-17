@@ -220,3 +220,59 @@ provider behavior and authentication.
 Validation uses isolated fake Codex executables without credentials or live model
 calls. Native 0.162.1 `exec --help` and local binary event metadata establish the
 JSONL field names used by the parser; broader version compatibility is unknown.
+
+## Private supervised attempt receipts (#147)
+
+On Linux, `inspect --supervised-json --attempt-ledger-dir EXISTING_PRIVATE_DIRECTORY
+[normal options] "task"` opts into one durable private attempt receipt. The option
+requires supervised mode; omission preserves the existing output and launch behavior.
+The directory must already exist, belong to the effective user and have mode exactly
+0700 (including no special mode bits). Every supplied component is opened relative
+to a held directory descriptor with no symlink following; `..` is refused. Relative
+paths start at the held current directory. At most 256 components are accepted.
+The caller must trust the kernel/filesystem and protect the directory against
+same-user/root modification, removal and rollback. Held descriptors prevent path
+substitution from redirecting receipt writes; concurrent rename can make a receipt
+unreachable at its original name. This is private local accounting, not authenticated
+or independently reviewed evidence, an authority grant or an anti-rollback store.
+
+Each invocation exclusively creates a random 128-bit opaque `.jsonl` filename,
+without scans or collision retries, using dirfd-relative no-follow/close-on-exec
+creation and mode 0600. Restrictive umasks that prevent exactly 0600 are refused.
+The immutable first line is exactly `{"schema":1,"type":"started"}` plus LF.
+The launcher writes and fsyncs this file and fsyncs the directory **before any model
+spawn**. Catalog/version probes remain the existing non-model preflight. Unsafe
+paths, metadata failures and start durability failures refuse without a model call.
+Failed startup can leave an empty, partial or start-only receipt; never delete or
+replay one automatically. Answer-file reservation can already have occurred.
+
+Exactly one terminal append is attempted, followed by file fsync, before stdout.
+It is a compact JSON object plus LF with exactly `schema` (1), `type` (`terminal`),
+`elapsed_ms` (saturating unsigned 64-bit monotonic milliseconds measured around
+supervision and answer persistence), and `report` (the unchanged stdout aggregate
+object specified above). Object keys use serde_json's sorted order. Usage is nullable;
+missing counters never become zero. Cleanup uncertainty is represented by the existing
+`Unknown` outcome, without claiming a separate confirmed-cleanup signal. There are
+no prompts, answers, source, caller paths, provider events, stderr, timestamps or
+provider identifiers in either record. Receipt names/paths are never printed.
+No receipt retry, automatic recovery launch, directory scan or public recovery CLI
+is introduced. Operators manage retention separately.
+
+The stable private v1 interpretation contract is bounded to 2048 bytes per receipt:
+exactly the start line alone means **Unknown/unfinished**; exactly that line followed
+by one valid canonical terminal line supplies the recorded aggregate outcome
+(`CompletedSuccess`, `CompletedFailure`, `Timeout`, `Interrupted`, `Unknown`).
+The internal parser requires exact fields/types, allowlisted status values, all five
+nullable unsigned usage counters, and canonical compact encoding. Missing evidence,
+partial/truncated lines, oversize input, duplicate keys/records, unknown schemas,
+extra fields or malformed evidence mean **Unknown/corrupt**. Neither form of Unknown
+permits inference of success, absence of a model call, or automatic replay.
+
+SIGKILL, power loss or parent crash after durable start can leave only that start,
+even if the provider finished. A crash during terminal append can leave corrupt
+partial evidence. Terminal write/fsync failure returns a fixed private diagnostic,
+exit 2 and no success JSON; the original start is retained. Bytes from an unsuccessful
+fsync may still be visible, so observing a valid record is not proof that the process
+observed successful durability or that storage honors fsync. Filesystem I/O and spawn
+remain outside the supervised deadline. There is no cross-file transaction with the
+optional answer file and no guarantee against hostile same-user/root writers.

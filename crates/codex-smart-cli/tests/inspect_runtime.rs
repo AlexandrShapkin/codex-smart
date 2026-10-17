@@ -324,6 +324,125 @@ mod supervised {
     }
 
     #[test]
+    fn ledger_private_receipts_and_concurrent_invocations() {
+        let f = Fixture::new();
+        f.stream(&stream_body(r#"{"type":"turn.completed"}"#));
+        let dir = f.0.join("ledger");
+        fs::create_dir(&dir).unwrap();
+        fs::set_permissions(&dir, fs::Permissions::from_mode(0o700)).unwrap();
+        let mut children = Vec::new();
+        for _ in 0..4 {
+            children.push(
+                f.supervised()
+                    .arg("--attempt-ledger-dir")
+                    .arg(&dir)
+                    .arg("PRIVATE PROMPT")
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .spawn()
+                    .unwrap(),
+            );
+        }
+        for child in children {
+            assert_eq!(
+                report(&child.wait_with_output().unwrap())["status"],
+                "CompletedSuccess"
+            );
+        }
+        let entries: Vec<_> = fs::read_dir(&dir).unwrap().collect();
+        assert_eq!(entries.len(), 4);
+        for entry in entries {
+            let path = entry.unwrap().path();
+            assert_eq!(
+                fs::metadata(&path).unwrap().permissions().mode() & 0o7777,
+                0o600
+            );
+            let text = fs::read_to_string(path).unwrap();
+            assert!(!text.contains("PRIVATE"));
+            let records: Vec<serde_json::Value> = text
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+            assert_eq!(records.len(), 2);
+            assert_eq!(records[0], serde_json::json!({"schema":1,"type":"started"}));
+            assert_eq!(
+                records[1]["report"]["usage"]["input_tokens"],
+                serde_json::Value::Null
+            );
+        }
+    }
+
+    #[test]
+    fn ledger_refuses_unsafe_paths_without_model_launch() {
+        use std::os::unix::fs::symlink;
+        for case in 0..4 {
+            let f = Fixture::new();
+            let dir = f.0.join("ledger");
+            fs::create_dir(&dir).unwrap();
+            fs::set_permissions(
+                &dir,
+                fs::Permissions::from_mode(if case == 0 { 0o755 } else { 0o700 }),
+            )
+            .unwrap();
+            symlink(&dir, f.0.join("link")).unwrap();
+            let path = match case {
+                1 => f.0.join("link"),
+                2 => f.0.join("link/../ledger"),
+                3 => f.0.join("missing"),
+                _ => dir,
+            };
+            let output = f
+                .supervised()
+                .arg("--attempt-ledger-dir")
+                .arg(path)
+                .arg("PRIVATE")
+                .output()
+                .unwrap();
+            assert_eq!(output.status.code(), Some(2));
+            assert!(output.stdout.is_empty());
+            assert!(stderr(&output).contains("E_INSPECT_LEDGER"));
+            f.not_launched();
+        }
+        let f = Fixture::new();
+        let output = f
+            .command()
+            .args(["inspect", "--attempt-ledger-dir", "/tmp", "task"])
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(2));
+        f.not_launched();
+    }
+
+    #[test]
+    fn ledger_retains_failure_and_timeout() {
+        for (body, status) in [
+            (stream_body(r#"{"type":"turn.failed"}"#), "CompletedFailure"),
+            ("while :; do :; done".to_owned(), "Timeout"),
+        ] {
+            let f = Fixture::new();
+            f.stream(&body);
+            let output = f
+                .supervised()
+                .arg("--attempt-ledger-dir")
+                .arg(&f.0)
+                .arg("task")
+                .output()
+                .unwrap();
+            assert_eq!(report(&output)["status"], status);
+            let path = fs::read_dir(&f.0)
+                .unwrap()
+                .map(|e| e.unwrap().path())
+                .find(|p| p.extension().is_some_and(|e| e == "jsonl"))
+                .unwrap();
+            let text = fs::read_to_string(path).unwrap();
+            let terminal: serde_json::Value =
+                serde_json::from_str(text.lines().nth(1).unwrap()).unwrap();
+            assert_eq!(terminal["report"]["status"], status);
+            f.one_call();
+        }
+    }
+
+    #[test]
     fn supervised_success_usage_private_answer_and_exact_argv() {
         let f = Fixture::new();
         f.stream(&stream_body(r#"{"type":"turn.completed","usage":{"input_tokens":12,"cached_input_tokens":0,"output_tokens":7,"cache_write_input_tokens":null,"reasoning_output_tokens":null}}"#));
@@ -464,6 +583,8 @@ mod supervised {
         f.stream("exec /usr/bin/sleep 30");
         let child = f
             .supervised()
+            .arg("--attempt-ledger-dir")
+            .arg(&f.0)
             .arg("task")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -478,6 +599,13 @@ mod supervised {
         let output = child.wait_with_output().unwrap();
         assert_eq!(report(&output)["status"], "Interrupted");
         f.one_call();
+        let path = fs::read_dir(&f.0)
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .find(|p| p.extension().is_some_and(|e| e == "jsonl"))
+            .unwrap();
+        let text = fs::read_to_string(path).unwrap();
+        assert!(text.contains("Interrupted"));
     }
 
     #[cfg(target_os = "linux")]

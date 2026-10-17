@@ -17,7 +17,7 @@ use codex_smart_core::{
 };
 use std::{ffi::OsString, path::Path};
 
-pub const HELP: &str = "inspect [--supervised-json [--timeout-seconds 1..120] [--answer-file PATH]] [--risk low|medium|high] [--safety none|security|migration|concurrency] [--reasoning medium|high] [--model gpt-6-luna|gpt-6-sol|gpt-6-astra] [--] \"Read-only inspection task\"\nOne explicit codex exec -s read-only attempt. Low-risk only. Bundled catalog support is checked against the selected Codex 0.162.1 executable; freshness and account/provider availability remain unknown. A provider failure is returned without retry. No prompt inspection or savings claim. Supervised mode emits aggregate JSON only; optional answer file is private exclusive-create (0600), never stdout. Linux only; default timeout 120 seconds, output limit 1 MiB.";
+pub const HELP: &str = "inspect [--supervised-json [--timeout-seconds 1..120] [--answer-file PATH] [--attempt-ledger-dir EXISTING_PRIVATE_DIRECTORY]] [--risk low|medium|high] [--safety none|security|migration|concurrency] [--reasoning medium|high] [--model gpt-6-luna|gpt-6-sol|gpt-6-astra] [--] \"Read-only inspection task\"\nOne explicit codex exec -s read-only attempt. Low-risk only. Bundled catalog support is checked against the selected Codex 0.162.1 executable; freshness and account/provider availability remain unknown. A provider failure is returned without retry. No prompt inspection or savings claim. Supervised mode emits aggregate JSON only; optional answer file is private exclusive-create (0600), never stdout. Linux only; default timeout 120 seconds, output limit 1 MiB.";
 const ARGS: &str = "E_INSPECT_ARGS: expected one quoted task and supported, unique typed options";
 
 #[derive(Clone, Copy)]
@@ -117,7 +117,7 @@ fn catalog(source: &[u8]) -> Result<CatalogSnapshot, &'static str> {
 }
 
 pub fn execute(args: &[OsString], repo: &Path) -> Result<i32, &'static str> {
-    if args.len() > 16 || args.iter().map(|arg| arg.len()).sum::<usize>() > 16_384 {
+    if args.len() > 18 || args.iter().map(|arg| arg.len()).sum::<usize>() > 16_384 {
         return Err(ARGS);
     }
     let mut risk = None;
@@ -126,6 +126,7 @@ pub fn execute(args: &[OsString], repo: &Path) -> Result<i32, &'static str> {
     let mut model = None;
     let mut supervised = false;
     let mut answer = None;
+    let mut ledger = None;
     let mut timeout = None;
     let mut index = 0;
     while index < args.len() {
@@ -146,6 +147,11 @@ pub fn execute(args: &[OsString], repo: &Path) -> Result<i32, &'static str> {
         }
         if option == "--answer-file" && answer.is_none() {
             answer = Some(args.get(index + 1).ok_or(ARGS)?.clone());
+            index += 2;
+            continue;
+        }
+        if option == "--attempt-ledger-dir" && ledger.is_none() {
+            ledger = Some(args.get(index + 1).ok_or(ARGS)?.clone());
             index += 2;
             continue;
         }
@@ -193,7 +199,7 @@ pub fn execute(args: &[OsString], repo: &Path) -> Result<i32, &'static str> {
     if args.len() != index + 1 || args[index].is_empty() {
         return Err(ARGS);
     }
-    if !supervised && (answer.is_some() || timeout.is_some()) {
+    if !supervised && (answer.is_some() || timeout.is_some() || ledger.is_some()) {
         return Err(ARGS);
     }
     #[cfg(not(target_os = "linux"))]
@@ -286,6 +292,7 @@ pub fn execute(args: &[OsString], repo: &Path) -> Result<i32, &'static str> {
             plan.with_args(argv),
             answer.as_deref().map(Path::new),
             timeout.unwrap_or(120),
+            ledger.as_deref().map(Path::new),
         );
     }
     eprintln!(
