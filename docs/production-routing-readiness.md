@@ -341,3 +341,39 @@ It adds no runtime authority or stage acceptance.
 The [operator/reviewer trust-root and offline-channel follow-up](decisions/0011-operator-reviewer-authority.md)
 (#121) compares two bootstrap choices and remains NO-GO for enrollment and
 production admission until independent channel, host state and authority evidence exist.
+
+## Working preview 0.x (#141)
+
+The product-first preview now opens interactive Codex with `codex-smart` and starts
+exactly one `codex exec -- PROMPT` with `codex-smart "task"`. Explicit `run -- ARGS`
+remains exact passthrough; legacy `exec` and `--` escape forms remain available.
+`codex-smart preview-help` lists the bounded typed options. Doctor/explain remain
+offline and read-only. No retries, classifier calls, automatic installs or telemetry
+are introduced. Unix exec, signals and exit status retain the trusted launch path.
+
+`codex-smart --intent inspection "task"` accepts one actual constrained policy
+optimization: typed Inspect assessment enables a short native-first instruction
+prefix in the task argv. It recommends targeted tools when available, without
+claiming verified capabilities, semantic sufficiency or savings. This explicit intent
+must accurately describe the task; no prompt text is classified. Plain tasks use
+Codex defaults as the compatible fallback. `--reasoning medium|high` preserves an
+explicit user override through the existing reasoning argv adapter; CLI/model
+compatibility remains Unknown and Codex may refuse it. There is no replay on refusal.
+`--risk high` or `--safety security|migration|concurrency` requires Strong/High and
+refuses before launching because verified model-class evidence is unavailable.
+A medium override cannot lower that floor. Untyped default launches make no safety
+classification or optimized-model claim. Use explicit passthrough for unsupported
+Codex options; it does not carry preview policy guarantees.
+
+This bounded product slice supersedes historical statements above that no runtime
+policy is applied at all. It does not activate preparation admission, verified model
+routing, validation execution or escalation. #94 retains those runtime/trust joins;
+#95 retains separately authorized lifecycle measurement. Adaptive remains active;
+no live benchmark or cost/quality winner is claimed.
+
+Review results, exact-head CI/Security, release-package checksum and remaining
+limits are tracked in [Issue #141](https://github.com/AlexandrShapkin/codex-smart/issues/141)
+and its reviewed PR. The implementation-runner sandbox denied one Unix-socket test
+and the cached advisory DB lock; those environmental failures were separately checked
+on the normal ThinkPad host. No successful local test substitutes for GitHub gates,
+accepted runtime routing or independent quality-equivalent savings evidence.

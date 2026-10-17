@@ -91,7 +91,7 @@ validation readiness and enum-only blockers; nomination grants no semantic cover
 A successful exit means the preview was rendered, not that execution is ready.
 
 `plan` is a reserved launcher command. Forward it to Codex with `codex-smart -- plan`
-or `codex-smart run -- plan`; ordinary run/implicit passthrough retains exact operator
+or `codex-smart run -- plan`; explicit run/legacy escaped passthrough retains exact operator
 argv and configuration priority. The plan ignores configuration rather than adding a
 new configuration layer. Explicit worker-backed preparation is documented below; residual runtime joins belong to
 [#94](https://github.com/AlexandrShapkin/codex-smart/issues/94); measurement acceptance
@@ -146,3 +146,13 @@ forward it through the ordinary unchanged Codex launch path.
 This bounded CLI join belongs to [#100](https://github.com/AlexandrShapkin/codex-smart/issues/100),
 the first child of #94. Independent technical acceptance and residual runtime gates
 remain open; it does not activate production routing or measurement.
+
+## Working preview invocation
+
+`codex-smart` opens interactive Codex; `codex-smart "task"` starts one exec.
+The [preview runtime contract](production-routing-readiness.md#working-preview-0x-141)
+owns typed inspection guidance, explicit reasoning and Strong/High refusals.
+Preview facts come only from explicit options, not the diagnostic configuration
+fields above. Unknown compatibility never enables automatic model/reasoning changes.
+The existing reasoning argv adapter caps preview arguments at 256 entries/16,384 bytes;
+exceeding bounds refuses before launch without printing their contents.

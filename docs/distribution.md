@@ -95,3 +95,27 @@ transaction races, rollback attacks and malicious release metadata require secur
 review. Supported compatibility, installer/uninstaller, updater/check/rollback,
 migration and interruption-recovery tests precede 0.8 hardening and 1.0 release
 rehearsal. No implementation is added by this document.
+
+## Local working preview archive (#141)
+
+A local-only Linux x86_64 helper builds the current 0.1.0 unreleased preview:
+
+```bash
+python3 scripts/local_preview.py build /absolute/new/archive-directory
+mkdir -p /absolute/user/bin
+python3 scripts/local_preview.py install /absolute/new/archive-directory/codex-smart-0.1.0-preview-linux-x86_64.tar.gz /absolute/user/bin
+python3 scripts/local_preview.py remove /absolute/new/archive-directory/codex-smart-0.1.0-preview-linux-x86_64.tar.gz /absolute/user/bin
+```
+
+Build requires cached Rust dependencies and uses locked offline Cargo. The archive contains the launcher plus a bounded `build-info.txt` manifest
+recording version `0.1.0-preview` and the exact clean-source Git commit SHA;
+the optional preparation worker is not included. Inspect the manifest with
+`tar -xOzf ARCHIVE build-info.txt` before installation. Keep the adjacent
+`.sha256` file for install/remove. Only use artifacts built from your trusted local
+source: this checksum checks corruption, not publisher authenticity. Install refuses
+replacement and symlink destinations; remove requires matching binary bytes. The bin
+directory must already exist at an absolute path without symlinks. No PATH, config,
+auth, tags, publication or updater is changed. Install writes a new file directly;
+interruption can leave a partial file, which must be inspected and removed manually.
+This is a single-operator local helper, not a concurrent or hostile-directory installer
+and not completion of the distribution stage or its authenticity contract.

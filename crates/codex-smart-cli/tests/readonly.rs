@@ -1534,3 +1534,54 @@ fn plan_reserved_name_escape_run_and_help_preserve_launch_contract() {
         assert_eq!(tree(&f.0), before);
     }
 }
+
+#[test]
+fn preview_launch_policy_override_refusal_and_no_replay() {
+    let f = Fixture::new();
+    f.write("repo/README", "fixture");
+    f.write("home/README", "fixture");
+    f.tool("codex");
+    f.write("bin/codex", "#!/bin/sh\nprintf x >> \"$HOME/attempts\"\nif [ \"$#\" -gt 0 ]; then printf '%s\\0' \"$@\" > \"$HOME/argv\"; else : > \"$HOME/argv\"; fi\nexit 37\n");
+    for (args, expected) in [
+        (vec![], b"".as_slice()),
+        (
+            vec!["private $(touch nope) task"],
+            b"exec\0--\0private $(touch nope) task\0".as_slice(),
+        ),
+        (
+            vec!["--reasoning", "high", "task"],
+            b"--config\0model_reasoning_effort=\"high\"\0exec\0--\0task\0".as_slice(),
+        ),
+    ] {
+        let output = f.command().args(args).output().unwrap();
+        assert_eq!(output.status.code(), Some(37));
+        assert_eq!(fs::read(f.0.join("home/argv")).unwrap(), expected);
+        assert!(!String::from_utf8_lossy(&output.stderr).contains("private"));
+        assert!(String::from_utf8_lossy(&output.stderr).contains("compatibility unknown"));
+    }
+    let output = f
+        .command()
+        .args(["--intent", "inspection", "task"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(37));
+    let argv = fs::read(f.0.join("home/argv")).unwrap();
+    assert!(argv.starts_with(b"exec\0--\0For this inspection"));
+    assert!(argv.ends_with(b"\n\ntask\0"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("accepted explicit inspection"));
+    assert_eq!(fs::read(f.0.join("home/attempts")).unwrap(), b"xxxx");
+    for args in [
+        vec!["--risk", "high", "task"],
+        vec!["--safety", "security", "--reasoning", "medium", "task"],
+        vec!["--safety", "migration", "task"],
+        vec!["--safety", "concurrency", "task"],
+        vec!["--reasoning", "low", "task"],
+        vec!["--intent", "inspection"],
+        vec!["--reasoning", "high", "--reasoning", "medium", "task"],
+    ] {
+        let output = f.command().args(args).output().unwrap();
+        assert_eq!(output.status.code(), Some(2));
+        assert_eq!(fs::read(f.0.join("home/attempts")).unwrap(), b"xxxx");
+    }
+    assert!(!f.0.join("repo/nope").exists());
+}

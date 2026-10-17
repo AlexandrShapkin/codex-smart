@@ -157,3 +157,10 @@ It adds no runtime authority or stage acceptance.
 The [operator/reviewer trust-root and offline-channel follow-up](../decisions/0011-operator-reviewer-authority.md)
 (#121) compares two bootstrap choices and remains NO-GO for enrollment and
 production admission until independent channel, host state and authority evidence exist.
+
+### Product-first working preview (#141)
+
+The one-attempt CLI and explicitly typed inspection-guidance optimization form
+the bounded Working Preview slice; [production readiness](../production-routing-readiness.md#working-preview-0x-141)
+owns defaults, override/refusal and unknown compatibility limits. #94/#95 retain
+verified runtime integration and comparative measurement; stage acceptance is unchanged.
