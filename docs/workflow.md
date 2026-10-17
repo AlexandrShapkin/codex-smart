@@ -6,6 +6,22 @@ are independent snapshots. A branch name or deployment directory name is not pro
 of source identity. Every substantial task starts in a new branch and worktree from
 an explicitly verified GitHub main commit. Never synchronize by overwriting files.
 
+## Product-first Working Preview fast track (2026-10-17)
+
+The immediate owner-directed product priority is a working, user-testable Codex Smart
+0.x CLI. Prefer one bounded end-to-end user feature over speculative preparation,
+new governance documents, or extra issues when existing contracts suffice. Study
+only blockers to that feature; retain technical debt in the owning backlog rather
+than implementing non-blocking 1.0 release infrastructure prematurely.
+
+This changes **prioritization**, not execution authority or safety. Keep isolated
+worktrees, independent exact-head review, mandatory offline gates, CI/Security,
+branch protection and existing risk floors. Do not mark #94/#95 or Adaptive 0.5
+accepted from an offline demonstration; record incomplete gates as partial/NO-GO.
+Working Preview packaging is local only: no tag, public release, deployment, live
+benchmark campaign, credential/config mutation or implied savings claim. All such
+exceptions retain their separate authorization rules. PR #125 remains prohibited.
+
 ## Start a Codex task
 
 Before editing, inspect the opened checkout and all applicable AGENTS.md files:

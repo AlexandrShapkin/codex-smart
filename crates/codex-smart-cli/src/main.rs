@@ -1,5 +1,6 @@
 mod plan;
 mod prepare;
+mod preview;
 
 use codex_smart_core::{
     VERSION,
@@ -188,8 +189,9 @@ fn execute(mut args: Vec<OsString>) -> Result<i32, &'static str> {
             println!("codex-smart {VERSION}")
         }
         Some("--help" | "-h" | "help") if args.len() == 1 => println!(
-            "codex-smart {VERSION}\nCommands: prepare (explicit pinned local worker; prepare --help for required options), plan --intent inspection [--task KIND] [--risk LEVEL] [--safety FACT] [--file RELATIVE_PATH ...] (plan-only; plan --help for values), run [--tool-lock FILE] [--dry-run] [--] [codex args...], doctor [--json] [--codex-config FILE] [--tool-lock FILE], capabilities [--tool-lock FILE], explain [--tool-lock FILE] [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nOther arguments pass through to Codex. Use -- to pass a reserved command name. Config transactions default to dry-run; use --file FILE and explicit --apply. Tool pins are explicit; versions/health remain unverified."
+            "codex-smart {VERSION}\nCommands: prepare (explicit pinned local worker; prepare --help for required options), plan --intent inspection [--task KIND] [--risk LEVEL] [--safety FACT] [--file RELATIVE_PATH ...] (plan-only; plan --help for values), run [--tool-lock FILE] [--dry-run] [--] [codex args...], doctor [--json] [--codex-config FILE] [--tool-lock FILE], capabilities [--tool-lock FILE], explain [--tool-lock FILE] [--task KIND] [--reasoning medium|high] [--context-limit BYTES], config [show|validate|migrate|rollback], version\nNo arguments opens interactive Codex; one quoted task starts one Codex exec. See preview-help for typed preview options. Use run -- for exact Codex passthrough. Config transactions default to dry-run; use --file FILE and explicit --apply. Tool pins are explicit; versions/health remain unverified."
         ),
+        Some("preview-help") if args.len() == 1 => println!("{}", preview::HELP),
         Some("prepare") => {
             if args[1..] == [OsString::from("--help")] {
                 println!("{}", prepare::HELP);
@@ -273,7 +275,8 @@ fn execute(mut args: Vec<OsString>) -> Result<i32, &'static str> {
         Some("--version" | "-V" | "version" | "--help" | "-h" | "help") => {
             return Err("E_ARGS: unexpected arguments");
         }
-        _ => return launch(args, false),
+        Some("--" | "exec" | "e") => return launch(args, false),
+        _ => return launch(preview::arguments(args)?, false),
     }
     Ok(0)
 }

@@ -32,12 +32,19 @@ cargo run -p codex-smart-cli -- doctor
 cargo run -p codex-smart-cli -- run --dry-run -- exec "describe this repository"
 ```
 
+A local Linux x86_64 archive, checksum and explicit install/remove helper are described
+in [distribution](docs/distribution.md#local-working-preview-archive-141). No publication is enabled.
+
 ## Commands
 
 After building, use `target/debug/codex-smart` or `cargo run -p codex-smart-cli --`:
 
 | Command | Purpose |
 | --- | --- |
+| *(no arguments)* | Open interactive Codex |
+| `"task"` | Start one Codex exec, without retries |
+| `--intent inspection "task"` | Explicit native-first inspection guidance |
+| `preview-help` | Typed preview options and refusal limits |
 | `doctor` | Offline capability and configuration diagnostics |
 | `explain --task architecture` | Inspect a routing preview without execution |
 | `plan --intent inspection [--file RELATIVE_PATH ...]` | Declarative inspection workflow preview; no acquisition or execution |
@@ -54,7 +61,7 @@ compatible inspection selection (omit `--task` or use `--task inspect`). Its opt
 are relative to the current directory; singleton options and file nominations cannot
 repeat. See `plan --help`, `prepare --help` and the [configuration contract](docs/configuration.md).
 
-Other non-reserved arguments pass through; `codex-smart -- doctor` forwards a reserved name to Codex. See [configuration](docs/configuration.md) for explicit dry-run/apply/rollback and [tool pins](docs/tool-compatibility.md) for optional `--tool-lock FILE`.
+One quoted non-reserved task starts a single Codex exec. Use `run -- ARGS` for arbitrary Codex options; `codex-smart -- doctor` forwards a reserved name to Codex. See [configuration](docs/configuration.md) for explicit dry-run/apply/rollback and [tool pins](docs/tool-compatibility.md) for optional `--tool-lock FILE`.
 
 ## Safety model
 
@@ -62,7 +69,7 @@ Diagnostics are offline/read-only by default and never execute discovered binari
 
 ## Routing model
 
-`explain` previews the reference Rust policy using explicit task hints and conservative capability evidence. `run` preserves exact Codex arguments and injects no profile or reasoning override. Router v2 composition, fallback, Playbooks and Adaptive policies are implemented and tested as pure contracts; their application to production execution remains unimplemented. See [routing](docs/routing.md) and [architecture](docs/architecture.md).
+`explain` previews the reference Rust policy using explicit task hints and conservative capability evidence. `run` preserves exact Codex arguments and injects no profile or reasoning override. Router v2 composition, fallback, Playbooks and Adaptive policies are implemented and tested as pure contracts; verified model routing, validation and escalation remain deferred. The [working preview](docs/production-routing-readiness.md#working-preview-0x-141) applies typed inspection guidance at runtime; explicit reasoning overrides retain unknown compatibility and high-risk requests refuse without verified Strong/High evidence. See [routing](docs/routing.md) and [architecture](docs/architecture.md).
 
 The public `plan` and `prepare` commands accept only explicit inspection intent.
 `plan` leaves capability evidence and semantic coverage Unknown and grants no execution
