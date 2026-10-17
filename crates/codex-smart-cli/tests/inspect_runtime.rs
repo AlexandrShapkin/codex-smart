@@ -224,38 +224,179 @@ fn malformed_options_and_private_values_never_appear_in_errors() {
     f.not_launched();
 }
 
-#[test]
-fn inspect_closes_inherited_stdin_without_waiting_for_input() {
+// Fixed private markers are independent of stderr (which may contain private data).
+// Record entry before doing work, so a missing EOF marker cannot masquerade as success.
+const STDIN_FAKE: &str = r#"#!/bin/sh
+if [ "$1" = --version ]; then
+    printf 'version\n' >> "$FAKE_PHASE" || exit 90
+    if [ "$FAKE_READ_VERSION" = 1 ]; then IFS= read -r line; fi
+    printf 'codex-cli 0.162.1\n'
+    exit "${FAKE_VERSION_EXIT:-0}"
+fi
+if [ "$1" = debug ]; then
+    printf 'catalog\n' >> "$FAKE_PHASE" || exit 90
+    printf '%s' "$FAKE_CATALOG"
+    exit "$FAKE_CATALOG_EXIT"
+fi
+printf 'attempt\n' >> "$FAKE_PHASE" || exit 90
+if IFS= read -r line; then exit 41; fi
+printf 'eof\n' >> "$FAKE_PHASE" || exit 90
+printf 'attempt\n' >> "$FAKE_CALLS" || exit 90
+exit "$FAKE_EXIT"
+"#;
+
+#[derive(Debug, PartialEq, Eq)]
+enum StdinPhase {
+    NotEntered,
+    Version,
+    Catalog,
+    Attempt,
+    Eof,
+    Invalid,
+}
+
+fn stdin_phase(bytes: &[u8]) -> StdinPhase {
+    match bytes {
+        b"" => StdinPhase::NotEntered,
+        b"version\n" => StdinPhase::Version,
+        b"version\ncatalog\n" => StdinPhase::Catalog,
+        b"version\ncatalog\nattempt\n" => StdinPhase::Attempt,
+        b"version\ncatalog\nattempt\neof\n" => StdinPhase::Eof,
+        _ => StdinPhase::Invalid,
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct StdinObservation {
+    phase: StdinPhase,
+    code: Option<i32>,
+    signal: Option<i32>,
+    timed_out: bool,
+}
+
+fn stdin_fixture() -> Fixture {
     let f = Fixture::new();
-    fs::write(
-        f.0.join("bin/codex"),
-        "#!/bin/sh\nif [ \"$1\" = --version ]; then printf 'codex-cli 0.162.1\\n'; exit 0; fi\nif [ \"$1\" = debug ]; then printf '%s' \"$FAKE_CATALOG\"; exit 0; fi\nif IFS= read -r line; then exit 41; fi\nprintf 'attempt\\n' >> \"$FAKE_CALLS\"\nexit 0\n",
-    )
-    .unwrap();
-    let mut child = f
-        .command()
-        .args(["inspect", "task"])
+    fs::write(f.0.join("bin/codex"), STDIN_FAKE).unwrap();
+    f
+}
+
+fn observe_stdin(f: &Fixture, mut command: Command, timeout: Duration) -> StdinObservation {
+    let mut child = command
+        .env("FAKE_PHASE", f.0.join("phase"))
         .stdin(Stdio::piped())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
         .unwrap();
-    // Keep the pipe writer open, replicating an interactive remote parent.
+    // Keep the writer open until after wait/cleanup: EOF must come from null stdin.
     let _still_open = child.stdin.take().unwrap();
-    let deadline = Instant::now() + Duration::from_secs(3);
-    let status = loop {
+    let deadline = Instant::now() + timeout;
+    let (status, timed_out) = loop {
         if let Some(status) = child.try_wait().unwrap() {
-            break status;
+            break (status, false);
         }
         if Instant::now() >= deadline {
+            // The child might exit between try_wait and kill; always reap it.
             let _ = child.kill();
-            let _ = child.wait();
-            panic!("inspect waited on inherited stdin");
+            break (child.wait().unwrap(), true);
         }
         std::thread::sleep(Duration::from_millis(20));
     };
-    assert!(status.success());
+    let phase = match fs::read(f.0.join("phase")) {
+        Ok(bytes) => stdin_phase(&bytes),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => StdinPhase::NotEntered,
+        Err(_) => StdinPhase::Invalid,
+    };
+    // Never include raw marker bytes, paths, argv, stdout or stderr in assertions.
+    StdinObservation {
+        phase,
+        code: status.code(),
+        signal: status.signal(),
+        timed_out,
+    }
+}
+
+#[test]
+fn inspect_closes_inherited_stdin_without_waiting_for_input() {
+    let f = stdin_fixture();
+    let mut command = f.command();
+    command.args(["inspect", "task"]);
+    assert_eq!(
+        observe_stdin(&f, command, Duration::from_secs(3)),
+        StdinObservation {
+            phase: StdinPhase::Eof,
+            code: Some(0),
+            signal: None,
+            timed_out: false,
+        }
+    );
     assert_eq!(fs::read_to_string(f.0.join("calls")).unwrap(), "attempt\n");
+}
+
+#[test]
+fn stdin_observer_distinguishes_fast_probe_and_attempt_failures() {
+    for (variable, value, phase, code) in [
+        ("PATH", "missing", StdinPhase::NotEntered, 2),
+        ("FAKE_VERSION_EXIT", "7", StdinPhase::Version, 2),
+        ("FAKE_CATALOG_EXIT", "7", StdinPhase::Catalog, 2),
+        ("FAKE_EXIT", "17", StdinPhase::Eof, 17),
+    ] {
+        let f = stdin_fixture();
+        let mut command = f.command();
+        command.args(["inspect", "task"]);
+        if phase == StdinPhase::NotEntered {
+            // Discovery refuses before any fake process starts.
+            command.env("PATH", f.0.join("missing"));
+        } else {
+            command.env(variable, value);
+        }
+        assert_eq!(
+            observe_stdin(&f, command, Duration::from_secs(3)),
+            StdinObservation {
+                phase,
+                code: Some(code),
+                signal: None,
+                timed_out: false
+            }
+        );
+        if code == 2 {
+            f.not_launched();
+        } else {
+            assert_eq!(fs::read_to_string(f.0.join("calls")).unwrap(), "attempt\n");
+        }
+    }
+}
+
+#[test]
+fn stdin_observer_detects_open_pipe_without_printing_untrusted_markers() {
+    let f = stdin_fixture();
+    // Execute the same fake directly, bypassing LaunchPlan's null stdin.
+    let mut command = Command::new(f.0.join("bin/codex"));
+    command
+        .env_clear()
+        .arg("--version")
+        .env("FAKE_READ_VERSION", "1");
+    assert_eq!(
+        observe_stdin(&f, command, Duration::from_secs(3)),
+        StdinObservation {
+            phase: StdinPhase::Version,
+            code: None,
+            signal: Some(9),
+            timed_out: true
+        }
+    );
+    f.not_launched();
+    for bytes in [
+        b"private prompt".as_slice(),
+        b"version\neof\n",
+        b"version\nversion\n",
+    ] {
+        assert_eq!(stdin_phase(bytes), StdinPhase::Invalid);
+    }
+    assert_eq!(
+        stdin_phase(b"version\ncatalog\nattempt\n"),
+        StdinPhase::Attempt
+    );
 }
 
 #[test]
