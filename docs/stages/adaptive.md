@@ -1,6 +1,6 @@
 # Adaptive model routing and runtime escalation
 
-Status: active 0.5 Adaptive Execution. #43 bounded execution state, #44 pure replaceable model/profile resolution and #45 bounded delegation/handoff policy are implemented. Profile-smoke evidence is accepted (#82), and an offline-tested benchmark runner is merged (#83). The comparative adaptive campaign has not run; production execution remains passthrough.
+Status: active 0.5 Adaptive Execution. #43 bounded execution state, #44 pure replaceable model/profile resolution and #45 bounded delegation/handoff policy are implemented. Profile-smoke evidence is accepted (#82), and an offline-tested benchmark runner is merged (#83). The comparative adaptive campaign has not run; ordinary production execution remains passthrough, with a separate opt-in inspection model attempt.
 
 ## Goal
 
@@ -164,3 +164,7 @@ The one-attempt CLI and explicitly typed inspection-guidance optimization form
 the bounded Working Preview slice; [production readiness](../production-routing-readiness.md#working-preview-0x-141)
 owns defaults, override/refusal and unknown compatibility limits. #94/#95 retain
 verified runtime integration and comparative measurement; stage acceptance is unchanged.
+The opt-in `inspect` route from #143 adds a real read-only Economy/Medium Codex
+attempt using bundled model/effort support, with provider availability still Unknown;
+the [runtime boundary](../production-routing-readiness.md#opt-in-read-only-inspection-model-attempt-143)
+records the exact limited join and refusals. It does not make Adaptive ready.

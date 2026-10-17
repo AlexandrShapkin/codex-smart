@@ -1,6 +1,6 @@
 # Workflow intelligence target
 
-Status: Playbooks 0.4 is implemented and accepted; Adaptive Execution 0.5 is active. #43 bounded execution, #44 replaceable model compatibility routing and #45 bounded delegation policy are implemented; #46 lifecycle measurement remains. #14 measured benchmark and #15 aggregate telemetry are accepted. Router v2 and the single Codex launch remain production behavior. These policy contracts still do not launch adaptive retries, children or model calls.
+Status: Playbooks 0.4 is implemented and accepted; Adaptive Execution 0.5 is active. #43 bounded execution, #44 replaceable model compatibility routing and #45 bounded delegation policy are implemented; #46 lifecycle measurement remains. #14 measured benchmark and #15 aggregate telemetry are accepted. Ordinary launches remain single Codex passthrough; the opt-in inspection route applies a bounded model/effort choice for one read-only attempt. These policy contracts still do not launch adaptive retries or children.
 
 ## Objective and boundaries
 
