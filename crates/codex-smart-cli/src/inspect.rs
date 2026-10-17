@@ -17,7 +17,7 @@ use codex_smart_core::{
 };
 use std::{ffi::OsString, path::Path};
 
-pub const HELP: &str = "inspect [--risk low|medium|high] [--safety none|security|migration|concurrency] [--reasoning medium|high] [--model gpt-6-luna|gpt-6-sol|gpt-6-astra] [--] \"Read-only inspection task\"\nOne explicit codex exec -s read-only attempt. Low-risk only. Bundled catalog support is checked against the selected Codex 0.162.1 executable; freshness and account/provider availability remain unknown. A provider failure is returned without retry. No prompt inspection or savings claim.";
+pub const HELP: &str = "inspect [--supervised-json [--timeout-seconds 1..120] [--answer-file PATH]] [--risk low|medium|high] [--safety none|security|migration|concurrency] [--reasoning medium|high] [--model gpt-6-luna|gpt-6-sol|gpt-6-astra] [--] \"Read-only inspection task\"\nOne explicit codex exec -s read-only attempt. Low-risk only. Bundled catalog support is checked against the selected Codex 0.162.1 executable; freshness and account/provider availability remain unknown. A provider failure is returned without retry. No prompt inspection or savings claim. Supervised mode emits aggregate JSON only; optional answer file is private exclusive-create (0600), never stdout. Linux only; default timeout 120 seconds, output limit 1 MiB.";
 const ARGS: &str = "E_INSPECT_ARGS: expected one quoted task and supported, unique typed options";
 
 #[derive(Clone, Copy)]
@@ -117,13 +117,16 @@ fn catalog(source: &[u8]) -> Result<CatalogSnapshot, &'static str> {
 }
 
 pub fn execute(args: &[OsString], repo: &Path) -> Result<i32, &'static str> {
-    if args.len() > 11 || args.iter().map(|arg| arg.len()).sum::<usize>() > 16_384 {
+    if args.len() > 16 || args.iter().map(|arg| arg.len()).sum::<usize>() > 16_384 {
         return Err(ARGS);
     }
     let mut risk = None;
     let mut safety = None;
     let mut reasoning = None;
     let mut model = None;
+    let mut supervised = false;
+    let mut answer = None;
+    let mut timeout = None;
     let mut index = 0;
     while index < args.len() {
         if args[index] == "--" {
@@ -136,8 +139,25 @@ pub fn execute(args: &[OsString], repo: &Path) -> Result<i32, &'static str> {
         if !option.starts_with('-') {
             break;
         }
+        if option == "--supervised-json" && !supervised {
+            supervised = true;
+            index += 1;
+            continue;
+        }
+        if option == "--answer-file" && answer.is_none() {
+            answer = Some(args.get(index + 1).ok_or(ARGS)?.clone());
+            index += 2;
+            continue;
+        }
         let value = args.get(index + 1).and_then(|v| v.to_str()).ok_or(ARGS)?;
         match option {
+            "--timeout-seconds" if timeout.is_none() => {
+                let seconds = value.parse::<u64>().map_err(|_| ARGS)?;
+                if !(1..=120).contains(&seconds) {
+                    return Err(ARGS);
+                }
+                timeout = Some(seconds);
+            }
             "--risk" if risk.is_none() => {
                 risk = Some(match value {
                     "low" => RiskLevel::Low,
@@ -173,6 +193,13 @@ pub fn execute(args: &[OsString], repo: &Path) -> Result<i32, &'static str> {
     if args.len() != index + 1 || args[index].is_empty() {
         return Err(ARGS);
     }
+    if !supervised && (answer.is_some() || timeout.is_some()) {
+        return Err(ARGS);
+    }
+    #[cfg(not(target_os = "linux"))]
+    if supervised {
+        return Err("E_INSPECT_PLATFORM: supervised inspection requires Linux");
+    }
     let assessment = assess(&RoutingFacts {
         task_hints: vec![TaskKind::Inspect],
         risk_hint: risk,
@@ -202,7 +229,12 @@ pub fn execute(args: &[OsString], repo: &Path) -> Result<i32, &'static str> {
     );
     let plan = LaunchPlan::prepare(std::env::var_os("PATH").as_deref(), repo, Vec::new())
         .map_err(|e| e.code())?;
-    let snapshot = catalog(&plan.inspect_catalog().map_err(|e| e.code())?)?;
+    let bundled = if supervised {
+        plan.inspect_catalog_supervised()
+    } else {
+        plan.inspect_catalog()
+    };
+    let snapshot = catalog(&bundled.map_err(|e| e.code())?)?;
     let resolution = resolve_model(required_profile, effort, &snapshot.catalog);
     // The bundled catalog cannot prove account availability. Only this explicit
     // command permits one attempt with that fact still Unknown.
@@ -245,7 +277,17 @@ pub fn execute(args: &[OsString], repo: &Path) -> Result<i32, &'static str> {
         OsString::from("-s"),
         OsString::from("read-only"),
     ]);
+    if supervised {
+        argv.extend([OsString::from("--json"), OsString::from("--ephemeral")]);
+    }
     argv.extend_from_slice(&planned.args()[2..]);
+    if supervised {
+        return super::inspect_supervised::execute(
+            plan.with_args(argv),
+            answer.as_deref().map(Path::new),
+            timeout.unwrap_or(120),
+        );
+    }
     eprintln!(
         "Inspect: bundled model/effort syntax checked for Codex 0.162.1; catalog freshness and account/provider availability unknown; explicit single read-only attempt, no retry"
     );

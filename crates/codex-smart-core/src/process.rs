@@ -92,22 +92,42 @@ impl LaunchPlan {
     /// supported effort; it does not establish account/provider availability.
     /// Discard stderr and catalog bodies: both may contain private runtime data.
     pub fn inspect_catalog(&self) -> Result<Vec<u8>, LaunchError> {
+        self.inspect_catalog_with(false)
+    }
+    /// Same catalog checks, with group cleanup for opt-in supervised probes too.
+    pub fn inspect_catalog_supervised(&self) -> Result<Vec<u8>, LaunchError> {
+        self.inspect_catalog_with(true)
+    }
+    fn inspect_catalog_with(&self, supervised: bool) -> Result<Vec<u8>, LaunchError> {
+        let probe = |args: &[&str], limit: u64| {
+            if supervised {
+                #[cfg(target_os = "linux")]
+                {
+                    let args: Vec<_> = args.iter().map(OsString::from).collect();
+                    let output = self.supervise_args(&args, Duration::from_secs(5), limit as usize);
+                    return if output.outcome == ProcessOutcome::Success {
+                        Ok(output.stdout)
+                    } else {
+                        Err(LaunchError::CatalogFailed)
+                    };
+                }
+                #[cfg(not(target_os = "linux"))]
+                return Err(LaunchError::CatalogFailed);
+            }
+            bounded_probe(&self.executable, args, limit)
+        };
         if !self.unchanged() {
             return Err(LaunchError::ChangedExecutable);
         }
         self.verify_pin()?;
-        let version = bounded_probe(&self.executable, &["--version"], 128)?;
+        let version = probe(&["--version"], 128)?;
         if version != b"codex-cli 0.162.1\n" {
             return Err(LaunchError::CatalogFailed);
         }
         if !self.unchanged() {
             return Err(LaunchError::ChangedExecutable);
         }
-        let catalog = bounded_probe(
-            &self.executable,
-            &["debug", "models", "--bundled"],
-            2_000_000,
-        )?;
+        let catalog = probe(&["debug", "models", "--bundled"], 2_000_000)?;
         if !self.unchanged() {
             return Err(LaunchError::ChangedExecutable);
         }
@@ -181,6 +201,168 @@ impl LaunchPlan {
             now.len() == self.metadata.len() && now.modified().ok() == self.metadata.modified().ok()
         }
     }
+    /// Linux-only bounded private transport for an explicit noninteractive attempt.
+    #[cfg(target_os = "linux")]
+    pub fn supervise(self, timeout: Duration) -> SupervisedOutput {
+        self.supervise_args(&self.args, timeout, MAX_SUPERVISED_OUTPUT)
+    }
+    #[cfg(target_os = "linux")]
+    fn supervise_args(
+        &self,
+        args: &[OsString],
+        timeout: Duration,
+        limit: usize,
+    ) -> SupervisedOutput {
+        use rustix::{
+            fs::{OFlags, fcntl_getfl, fcntl_setfl},
+            process::{Pid, Signal, WaitId, WaitIdOptions, kill_process_group, waitid},
+        };
+        use std::os::unix::process::{CommandExt, ExitStatusExt};
+        static SLOT: std::sync::Mutex<Option<std::process::Child>> = std::sync::Mutex::new(None);
+        let unknown = || SupervisedOutput {
+            outcome: ProcessOutcome::Unknown,
+            stdout: Vec::new(),
+        };
+        let Ok(mut slot) = SLOT.try_lock() else {
+            return unknown();
+        };
+        if let Some(child) = slot.as_mut() {
+            if !matches!(child.try_wait(), Ok(Some(_))) {
+                return unknown();
+            }
+            *slot = None;
+        }
+        if !self.unchanged() || self.verify_pin().is_err() {
+            return unknown();
+        }
+        let Ok(signals) = codex_smart_process::InterruptGuard::install() else {
+            return unknown();
+        };
+        let mut command = Command::new(&self.executable);
+        command
+            .args(args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .process_group(0);
+        codex_smart_process::stdio_only(&mut command);
+        let Ok(child) = command.spawn() else {
+            return unknown();
+        };
+        *slot = Some(child);
+        let child = slot.as_mut().expect("owned child");
+        let pid = Pid::from_raw(child.id() as i32).expect("child pid");
+        let mut stdout = child.stdout.take().expect("piped stdout");
+        let mut bytes = Vec::new();
+        let mut eof = false;
+        let mut outcome = ProcessOutcome::Unknown;
+        let mut complete_transport = true;
+        let deadline = Instant::now() + timeout;
+        let configured = fcntl_getfl(&stdout)
+            .and_then(|flags| fcntl_setfl(&stdout, flags | OFlags::NONBLOCK))
+            .is_ok();
+        if configured {
+            loop {
+                // Drain only a bounded chunk per tick so a noisy writer cannot starve the deadline.
+                let mut buffer = [0; 8192];
+                match stdout.read(&mut buffer) {
+                    Ok(0) => eof = true,
+                    Ok(n) if bytes.len() + n <= limit => bytes.extend_from_slice(&buffer[..n]),
+                    Ok(_) => {
+                        complete_transport = false;
+                        break;
+                    }
+                    Err(e)
+                        if e.kind() == std::io::ErrorKind::WouldBlock
+                            || e.kind() == std::io::ErrorKind::Interrupted => {}
+                    Err(_) => {
+                        complete_transport = false;
+                        break;
+                    }
+                }
+                if signals.interrupted() {
+                    outcome = ProcessOutcome::Interrupted;
+                    break;
+                }
+                if Instant::now() >= deadline {
+                    outcome = ProcessOutcome::Timeout;
+                    break;
+                }
+                // NOWAIT keeps the leader's PID reserved until group cleanup, avoiding PID reuse.
+                match waitid(
+                    WaitId::Pid(pid),
+                    WaitIdOptions::EXITED | WaitIdOptions::NOHANG | WaitIdOptions::NOWAIT,
+                ) {
+                    Ok(Some(_)) => break,
+                    Ok(_) => {}
+                    Err(_) => {
+                        complete_transport = false;
+                        break;
+                    }
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+        }
+        // Kill the entire original group before reaping its leader, even on success.
+        // Escaped sessions cannot be confined by a process group; see public limits.
+        let cleanup = kill_process_group(pid, Signal::KILL).is_ok();
+        let cleanup_deadline = Instant::now() + Duration::from_secs(1);
+        if configured && !eof {
+            loop {
+                let mut buffer = [0; 8192];
+                match stdout.read(&mut buffer) {
+                    Ok(0) => {
+                        eof = true;
+                        break;
+                    }
+                    Ok(n) if bytes.len() + n <= limit => bytes.extend_from_slice(&buffer[..n]),
+                    Ok(_) => complete_transport = false,
+                    Err(e)
+                        if matches!(
+                            e.kind(),
+                            std::io::ErrorKind::WouldBlock | std::io::ErrorKind::Interrupted
+                        ) => {}
+                    Err(_) => break,
+                }
+                if Instant::now() >= cleanup_deadline {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+        }
+        loop {
+            match child.try_wait() {
+                Ok(Some(status)) => {
+                    if cleanup && configured && eof && complete_transport {
+                        if outcome == ProcessOutcome::Unknown {
+                            outcome = if status.signal().is_some() {
+                                ProcessOutcome::Interrupted
+                            } else if status.success() {
+                                ProcessOutcome::Success
+                            } else {
+                                ProcessOutcome::Failure
+                            };
+                        }
+                    } else {
+                        outcome = ProcessOutcome::Unknown;
+                    }
+                    *slot = None;
+                    break;
+                }
+                Ok(None) if Instant::now() < cleanup_deadline => {
+                    std::thread::sleep(Duration::from_millis(5))
+                }
+                _ => {
+                    outcome = ProcessOutcome::Unknown;
+                    break;
+                }
+            }
+        }
+        SupervisedOutput {
+            outcome,
+            stdout: bytes,
+        }
+    }
     /// Unix replaces the launcher, preserving terminal, exit status and signals.
     /// A metadata recheck narrows but does not eliminate pathname execution TOCTOU.
     pub fn execute(self) -> Result<i32, LaunchError> {
@@ -205,4 +387,22 @@ impl LaunchPlan {
             Ok(status.code().unwrap_or(1))
         }
     }
+}
+
+/// Private bytes must never be rendered in diagnostics.
+#[cfg(target_os = "linux")]
+pub const MAX_SUPERVISED_OUTPUT: usize = 1_048_576;
+#[cfg(target_os = "linux")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProcessOutcome {
+    Success,
+    Failure,
+    Timeout,
+    Interrupted,
+    Unknown,
+}
+#[cfg(target_os = "linux")]
+pub struct SupervisedOutput {
+    pub outcome: ProcessOutcome,
+    pub stdout: Vec<u8>,
 }

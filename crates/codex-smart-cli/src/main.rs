@@ -1,4 +1,5 @@
 mod inspect;
+mod inspect_supervised;
 mod plan;
 mod prepare;
 mod preview;

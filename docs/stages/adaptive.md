@@ -168,3 +168,10 @@ The opt-in `inspect` route from #143 adds a real read-only Economy/Medium Codex
 attempt using bundled model/effort support, with provider availability still Unknown;
 the [runtime boundary](../production-routing-readiness.md#opt-in-read-only-inspection-model-attempt-143)
 records the exact limited join and refusals. It does not make Adaptive ready.
+
+The #145 opt-in `inspect --supervised-json` increment adds one bounded noninteractive
+attempt with aggregate status/token accounting and an explicit private answer file.
+The [configuration contract](../configuration.md#supervised-inspection-accounting-145)
+owns its limits and cleanup uncertainty. Offline fake-Codex tests provide implementation
+evidence; independent review remains required, and #94/#95 and stage acceptance
+remain outstanding. Default inspect and ordinary run retain their existing behavior.
