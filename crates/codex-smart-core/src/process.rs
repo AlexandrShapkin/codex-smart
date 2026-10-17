@@ -3,8 +3,52 @@ use crate::capability::Capability;
 use crate::capability::find_executable;
 use crate::tool_lock::{Checksum, MAX_VERIFY_BYTES, Pin, fingerprint};
 use std::ffi::{OsStr, OsString};
+use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
+
+fn bounded_probe(executable: &Path, args: &[&str], limit: u64) -> Result<Vec<u8>, LaunchError> {
+    let mut child = Command::new(executable)
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|_| LaunchError::CatalogFailed)?;
+    let stdout = child.stdout.take().ok_or(LaunchError::CatalogFailed)?;
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    std::thread::spawn(move || {
+        let mut bytes = Vec::new();
+        let result = stdout
+            .take(limit + 1)
+            .read_to_end(&mut bytes)
+            .map(|_| bytes);
+        let _ = tx.send(result);
+    });
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let remaining = deadline.saturating_duration_since(Instant::now());
+    let bytes = match rx.recv_timeout(remaining) {
+        Ok(Ok(bytes)) if bytes.len() as u64 <= limit => bytes,
+        _ => {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(LaunchError::CatalogFailed);
+        }
+    };
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) if status.success() => return Ok(bytes),
+            Ok(Some(_)) | Err(_) => return Err(LaunchError::CatalogFailed),
+            Ok(None) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(10)),
+            Ok(None) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(LaunchError::CatalogFailed);
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LaunchError {
@@ -12,6 +56,7 @@ pub enum LaunchError {
     ChangedExecutable,
     SpawnFailed,
     PinMismatch,
+    CatalogFailed,
 }
 impl LaunchError {
     pub fn code(self) -> &'static str {
@@ -20,6 +65,7 @@ impl LaunchError {
             Self::ChangedExecutable => "E_CODEX_CHANGED: executable changed after planning",
             Self::SpawnFailed => "E_CODEX_SPAWN: could not execute Codex",
             Self::PinMismatch => "E_CODEX_PIN: required Codex artifact pin could not be verified",
+            Self::CatalogFailed => "E_CODEX_CATALOG: trusted Codex model catalog could not be read",
         }
     }
 }
@@ -29,8 +75,45 @@ pub struct LaunchPlan {
     args: Vec<OsString>,
     metadata: std::fs::Metadata,
     checksum: Option<Checksum>,
+    closed_stdin: bool,
 }
 impl LaunchPlan {
+    /// Attach reviewed argv to the same executable identity inspected earlier.
+    pub fn with_args(mut self, args: Vec<OsString>) -> Self {
+        self.args = args;
+        self
+    }
+    /// Explicit noninteractive attempts must not append or wait for inherited stdin.
+    pub fn with_closed_stdin(mut self) -> Self {
+        self.closed_stdin = true;
+        self
+    }
+    /// Explicit opt-in runtime inspection only. The catalog describes syntax and
+    /// supported effort; it does not establish account/provider availability.
+    /// Discard stderr and catalog bodies: both may contain private runtime data.
+    pub fn inspect_catalog(&self) -> Result<Vec<u8>, LaunchError> {
+        if !self.unchanged() {
+            return Err(LaunchError::ChangedExecutable);
+        }
+        self.verify_pin()?;
+        let version = bounded_probe(&self.executable, &["--version"], 128)?;
+        if version != b"codex-cli 0.162.1\n" {
+            return Err(LaunchError::CatalogFailed);
+        }
+        if !self.unchanged() {
+            return Err(LaunchError::ChangedExecutable);
+        }
+        let catalog = bounded_probe(
+            &self.executable,
+            &["debug", "models", "--bundled"],
+            2_000_000,
+        )?;
+        if !self.unchanged() {
+            return Err(LaunchError::ChangedExecutable);
+        }
+        self.verify_pin()?;
+        Ok(catalog)
+    }
     pub fn prepare(
         path: Option<&OsStr>,
         repo: &Path,
@@ -45,6 +128,7 @@ impl LaunchPlan {
             args,
             metadata,
             checksum: None,
+            closed_stdin: false,
         })
     }
     pub fn require_pin(mut self, pin: &Pin) -> Result<Self, LaunchError> {
@@ -106,6 +190,9 @@ impl LaunchPlan {
         self.verify_pin()?;
         let mut command = Command::new(&self.executable);
         command.args(&self.args);
+        if self.closed_stdin {
+            command.stdin(Stdio::null());
+        }
         #[cfg(unix)]
         {
             use std::os::unix::process::CommandExt;

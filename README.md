@@ -44,6 +44,7 @@ After building, use `target/debug/codex-smart` or `cargo run -p codex-smart-cli 
 | *(no arguments)* | Open interactive Codex |
 | `"task"` | Start one Codex exec, without retries |
 | `--intent inspection "task"` | Explicit native-first inspection guidance |
+| `inspect "Read-only inspection task"` | Opt in to one low-risk `gpt-6-luna` medium-effort attempt in Codex read-only mode |
 | `preview-help` | Typed preview options and refusal limits |
 | `doctor` | Offline capability and configuration diagnostics |
 | `explain --task architecture` | Inspect a routing preview without execution |
@@ -63,13 +64,23 @@ repeat. See `plan --help`, `prepare --help` and the [configuration contract](doc
 
 One quoted non-reserved task starts a single Codex exec. Use `run -- ARGS` for arbitrary Codex options; `codex-smart -- doctor` forwards a reserved name to Codex. See [configuration](docs/configuration.md) for explicit dry-run/apply/rollback and [tool pins](docs/tool-compatibility.md) for optional `--tool-lock FILE`.
 
+`inspect` accepts one quoted task and optional typed `--risk`, `--safety`, `--reasoning`
+and `--model` (see `inspect --help`). It checks the selected Codex 0.162.1 executable's
+bundled catalog, then launches `codex --model gpt-6-luna --config
+'model_reasoning_effort="medium"' exec -s read-only -- "task"` by OS argv.
+Catalog freshness and account/provider availability remain unknown; invoking
+`inspect` opts in to one attempt despite that uncertainty. Missing or unsupported
+model/effort data refuses before launch; medium/high risk and safety-sensitive facts
+also refuse. Codex failures keep their exit status without retry. No prompt text is
+classified or included in launcher diagnostics.
+
 ## Safety model
 
 Diagnostics are offline/read-only by default and never execute discovered binaries, index a repository or change git metadata. Project configuration and PATH are untrusted. Explicit launches use OS argument arrays without a shell; the launched Codex process follows its own configuration and permissions. Separate marked codex-smart configuration transactions require explicit actions. See [doctor](docs/doctor.md), [tooling](docs/tooling.md) and [configuration](docs/configuration.md).
 
 ## Routing model
 
-`explain` previews the reference Rust policy using explicit task hints and conservative capability evidence. `run` preserves exact Codex arguments and injects no profile or reasoning override. Router v2 composition, fallback, Playbooks and Adaptive policies are implemented and tested as pure contracts; verified model routing, validation and escalation remain deferred. The [working preview](docs/production-routing-readiness.md#working-preview-0x-141) applies typed inspection guidance at runtime; explicit reasoning overrides retain unknown compatibility and high-risk requests refuse without verified Strong/High evidence. See [routing](docs/routing.md) and [architecture](docs/architecture.md).
+`explain` previews the reference Rust policy using explicit task hints and conservative capability evidence. `run` preserves exact Codex arguments and injects no profile or reasoning override. Router v2 composition, fallback, Playbooks and Adaptive policies are implemented and tested as pure contracts; verified model availability, validation and escalation remain deferred. The [working preview](docs/production-routing-readiness.md#working-preview-0x-141) applies typed inspection guidance at runtime; `inspect` adds an explicit one-attempt model route with unknown provider availability. See [routing](docs/routing.md) and [architecture](docs/architecture.md).
 
 The public `plan` and `prepare` commands accept only explicit inspection intent.
 `plan` leaves capability evidence and semantic coverage Unknown and grants no execution

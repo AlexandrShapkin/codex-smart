@@ -1,6 +1,6 @@
 # ADR 0008: Deterministic workflow playbooks and bounded adaptive execution
 
-Status: accepted direction; Playbooks 0.4 semantics plus Adaptive #43 bounded execution, #44 replaceable profile/model compatibility and #45 bounded delegation policy are implemented. Concrete provider/model argv application, validation execution and child-process execution remain future work.
+Status: accepted direction; Playbooks 0.4 semantics plus Adaptive #43 bounded execution, #44 replaceable profile/model compatibility and #45 bounded delegation policy are implemented. #143 adds a narrow opt-in, one-attempt inspection model argv application with unknown provider availability. Verified production availability, validation execution and child-process execution remain future work.
 
 ## Context
 

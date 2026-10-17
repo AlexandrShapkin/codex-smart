@@ -377,3 +377,32 @@ and its reviewed PR. The implementation-runner sandbox denied one Unix-socket te
 and the cached advisory DB lock; those environmental failures were separately checked
 on the normal ThinkPad host. No successful local test substitutes for GitHub gates,
 accepted runtime routing or independent quality-equivalent savings evidence.
+
+### Opt-in read-only inspection model attempt (#143)
+
+`codex-smart inspect "Read-only inspection task"` is a separate low-risk route.
+Explicit Inspect assessment and the inspection playbook supply the Economy/Medium
+floor. The CLI joins that typed request to `adaptive_routing::resolve_model`; the
+resolver correctly returns `NeedsEvidence`, because the bundled model catalog
+cannot verify account/provider availability. A ready `AdaptiveController` cannot
+be constructed without independently verified native and validation readiness, so
+this one-attempt path does not fabricate `NativeSurface::Verified` or a controller.
+The explicit `inspect` invocation authorizes a single attempt while availability
+and catalog freshness remain unknown. It does not claim a resolved/verified target.
+
+The trusted launch plan selects one Codex executable and inspects its exact
+`codex-cli 0.162.1` version and `debug models --bundled` output. The latter is an
+offline snapshot of supported model/effort syntax, not a live account entitlement
+or execution probe. The bounded adapter accepts only an exact listed model with
+the requested effort and `supported_in_api=true`; it defaults to `gpt-6-luna` and
+medium effort, permits explicit stronger listed model and supported effort, and
+never falls back to another model. It refuses missing, duplicate, malformed,
+unsupported, incompatible-version and high/medium-risk or safety-sensitive inputs.
+The argv planner supplies the reasoning override; the trusted process layer then
+execs `--model gpt-6-luna --config model_reasoning_effort=\"medium\" exec -s read-only -- PROMPT`
+as separate OS arguments. Prompt and catalog bodies are omitted from diagnostics.
+There is no classifier call, retry, replay, config/auth/MCP/plugin edit, validation
+claim, or savings claim. Provider failures propagate through the existing Unix exec
+status/signal path. `run`, ordinary tasks, `--intent inspection`, and diagnostics
+retain their earlier behavior. Fresh runtime account compatibility and independent
+quality/cost measurement remain open under #94/#95.
