@@ -708,6 +708,169 @@ I/O, authentication or host observation occurs. Matching full spec/context diges
 compares claims only; actual complete current specification/context collection,
 semantic policy and reviewer authorization still require independent proof.
 
+### Bounded offline current identity observation — qualification (#155)
+
+This **documentation-only proposal** for [#155](https://github.com/AlexandrShapkin/codex-smart/issues/155),
+child of #94, qualifies a possible local observer; no collector is implemented or
+accepted here. Adaptive 0.5 remains **ACTIVE; production NO-GO**. #135/#137,
+[ADR 0010](decisions/0010-native-inspection-trust-boundary.md) and
+[ADR 0011](decisions/0011-operator-reviewer-authority.md) retain their independent
+authority, host qualification and use-boundary obligations.
+
+**Observation boundary and adversary.** A future collector MAY read explicitly
+nominated local bytes and metadata and compare them with separately held inputs.
+Repository contents, Git metadata, config, PATH, candidate/review transport and the
+host itself MAY be candidate controlled, including concurrent writers, replacement
+files, mounts and a compromised kernel. Independent collection means acquiring
+bytes without trusting candidate claims; it does **not** mean authentication,
+trustworthy origin or a trustworthy host. A collector cannot detect every lie by
+its kernel. Independently qualified kernel/filesystem isolation is a prerequisite
+for a stable observation; absent that evidence, return Unknown(UnstableSnapshot).
+Reading owner/ACL metadata, an embedded key or a provenance enum cannot supply it.
+Root/operator/reviewer authority, protected policy/delegation/revocation generations,
+trusted time/clock continuity and protected session/use/replay state MUST remain
+separate external prerequisites. Reading their alleged files establishes bytes
+only; it MUST NOT turn them into authority or prove unseen offline revocations.
+
+**Required coverage, not a hash-only checklist.** The following maps every
+`BindingClaims` member to its obligation. E tags are hexadecimal as in #137.
+Locally observable rows require complete independently held inputs and qualified
+coverage; external rows MUST NOT be synthesized from candidate declarations.
+
+| Claim / E tag | Required independently held coverage and limit of observation |
+| --- | --- |
+| `repository` / `02` | Bind the exact repository label to the prior independently nominated repository root/worktree and Git identity. A remote URL, directory name or HEAD label alone cannot establish repository identity or ownership. |
+| `scope` / `04`, S.scope | Compare exact lexical bytes and component containment of S.cwd and path operands; separately establish actual descriptor/mount containment for every relevant input. Lexical equality is not filesystem confinement. |
+| `spec_digest` / `12` S, `13` | Hold the **entire current Specification** independently of reviewed S: schema_version, executable absolute path, executable_pin, all three Version components, source_identity, configuration_identity, ordered argv with every Word/Flag/Path tag and byte, scope, cwd, operation, wall_seconds, cpu_seconds, input_bytes, output_bytes, memory_bytes, processes, profile and reasoning. Compare every member to reviewed S and compute the #137 spec_digest for comparison to `13`; a digest cannot reconstruct S. Declared budgets are not enforced resource controls; tool-specific argv semantics still need independent review. |
+| `source` / `14`, S.source_identity | Cover relevant current source bytes and repository state: worktree, referenced Git tree and index, staged/unstaged changes, relevant untracked and ignored/generated inputs. HEAD or a source receipt cannot substitute for current dirty-state coverage. |
+| `configuration` / `15`, S.configuration_identity | Cover actual effective configuration, defaults, load order/precedence, overrides and relevant environment, including implicit tool config. Missing environment/default semantics is incomplete coverage, even when config files match. |
+| `tool_closure` / `16` | Identify the actual selected executable artifact and relevant interpreter, loader, libraries, scripts, plugins and dependency closure, not only S.executable_pin or a PATH/version declaration. No execution probe is permitted; unobservable runtime selection/version/closure remains Unknown. |
+| `verifier` / `17` | Identify the **running** collector/verifier artifact and its active schema/policy implementation and configuration, not a candidate-nominated binary on disk. S has no equivalent verifier member. Policy bytes do not prove policy authority or freshness. |
+| `context` / `18` | Independently hold complete current K: task kind, caller risk, selected workflow risk, effective risk=max of both, ambiguity, full ordered canonical reason set, recipe readiness and every check in original order including repetitions, obligation/readiness/native capabilities. Reconstruct exact #137 K and compare its context digest; a hash cannot recover K or establish semantic task truth. High retains Strong/High. |
+| `policy`, `policy_epoch` / `05`, `06` | External independently authorized policy identity and current protected epoch/lease; locally read policy bytes are insufficient. |
+| `root`, `operator`, `reviewer`, `delegation_epoch`, `revocation_generation` / `07`–`0b` | External authenticated authority, scope/delegation and protected current generations; no candidate-selected anchor or local matching record qualifies them. |
+| `observation`, `session`, `one_use` / `0c`–`0e` | External observation/session binding and protected one-use history/continuity. A local identifier or absent prior-use claim proves no uniqueness or non-replay. |
+| `clock_domain`, `observed_at`, `expires_at` / `0f`–`11` | External trusted clock/domain, interval and freshness evidence, with rollback continuity. A local wall clock or scan deadline cannot authenticate these claims. |
+| `provenance` / no E tag | Caller assertion only, including ExternallyVerifiedAssumption; never upgraded by collection, matching hashes or copying review evidence. |
+
+File bytes/metadata can be locally re-read; S.argv, budgets, profile/reasoning,
+selected operation, and K's task/risk/reasons/recipe are **control-plane facts**,
+not derivable from a filesystem scan. Their current values require separately
+held, non-candidate-selected invocation/assessment evidence, with source and
+continuity qualified in a future integration. Reading a process command line or
+self-declared plan does not authenticate that evidence. A filesystem-only collector
+MUST report Unknown(UnqualifiedCoverage) for full S/K, not infer or copy them.
+
+`ReviewEvidence.wire_digest` additionally binds exact E bytes, not reviewer authority;
+`TimeObservation` and `PriorUse` remain supplied assertions. Decision/capability and
+proof-suite/proof fields retain #137 gates. No S/K reconstruction from `ParseOnly`
+is available: its private comparison projection is not a retained full descriptor.
+Only #137 defines canonical S/K and their digest algorithms here. Exact source,
+configuration, closure and verifier byte manifests/encodings still require separate
+acceptance; this subsection selects no new digest encoding or algorithm for them.
+Unknown, zero, unreadable or excluded required coverage MUST remain Unknown, never
+a positive observation; an empty scan cannot establish complete source coverage.
+
+**Proposed finite local read budgets (not enforced by current Rust).** One attempt
+MUST use at most 4,096 entries total (directories, files and excluded entries
+included), 16 MiB per regular file, 128 MiB aggregate bytes read including rereads
+and metadata/manifest buffers, 64 directory components and 30 seconds elapsed.
+All roots and auxiliary inputs share these caps; callers MAY lower, never raise
+them. Counters/lengths MUST use checked arithmetic before reads/allocation; byte
+or counter overflow and any exceeded cap reject, without partial positive output.
+Zero/unknown budget configuration is Unknown(UnqualifiedCoverage). A bounded local
+monotonic deadline limits work only; unavailable deadline enforcement is Unknown.
+Symlink traversal budget is **zero**: reject symlinks, including ancestors and
+magic links; do not resolve them. No crossing the independently pinned allowed
+local mount, external devices, network filesystems/network I/O, special files,
+privileged scans or arbitrary process launches is permitted. Do not run Git,
+version commands, interpreters, hooks, filters, package managers or discovered tools.
+The existing decoder caps remain separately **16,384 bytes for E** and **65,536
+bytes combined E/external proof/independent policy**, with checked addition before
+parsing. These scan budgets neither replace those caps nor change S's policy limits
+or existing preparation acquisition limits.
+
+**Held snapshot requirements.** Before reading, require prior explicit independent
+root/scope nomination and a pinned allowed local mount, including any required
+auxiliary roots on that mount; project config MUST NOT expand the nomination.
+Walk read-only with held directory/file descriptors and no-follow operations for
+every component. Bind fd/object identity, inode, device, mount identity, relevant
+metadata and content digests; a pathname, inode or mtime alone is insufficient.
+An ephemeral opaque snapshot identity SHOULD bind the nominated roots/mounts,
+sorted complete inclusion/exclusion manifest, current S/K and config/tool/verifier
+identities and the local scan generation. It is not the envelope observation or
+one-use ID, not an authenticated provenance token, and not a substitute for
+coherence or use-time revalidation. Any bound-member change invalidates it.
+Retain a bounded private inclusion/exclusion manifest with reasons and required
+coverage, including worktree/Git tree/index differences. Submodules and LFS require
+actual relevant content and nominated containment: a gitlink, LFS pointer or absent
+object is not that content. Relevant ignored/generated inputs MUST be included or
+coverage is Unknown; exclusions cannot silently mean irrelevant. Missing semantic
+knowledge about which inputs matter is also Unknown(UnqualifiedCoverage).
+
+A read-only fd does not freeze in-place writes, directory membership, hard-link
+aliases or replacement/mount changes. Before/after hashes or matching mtimes do
+not prove a coherent snapshot, nor exclude mutation followed by restoration.
+Require separately qualified kernel/FS snapshot or writer-exclusion guarantees
+covering the entire held set and its membership; otherwise Unknown(UnstableSnapshot).
+Hold that set through assessment and any future use; revalidate content/object,
+mount and external policy generations at use. Observed drift invalidates the
+observation. No pathname reopen may silently replace the held object. This proposal
+implements no atomic consume; #135's separately protected transaction must still
+couple revalidation to use, or admission remains Unknown.
+
+**Proposed enum-only outcomes and deterministic failure order.** These conceptual
+statuses are **not Rust APIs** and do not replace #153 or #135 results:
+
+```text
+ObservedUntrusted                     // complete qualified local observation only
+Unknown(MissingNomination | UnqualifiedCoverage | UnreadableInput
+        | UnobservableInput | UnstableSnapshot)
+Reject(OverBudget | UnsafeTraversal | Conflict | IdentityMismatch
+       | GenerationChanged | PrivacyViolation)
+```
+
+For this collector only, select first failure by: (1) invalid/overflow/exceeded
+resource caps (`OverBudget`); (2) established unsafe traversal, then privacy
+violation; (3) prerequisite/coverage Unknown reasons in the displayed order;
+(4) established Conflict, IdentityMismatch, GenerationChanged in that order;
+(5) ObservedUntrusted. Zero/unknown budgets follow stage 3 as specified above.
+Within a stage use coverage-table order, then bytewise relative manifest-entry
+order, never directory enumeration order. Missing prerequisites may mask later
+comparisons; they never imply success. This ordering does not alter decoder or
+`compare_evidence` precedence. Emit fixed enums only, with no raw paths, source,
+argv, environment, hashes, proof material or secrets; keep held bytes/manifests
+private, bounded and ephemeral, with no logging/serialization/export by default.
+
+| Negative/failure case (future isolated fake controls) | Required proposed outcome |
+| --- | --- |
+| Omit full S/K, dirty/untracked/config/default/environment/closure/verifier coverage; supply zero identity or relevant exclusion | Unknown(UnqualifiedCoverage); unreadable required input instead gives Unknown(UnreadableInput). No digest-only fallback. |
+| Copy candidate/review/current or self-assert provenance/authority/time/use | Cannot qualify missing independent nomination/coverage; Unknown as applicable. Even complete observed bytes remain ObservedUntrusted, with authority external. |
+| Duplicate/conflicting manifests or distinct known bytes assigned the same identity (including a demonstrated digest collision) | Reject(Conflict); never merge, last-writer select or treat hash equality as byte equality. |
+| Escape via ancestor/leaf symlink, mount substitution/crossing, device or special file | Reject(UnsafeTraversal); no target reads. Unobservable mount confinement is Unknown(UnstableSnapshot). |
+| Replace/overwrite a held file or mutate concurrently | Proven content/object mismatch: Reject(IdentityMismatch); proven snapshot/generation drift: Reject(GenerationChanged). Inability to exclude transient writes/restoration: Unknown(UnstableSnapshot). |
+| Exceed entry/file/aggregate/depth/deadline cap or overflow byte arithmetic | Reject(OverBudget); discard partial positive result. |
+| Reuse stale collected claims after known source/config/tool/verifier or protected generation change | Reject(IdentityMismatch) or Reject(GenerationChanged), respectively; unavailable continuity is Unknown. Expiry/replay remain external #135 gates, never solved by rescanning. |
+| Attempt to emit private paths, hashes, argv, environment or secret-bearing errors | Reject(PrivacyViolation); suppress payload, no partial diagnostic export. |
+
+**Minimal future slice and prerequisites.** Only after separate architecture/security
+acceptance of exact coverage/encodings, finite budgets, independent nomination,
+qualified host isolation and the negative controls above MAY a native read-only
+collector hold nominated descriptors, construct full current S/K and private
+manifests, then offer bounded comparison inputs. Unobservable version, runtime
+loading, effective defaults or task semantics MUST stop positive coverage; no probe
+or candidate assertion repairs them. Existing `preparation` acquisition and
+`native_inspection::assess`/`assess_canonical` do not supply these missing guarantees.
+A complete collector result would be ObservedUntrusted; a matching #153 comparison
+still returns `BindingResult::NeedsIndependentAuthority`. The current absent-input
+result is exactly `BindingResult::Missing(EvidenceKind::Current)` (often abbreviated
+Missing(Current)), not a new collector Unknown variant. No conversion is added to
+`Approval`, `CurrentAssumptions`, `NativeSurface::Verified` or a runtime caller.
+No Ready/Accepted/Verified status, enrollment, authentication, trusted time, replay
+protection, validation/model/Codex execution, runtime adapter or product readiness
+is delivered or authorized. #94 retains integration/trust gaps; #95 retains separate
+measurement acceptance. This qualification leaves every production gate closed.
+
 ### Reproducible byte-level offline vectors
 
 The fixture script below specifies complete positive bytes by construction,
