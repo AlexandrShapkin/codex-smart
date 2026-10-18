@@ -1405,6 +1405,138 @@ an untrusted 32-byte claim: no automatic manifest conversion is specified.
 `ParseOnly`, evidence binding and `compare_evidence` are unchanged; independent
 policy, host qualification and atomic-use evidence remain blockers, not promises.
 
+#### Canonical current effective configuration identity manifest v1 (#161)
+
+**Normative docs-only proposal**; #155/#157/#159 unchanged. Candidate manifests/
+names/config NEVER nominate completeness/exclusions/roots/authority. Independent
+authenticated review MUST qualify C/scope/roots/codecs/semantics/full operation/argv/
+cwd/tool closure. Unknown != Ready; no discovery execution.
+
+Closure: system/install/user/ancestor/repository/workspace/local/explicit config/
+imports, argv, compiled defaults, env presence/absence/values, conditional/runtime/
+platform selectors, implicit tool/interpreter/loader/plugin/search inputs; actual
+loads/order/duplicates/merges/resets/expansion/shadowed/inactive inputs; generated
+files/generators, Git tree/index/worktree, dirty/untracked/ignored/deleted inputs.
+Require M/C bytes/membership and C default/env/selector/dependency facts.
+Unknown semantic/host/env dependencies: Unknown(UnqualifiedCoverage); unobservable
+known facts: Unknown(UnobservableInput). Reachability/values cannot prove completeness/absence.
+
+**Bytes:** U8/U16/U32/U64 unsigned BE 1/2/4/8 bytes; #157 B/L. Mandatory order:
+
+```text
+G = ASCII("codex-smart/current-effective-configuration/v1")||00
+key = L(raw_components)
+event = U32(sequence)||U8(origin)||B(namespace)||B(key)
+       ||L(provenance)||U8(present)||B(input)||U8(effect)
+result = B(namespace)||B(key)||U8(present)||B(value)||L(contributors)
+Q = G||U16(1)||B(scope_id)||L(roots)||B(C)
+   ||raw32(SHA256(M))||L(events)||L(results)
+configuration_identity = SHA256(Q)
+```
+
+G: one NUL, no extra prefix. Independently compare scope/C/M/roots bytes:
+Q.roots=C.roots=M.roots, M.policy_bytes=C; scope maps to S.scope. Input roots != authority-root `07`; no digest substitution.
+
+|Field|Exact enum/encoding|
+|---|---|
+|origin U8|1=config load, 2=argv override, 3=default, 4=env, 5=conditional/runtime selector, 6=implicit tool/interpreter/loader, 7=host fact|
+|present U8|0=observed absent (empty input/value), 1=present (empty allowed); no Unknown encoding|
+|effect U8|1=contributes, 2=shadowed, 3=inactive, 4=absence test; 1/2 require present=1, 4 requires present=0|
+|provenance|Nonempty strictly increasing L(U32 C IDs); all backing/semantic dependencies|
+|contributors|Strictly increasing L(U32 sequences); evaluation order|
+
+Namespace: independent opaque 1..64 bytes. Key: 1..64 nonempty raw components,
+<=1024 bytes each, no NUL; dots/slashes literal. No normalization/casefold/replacement/
+synonyms; exact non-UTF8. Unobservable spelling: UnobservableInput; unresolved aliases:
+UnqualifiedCoverage; competing aliases: Conflict. Paths/roots: #157.
+
+Events: evaluation sequence 0..n-1, n>=1, including repeated/shadowed/absent/inactive
+occurrences; no deduplication/name/hash sort. Review MUST pin unique typed/structured input/
+value codecs/versions/semantics in C; no display/hash substitution. Unknown encoding/
+evaluation: UnqualifiedCoverage. Replacement: one contributor; merge: all. No
+shadowed/inactive/absence contributors.
+
+Results: unique (namespace, component-wise key), unsigned lexicographic, shorter
+prefix first; one/event key. Present contributors: its effect-1 events exactly once;
+absent value/contributors empty. Framing/enum/width/reference/order/duplicate/domain/
+version/trailing faults: Conflict. Require exact re-encoding; baseline drift: IdentityMismatch.
+
+Bind digest to reviewed Q, S.configuration_identity, E hex `15`, current
+BindingClaims.configuration. Retain Conflict(Configuration)/NeedsIndependentAuthority
+and opaque Native identity. Rust/S/E/receipt unchanged. Hashes: integrity ONLY,
+never attestation/trust/readiness/health/validation/execution rights.
+
+Private C/M/Q/proof/env/host snapshot: #157/#159 isolation. Any mutation invalidates,
+even shadowed/identical-byte replacement. Unknown isolation/transient-write exclusion
+fails closed; equal scans cannot repair TOCTOU.
+
+Inherit 4096 closure entries, 16 MiB/file, 128 MiB reads/storage (C/M/Q/proof/rereads),
+64 path components, 30s total. L<=4096, B<=aggregate; embedded file caps unchanged.
+Checked arithmetic before allocation/read; excess/overflow: OverBudget. Lower-only/
+unknown limits/envelope caps follow #159.
+
+Public outcomes/precedence: #155/#157/#159: OverBudget; UnsafeTraversal
+then PrivacyViolation; Unknown(MissingNomination, UnqualifiedCoverage, UnreadableInput,
+UnobservableInput, UnstableSnapshot); Conflict, IdentityMismatch, GenerationChanged;
+else ObservedUntrusted. Inherited tie order, then event sequence/result key/first syntax offset.
+Never probe forbidden inputs. Public logs/errors/export: fixed enums ONLY,
+no bytes/paths/keys/hashes/config/env/secrets/argv/attestation/proof.
+Private state bounded/ephemeral. Unsafe inclusion: UnqualifiedCoverage;
+forbidden access/disclosure: PrivacyViolation.
+
+**Synthetic stdlib bytes.** Root r, config a=x. Semantic/auth/isolation context
+and attestation b'a': fake/unproven; no actual configuration proof/parser replay.
+
+```python
+from hashlib import sha256
+u = lambda n,w: n.to_bytes(w,"big")
+B = lambda x: u(len(x),4)+x
+L = lambda xs: u(len(xs),4)+b"".join(B(x) for x in xs)
+P = b"codex-smart/inclusion-closure-policy/v1\0"
+F = b"codex-smart/current-source-file/v1\0"
+D = b"codex-smart/current-source-manifest/v1\0"
+G = b"codex-smart/current-effective-configuration/v1\0"
+root = B(b"r")+b"\1"+B(b"")
+loc = lambda role,path,kind: u(role,1)+B(b"r")+B(L(path))+u(kind,1)
+d = L([B(b"a")+b"\1"])
+f = b"\0"+u(1,8)+B(sha256(F+u(1,8)+b"x").digest())
+v0 = b"\1"+B(loc(1,[],2))+B(d)
+v1 = b"\3"+B(loc(3,[b"a"],1))+B(f)
+assert v0 < v1
+C = (P+u(1,2)+B(b"s")+L([root])+L([v0,v1])+L([u(0,4)])
+     +L([u(0,4)+b"\1"+u(1,4)])+B(b"a"))
+e0 = loc(1,[],2)+B(d)
+e1 = loc(3,[b"a"],1)+B(f)
+assert e0 < e1
+M = D+u(1,2)+B(C)+L([root])+L([e0,e1])
+k = L([b"k"])
+e = u(0,4)+b"\1"+B(b"n")+B(k)+L([u(1,4)])+b"\1"+B(b"x")+b"\1"
+r = B(b"n")+B(k)+b"\1"+B(b"x")+L([u(0,4)])
+p = G+u(1,2)+B(b"s")+L([root])+B(C)+sha256(M).digest()
+Q0 = p+L([e])+L([r])
+assert (len(C),len(M),len(Q0)) == (223,400,425)
+assert sha256(Q0).hexdigest() == "a4336b1916af58315462b4107a6fc7455ffe0fc3573c8082077214acb629b606"
+# SPECIFIED ONLY: all Reject(Conflict); no decoder run.
+negative = [Q0[:-1], Q0+b"\0", b"?"+Q0[1:],
+            G+u(2,2)+Q0[len(G)+2:], p+L([e,e])+L([r])]
+assert len(set(negative+[Q0])) == 6  # construction, not outcomes
+```
+
+Matrix (fake): SPECIFIED ONLY:
+
+|Mutation|Result|
+|---|---|
+|Framing/enum/width/order/duplicate/reference faults|Reject(Conflict)|
+|Missing/extra/shadowed loads; precedence/default/env absent-vs-empty/argv/tool selector/dirty/untracked/ignored/generated drift|Reject(IdentityMismatch)|
+|Candidate completeness; unknown implicit/conditional/host/env|Unknown(MissingNomination); Unknown(UnqualifiedCoverage)|
+|Exact non-UTF8; lossy spelling; alias|ObservedUntrusted; Unknown(UnobservableInput); Reject(Conflict)|
+|Symlink/escape/hardlink/special node|Reject(UnsafeTraversal), no read|
+|TOCTOU drift; generation-only; unknown isolation/transient-write exclusion|Reject(IdentityMismatch); Reject(GenerationChanged); Unknown(UnstableSnapshot); invalidate|
+|Exceed entries/L/file/aggregate/path/time caps; overflow|Reject(OverBudget)|
+|Unsafe private inclusion; fake secret/path/proof/env/hash leak|Unknown(UnqualifiedCoverage); Reject(PrivacyViolation)|
+
+Production: **NO-GO**.
+
 ### Reproducible byte-level offline vectors
 
 The fixture script below specifies complete positive bytes by construction,
