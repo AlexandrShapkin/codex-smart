@@ -946,8 +946,10 @@ Domain strings contain exactly the shown single final NUL, with no extra NUL.
 SHA-256 separation prevents file/manifest cross-domain substitution; it supplies
 integrity only. `policy_bytes` are exact independently held versioned closure-policy
 bytes, including scope, graph and completeness attestation, not a candidate hash.
-Their semantic interpretation MUST already be independently qualified; this section
-defines no policy parser or provisioning protocol. A hash cannot recover that policy.
+The [inclusion/closure policy v1 proposal](#canonical-independently-scoped-inclusionclosure-policy-v1-159)
+below defines one exact policy encoding including completeness-attestation bytes;
+semantic qualification and attestation authentication remain external prerequisites.
+No policy parser or provisioning protocol is implemented. A hash cannot recover that policy.
 
 Root IDs are unique nonempty opaque byte strings, at most 64 bytes, independently
 bound to actual private root paths/handles and logical views. Views are 1=current
@@ -1046,6 +1048,305 @@ entry order; never enumeration order. Only established findings participate; do 
 probe unsafe inputs to discover later failures. No public hashes, source, real paths,
 prompts, argv, environment, credentials or private policy; retain bounded ephemeral
 private state only. This does not change #153 comparison/decoder precedence.
+
+#### Canonical independently scoped inclusion/closure policy v1 (#159)
+
+**Normative proposal, docs only.** Candidate-controlled files, Git state, config,
+PATH, exclusions, dependency claims and writers can conceal relevant inputs. The
+policy MUST originate in a separately authorized, independently reviewed context;
+a candidate list MUST NOT define the inclusion boundary. A hostile kernel or an
+operator-equivalent writer is outside any qualified guarantee here. This section
+implements no parser, evaluator, collector or host isolation. Manifest v1 remains
+exactly #157, with opaque `policy_bytes`; this is one proposed encoding for those
+bytes, not a new manifest version. The #157 synthetic `p` below remains a manifest
+framing fixture, not a valid policy v1.
+
+**External prerequisites.** Independently held review context MUST nominate the
+opaque scope identity, complete root table, actual anchored handles/mount, logical
+views/selectors, role obligations, semantic selection rules and initial graph seeds.
+It MUST separately qualify completeness of the finite dependencies, exclusions,
+absence tests and offline config/tool semantics, plus snapshot isolation and running
+verifier identity. Exact independently provided completeness-attestation bytes MUST
+be included in C below, as required by #157. Their independent source, authorization,
+provenance and semantic truth require separate authenticated review proof; inclusion
+is not a serialized success flag or a substitute for that external proof.
+Compare scope/root/selector/role/path/kind and exact policy bytes with that separate
+context, byte-for-byte, without normalization or digest-only substitution. Equality
+is a consistency test, never independent reviewer identity or provenance. Missing
+nomination is Unknown(MissingNomination); missing semantic qualification is
+Unknown(UnqualifiedCoverage). Copying candidate data into the external context
+cannot qualify either prerequisite.
+
+**One byte encoding.** U8/U16/U32/U64 are unsigned big-endian integers of exactly
+1/2/4/8 bytes. `B(x)=U32(len(x))||x`; `L(xs)=U32(count(xs))||B(x1)||...||B(xn)`.
+All fields below are mandatory, in displayed order. Domain `P` has exactly one
+trailing NUL. SHA256 hashes the entire `C`, including P, with no second prefix.
+
+```text
+P = ASCII("codex-smart/inclusion-closure-policy/v1") || 00
+locator = U8(role) || B(root_id) || B(path) || U8(kind)
+vertex = U8(category) || B(locator) || B(expected)
+edge = U32(from) || U8(relation) || U32(to)
+C = P || U16(1) || B(scope_id) || L(roots)
+    || L(vertices) || L(seeds) || L(edges) || B(coverage_attestation)
+policy_digest = SHA256(C)
+```
+
+`scope_id` is opaque, nonempty, 1..64 bytes, independently mapped to the requested
+repository/capability/scope (including existing S.scope); it is not a path or an
+approver. `roots`, `root_id`, view/selector, path components, roles 1..8 and physical
+kinds 1..3 use **exactly #157's encodings and restrictions**. Root table MUST equal
+M.roots; M.policy_bytes MUST equal C. A different authorized root selection requires
+new policy/review, never automatic expansion. View-1 roots cannot overlap/alias;
+views 2/3 retain distinct IDs and roles 5/6. No role aliases or duplicate physical
+(root_id,path) are permitted; multi-role material uses role 8 with its full role
+obligations held independently, not multiple records. Directory roles remain explicit.
+
+`coverage_attestation` is exactly one mandatory nonempty opaque byte string,
+1..4096 bytes, supplied by the independently authorized review context, never set
+or selected by the candidate. Its sole canonical representation is the exact byte
+sequence independently provided: no text conversion, normalization, alternate
+encoding or digest substitution. Compare it byte-for-byte with the attestation
+payload bound by separately authenticated review proof for this exact scope, roots,
+graph, reviewer authorization and current policy/review epoch. A matching digest
+alone is no proof. Omitted/truncated/empty or duplicate attestation fields reject
+Conflict; a length above 4096 rejects OverBudget before allocation. Known byte
+mismatch with the authenticated payload rejects IdentityMismatch; known unauthorized
+reviewer/epoch binding or contradictory authenticated attestations reject Conflict,
+with no merging, last-writer selection or candidate choice. Missing/unqualified
+proof or semantic coverage remains Unknown(UnqualifiedCoverage), never inferred
+from matching bytes. Keep the attestation and proof private, bounded and ephemeral
+under the existing aggregate/combined caps; no logging, public hashes or export.
+
+Categories are exactly: 1=directory, 2=ordinary file, 3=config file, 4=selected
+executable, 5=tool dependency, 6=Git ref, 7=Git object, 8=Git index state,
+9=Git worktree state, 10=absent path, 11=generated output, 12=selector provenance,
+13=default provenance, 14=environment provenance, 15=exclusion. Categories
+1/2/3/4/5/11/15 are material: locator.kind is respectively 2/1/1/1/1/1/3 and
+expected is the exact #157 payload. Role/category must agree: config=3 or 8,
+executable/dependency=2 or 8, generated=4 or 8 in view 1; view 2/3 always use
+5/6. Ordinary files/directories may use any view-legal independently assigned role.
+The material vertices project to **all and only** M.entries. For an included
+directory, expected is its complete #157 dir_payload, including exclusion members;
+there is no second candidate-selected membership list.
+
+Other categories use kind=0, which is policy-only and MUST NOT appear in M.
+Absent path uses a nonempty path and empty expected; its root/role names the
+would-be material input, and it cannot coexist with a material vertex at that path.
+Its parent MUST be an included directory, and successful absence requires observing
+that complete parent membership. Other kind-0 locators use the root path (zero
+components) and expected=`B(key)||U8(present)||B(value)`. Key is a nonempty opaque
+1..1024-byte identifier from external semantic review; present is exactly 0 or 1;
+0 requires empty value. Value is exact raw bytes, not text normalization or a hash
+in lieu of the fact. For ref, key is the exact ref name and value its resolved
+#157 view-2 selector; for object, key is that selector's object-format byte followed
+by B(object_id), and value is complete decompressed Git object framing/bytes
+(type, one ASCII space, minimal ASCII decimal size, NUL, content), checked
+against its ID and declared content size. Types are commit/tree/blob/tag only;
+size has no sign or leading zero except zero itself. Object IDs may
+name tree/blob objects as well as commits. Index-state value is exact index bytes;
+worktree-state key/value identifies the independently reviewed worktree association
+and exact Git administrative bytes. Ref/object/index/worktree facts require present=1.
+Selector/default/environment key/value semantics and precedence MUST be separately
+reviewed offline; absent env/default/selector values require present=0. Unknown
+semantics cannot be represented as absence. Relevant backing config/metadata files
+also require material vertices; facts cannot substitute for reading their bytes.
+
+Vertices sort by their **entire raw vertex bytes**, strictly increasing; vertex ID
+is its zero-based U32 position. Duplicate material locators, duplicate absent
+locators, or duplicate (category,locator,key) facts reject Conflict even if expected
+values differ. Seeds are exactly U32 vertex IDs encoded as L elements, strictly
+increasing numerically. Every root directory is a seed; independently selected
+operation/config/tool/selector facts are additional seeds as required by review.
+At least one root, vertex and seed is required; zero edges is valid only if no
+obligation requires an edge. Roots sort by raw root_id as #157. Edges sort uniquely
+by numeric (from,relation,to); both endpoints must exist. No hash-based ordering,
+collation or tie resolution is allowed; equal keys with different values conflict.
+No unknown fields/enums, extensions, optional alternatives, padding, duplicate lists,
+nonminimal integer representations or trailing data are accepted. Decode each
+framed record completely and require exact re-encoding equality; any syntax/domain/
+version/order/width failure is Reject(Conflict), subject to #155 precedence below.
+
+**Finite graph obligations.** Relations are exactly 1=contains, 2=selects,
+3=configures, 4=depends-on, 5=generated-from, 6=Git-binds, 7=requires-absence,
+8=provenance. Contains MUST run from an included directory to each immediate
+material child, once per member, including exclusions; it cannot skip levels.
+Selects runs from category 12 to a selected input/fact; configures from 3/13/14 to
+an affected input/fact; depends-on from any non-exclusion input to a required input;
+generated-from from 11 to every generator executable/config/source/dependency;
+Git-binds from 6/7/8/9 to the corresponding referenced object, tree child, index
+blob or worktree material/absence; requires-absence from a non-exclusion input to
+10; provenance from any non-exclusion input to 12/13/14. Exclusions and absence
+vertices have no outgoing edges. Other endpoint combinations conflict. Every
+relation asserts a required obligation, never an optional hint or permission.
+
+Traverse seeds in ascending ID, processing the smallest pending ID, marking once,
+and enqueue all outgoing targets in edge order. Cycles terminate via the visited
+set and do not discharge missing dependencies. All vertices MUST be reached;
+unreachable vertices or dangling IDs conflict. Independently reviewed semantics
+MUST require every necessary relation and seed; graph reachability alone proves
+neither relevance nor completeness. A missing known implicit dependency, unresolved
+dynamic selector, conditional, plugin/loader/interpreter search or environment
+selection is Unknown(UnqualifiedCoverage), even if a candidate graph is connected.
+Do not run tools to resolve it. Directory traversal/enumeration comes from nominated
+roots, not only listed candidate leaves: compare actual complete immediate raw
+membership to expected and reconcile every child/record. A new child, including an
+ignored/generated child, fails closed as IdentityMismatch against held membership;
+never silently append it or apply candidate ignore rules.
+
+Exclusions use exactly #157's payload and fixed mapping:
+IndependentlyIrrelevant=1, OutsideAuthorizedScope=2,
+ProtectedPrivateIrrelevant=3. Their independent justifications remain outside C.
+An excluded directory needs independently qualified irrelevant-subtree proof;
+without it coverage is Unknown(UnqualifiedCoverage). Names, extensions, Git status,
+ignore files and tool rules MUST NOT reduce coverage. Relevant private inputs that
+cannot safely be included are Unknown(UnqualifiedCoverage); forbidden access or
+export is PrivacyViolation. An expected absent path is an obligation, not a file
+record: present now gives IdentityMismatch; unobservable absence gives
+Unknown(UnreadableInput), never success from an omitted entry.
+
+Git closure MUST cover pinned committed trees/blobs and required parent/object
+relations according to independently reviewed operation semantics, separate index
+stage-0 bytes/modes/blobs, staged and unstaged differences, deletion/absence, and
+relevant untracked, ignored and generated worktree inputs. Ref/object facts cannot
+replace material logical tree/index records. Reconcile all views; HEAD alone is
+insufficient. Unmerged index rejects Conflict; sparse coverage stays Unknown.
+Submodules/LFS require separately nominated contained actual content and pinned
+object closure; a gitlink/pointer alone is Unknown(UnqualifiedCoverage), with no
+fetch/smudge. Config overrides, load order, defaults, env and every conditional
+selection, generated sources and tool dependencies require offline knowable complete
+semantics, otherwise Unknown(UnqualifiedCoverage). #157's exact non-UTF8 preservation,
+casefold/normalization refusal, hardlink/object-alias checks, no-follow containment
+and pinned local mount requirements apply unchanged to every root and auxiliary input.
+
+**Private lifetime, limits and results.** Hold exact C/M/root/graph bytes, separate
+semantic-review binding, descriptors, object metadata and snapshot generations
+privately, with protected policy/root/graph/manifest/snapshot generation bindings.
+At every use compare those generations and all bound membership/content/index/
+metadata with the held baseline; any change invalidates the handle. Attestation
+bytes and their authenticated epoch/reviewer binding are also held and revalidated:
+byte drift rejects IdentityMismatch; a changed protected epoch/reviewer-binding
+generation alone rejects GenerationChanged; unavailable binding continuity is
+Unknown(UnqualifiedCoverage). Any such change/uncertainty invalidates the handle
+and requires fresh independent review, not reuse of the old attestation. No pathname
+reopen or matching digest repairs it. Transparent TOCTOU, transient writes/restoration
+or absent separately qualified whole-closure host isolation is
+Unknown(UnstableSnapshot); atomic use remains an external #135 prerequisite.
+
+Inherit #155/#157: at most 4096 entries across roots/views (directories, exclusions,
+absence and fact vertices included), 16 MiB per file, 128 MiB aggregate including
+policy/graph/edge buffers, decompression, retries, rereads and expansions, 64 path
+components, 30 seconds for the entire attempt. All L counts (including edges and
+seeds) additionally cap at 4096; each B length caps at 128 MiB and all storage/reads
+share the aggregate bound; embedded logical file bytes still obey the 16 MiB
+per-file limit. Use checked arithmetic before allocating/reading; cap
+excess or overflow is OverBudget. Unknown/zero configured budgets cannot qualify
+coverage. Envelope 16 KiB/combined 64 KiB limits apply separately wherever applicable;
+this policy does not relax them.
+
+Public outcomes and first failure are **exactly #155/#157**: OverBudget;
+UnsafeTraversal then PrivacyViolation; Unknown(MissingNomination,
+UnqualifiedCoverage, UnreadableInput, UnobservableInput, UnstableSnapshot) in that
+order; Conflict, IdentityMismatch, GenerationChanged; otherwise ObservedUntrusted.
+Within stages use #155 coverage-table order then #157 canonical entry order;
+policy-only facts tie-break by raw vertex bytes, syntax faults by first byte offset.
+Only established findings participate; never inspect unsafe inputs to find a later
+failure. No private policy, paths, hashes, credentials, source, prompts, argv or env
+may appear in public output/errors; fixed enums only, no partial positive result.
+SHA256(C) supplies neither independent nomination, semantic coverage, host provenance,
+authorized approver, trusted time nor execution permission. Envelope v1, ParseOnly,
+BindingClaims, compare_evidence and all Rust APIs remain unchanged. Production is
+**NO-GO**; no authority, host qualification or acceptance is established here.
+
+**Synthetic offline bytes.** This stdlib Python constructs a nongit scope `s`, root
+`r`, included root directory and file `a` containing `x`, with one contains edge
+and independently supplied fake attestation bytes `a`.
+It demonstrates serialization only. External nomination, semantic completeness and
+isolation are fake assumptions, not outcomes derived by this script. It implements
+no parser or evaluator and performs no host inspection.
+
+```python
+from hashlib import sha256
+u8 = lambda n: n.to_bytes(1, 'big')
+u16 = lambda n: n.to_bytes(2, 'big')
+u32 = lambda n: n.to_bytes(4, 'big')
+u64 = lambda n: n.to_bytes(8, 'big')
+B = lambda x: u32(len(x)) + x
+L = lambda xs: u32(len(xs)) + b''.join(B(x) for x in xs)
+P = b'codex-smart/inclusion-closure-policy/v1\0'
+F = b'codex-smart/current-source-file/v1\0'
+root = B(b'r') + u8(1) + B(b'')
+loc = lambda path, kind: u8(1) + B(b'r') + B(L(path)) + u8(kind)
+directory = L([B(b'a') + u8(1)])
+file = u8(0) + u64(1) + B(sha256(F + u64(1) + b'x').digest())
+v0 = u8(1) + B(loc([], 2)) + B(directory)
+v1 = u8(2) + B(loc([b'a'], 1)) + B(file)
+assert v0 < v1
+C = (P + u16(1) + B(b's') + L([root]) + L([v0, v1])
+     + L([u32(0)]) + L([u32(0) + u8(1) + u32(1)]) + B(b'a'))
+assert len(C) == 223
+assert sha256(C).hexdigest() == 'eaea4e401b0ccb85b2097663478c1fa40b32803a2028af7f9afc36b49b065f8f'
+
+# Normative expected enums only: no parser/evaluator/collector is run.
+# All separate fake prerequisites are qualified, including authenticated b'a'.
+held_attestation = b'a'
+assert C[-5:] == B(held_attestation)
+prefix = C[:-5]  # exact bytes before the final mandatory attestation field
+negative_vectors = {
+    'wrong_version': (C[:len(P)] + u16(2) + C[len(P)+2:],
+                      223, 'Reject(Conflict)'),
+    'trailing_zero': (C + b'\0', 224, 'Reject(Conflict)'),
+    'empty_attestation': (prefix + B(b''), 222, 'Reject(Conflict)'),
+    'altered_attestation': (prefix + B(b'b'), 223, 'Reject(IdentityMismatch)'),
+    'oversize_attestation': (prefix + u32(4097), 222, 'Reject(OverBudget)'),
+}
+assert B(b'b') != B(held_attestation)
+assert len({raw for raw, _, _ in negative_vectors.values()}) == 5
+for name, (raw, expected_size, expected_enum) in negative_vectors.items():
+    assert len(raw) == expected_size, name
+    assert sha256(raw).digest() != sha256(C).digest(), name
+    assert expected_enum in {'Reject(Conflict)', 'Reject(IdentityMismatch)',
+                             'Reject(OverBudget)'}
+# Assertions verify fixture construction only, never the declared outcomes.
+```
+
+**Deterministic negative matrix (specified, not executed collector tests).** Each
+row mutates only the synthetic model or its separately held fake prerequisites;
+all other prerequisites are assumed qualified and all budgets in range. Git,
+absence, exclusion and multi-root rows use finite synthetic extensions with the
+named feature present and independently held before mutation. Expected
+results use the fixed precedence above; successful serialization is not observation.
+
+| Mutation / independently supplied finding | Required outcome |
+| --- | --- |
+| Truncate any integer/B/L payload; change P/NUL or U16 version; unknown category/relation/kind; append byte/padding/field; count/framing mismatch | Reject(Conflict) |
+| Omit/truncate/empty/duplicate coverage_attestation field | Reject(Conflict) |
+| coverage_attestation declares 4097 bytes, even with no payload | Reject(OverBudget) |
+| Alter attestation bytes against separately authenticated payload | Reject(IdentityMismatch) |
+| Candidate-only attestation or absent/unqualified independent review proof | Unknown(UnqualifiedCoverage) |
+| Known unauthorized attestation reviewer/epoch binding; contradictory authenticated attestations | Reject(Conflict) |
+| Change protected attestation epoch/reviewer-binding generation alone; lose binding continuity | Reject(GenerationChanged); Unknown(UnqualifiedCoverage), respectively |
+| Attempt to export private attestation/proof | Reject(PrivacyViolation), suppress payload |
+| Swap sorted roots/vertices/seeds/edges; duplicate one; dangling endpoint, unreachable vertex or missing contains edge vs directory payload | Reject(Conflict) |
+| Omit nomination; copy candidate scope into an unqualified review context | Unknown(MissingNomination) |
+| Well-formed scope/root/view/selector/role differs from independently held nomination | Reject(IdentityMismatch) |
+| Duplicate root ID, physical root alias/overlap, duplicate path with conflicting role/kind, multi-role duplicate, known byte/digest or ordering-key collision | Reject(Conflict) |
+| Remove file record but retain directory member (internal inconsistency) | Reject(Conflict) |
+| Consistently remove/add member and record relative to held policy baseline; new directory child | Reject(IdentityMismatch) |
+| Expected absent child appears; included file becomes absent/unreadable | Reject(IdentityMismatch); Unknown(UnreadableInput), respectively |
+| Missing Git object; staged blob/mode or index bytes drift against held baseline | Unknown(UnobservableInput); Reject(IdentityMismatch), respectively |
+| Unmerged stages 1–3; sparse checkout | Reject(Conflict); Unknown(UnqualifiedCoverage), respectively |
+| Relevant ignored/generated input excluded or omitted from semantic closure; missing implicit tool dependency; unresolved config/default/env/conditional selection | Unknown(UnqualifiedCoverage) |
+| Gitlink/LFS pointer without qualified actual content/closure | Unknown(UnqualifiedCoverage) |
+| Candidate ignore name/extension/status rule offered as exclusion proof | Unknown(UnqualifiedCoverage) |
+| Unsupported casefold/name semantics; unobservable object/mount API | Unknown(UnobservableInput) |
+| Symlink, hardlink count !=1, special node, crossed mount or unsafe path | Reject(UnsafeTraversal) |
+| No qualified snapshot isolation; equal repeated scans; transparent TOCTOU | Unknown(UnstableSnapshot) |
+| Change protected policy/root/graph/manifest/snapshot generation alone | Reject(GenerationChanged) |
+| Change bytes/object/index/membership plus generation | Reject(IdentityMismatch) |
+| 4097 entries/vertices/edges, 16 MiB+1 file, 128 MiB+1 aggregate, 65 components, >30 seconds or checked overflow | Reject(OverBudget) |
+| Forbidden private read or attempted path/hash/policy/source/prompt/credential export | Reject(PrivacyViolation), suppress payload |
+| OverBudget plus missing nomination; missing isolation plus known byte drift | Reject(OverBudget); Unknown(UnstableSnapshot), respectively |
 
 **Synthetic reference vector (offline model only).** The following executable
 Python pseudocode defines every byte of one positive framing vector: independent
