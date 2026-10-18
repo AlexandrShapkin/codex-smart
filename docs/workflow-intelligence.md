@@ -871,6 +871,239 @@ protection, validation/model/Codex execution, runtime adapter or product readine
 is delivered or authorized. #94 retains integration/trust gaps; #95 retains separate
 measurement acceptance. This qualification leaves every production gate closed.
 
+### Canonical current source identity manifest v1 — docs-only qualification (#157)
+
+**Threat model and independent scope closure.** The candidate can control source,
+Git/index/config/tool bytes, names, exclusions, aliases and concurrent writers;
+its host/kernel can lie. This **NEW PROPOSED offline source manifest v1** is
+**proposal/docs only**: no collector, host qualification, runtime join or authority.
+An independently authorized policy MUST bind root handles, opaque root labels,
+requested scope, relevant pinned commits and a finite directed closure graph.
+Vertices identify required source/tool/config/generated inputs; edges identify
+all known selection, inclusion and dependency relations. Independent semantic
+review MUST attest that every known relevant input and edge is covered, including
+implicit configuration and generated inputs, and that no unresolved dependency
+remains. Unknown relevance/selection semantics yields Unknown(UnqualifiedCoverage).
+A candidate manifest, empty graph or declaration of completeness cannot attest
+itself. Source-only success cannot establish full S/K or #155 observation coverage.
+
+Policy MUST enumerate included directory boundaries and required files, and assign
+every observed child either inclusion or a fixed independently justified exclusion.
+Known relevant files MUST be included; ignored/untracked/generated status is never
+an exclusion reason. Exclusion codes are exactly 1=IndependentlyIrrelevant,
+2=OutsideAuthorizedScope, 3=ProtectedPrivateIrrelevant. Reasons and attestations stay
+private. An excluded directory seals an independently proved irrelevant subtree;
+without that proof its descendants MUST be enumerated within budget or coverage
+is Unknown(UnqualifiedCoverage). Relevant private data that cannot safely be read
+is Unknown(UnqualifiedCoverage), never silently excluded; attempted forbidden
+access/disclosure is Reject(PrivacyViolation). Candidate rules cannot shrink scope.
+
+**Git views are separate observations.** For each relevant repository, policy MUST
+pin the relevant commit(s), their complete relevant tree/blob object closure and
+object format, and independently bind current HEAD/ref state, index and worktree.
+Only relevant pinned commits are traversed: other branches require coverage only
+when independently known relevant, then MUST also be pinned. Missing required Git
+objects, including shallow/partial-clone omissions, are Unknown(UnobservableInput);
+no fetch. Read/decode objects and index offline without Git commands, hooks,
+filters, attributes execution, interpreters or tools. Verify object type, claimed
+object ID and bytes, with bounded decompression and independent SHA-256 framing.
+Git object IDs alone are not content/identity evidence or collision protection.
+Index stage 0 paths/modes/blob bytes are included separately from current worktree;
+stages 1–3/unmerged entries reject Conflict. Sparse checkout is
+Unknown(UnqualifiedCoverage) in v1; no inferred completeness from sparse indexes.
+Staged, unstaged, deleted and relevant untracked/ignored/generated paths MUST be
+reconciled explicitly. Expected absent paths are private policy obligations, not
+invented file records; inability to observe a required path is Unknown(UnreadableInput).
+HEAD/tree/index/status never replace reading current bytes and directory membership.
+If policy references `.git` metadata, its exact bytes MUST additionally be included
+as explicit metadata entries under the same bounds; linked worktree Git directories
+need separate independent nomination. No automatic `.git` traversal or root expansion.
+
+**Canonical byte grammar (new format, no implicit encoding).** All integers are
+unsigned big-endian: U8/U16/U32/U64 are exactly 1/2/4/8 bytes. `B(x)=U32(len(x))||x`;
+`L(xs)=U32(count(xs))||B(x1)||...||B(xn)`; `||` is concatenation.
+No padding, optional fields, implicit terminator, alternate representation or
+trailing bytes is allowed. Invalid framing/version/enum/order is Reject(Conflict),
+after higher-priority failures below. Roots and policy_bytes MUST be nonempty.
+Checked bounds apply before decoding/allocation.
+
+```text
+F = ASCII("codex-smart/current-source-file/v1") || 00
+D = ASCII("codex-smart/current-source-manifest/v1") || 00
+content(bytes) = SHA256(F || U64(len(bytes)) || bytes)
+path = L(raw_components)                         // no text conversion
+root = B(root_id) || U8(view) || B(selector)
+entry = U8(role) || B(root_id) || B(path) || U8(kind) || B(payload)
+file_payload = U8(executable) || U64(size) || B(content_digest)
+member = B(raw_child_name) || U8(child_record_kind)
+dir_payload = L(members)
+excluded_payload = U8(actual_kind) || U8(reason)
+M = D || U16(1) || B(policy_bytes) || L(roots) || L(entries)
+manifest_digest = SHA256(M)
+```
+
+Domain strings contain exactly the shown single final NUL, with no extra NUL.
+SHA-256 separation prevents file/manifest cross-domain substitution; it supplies
+integrity only. `policy_bytes` are exact independently held versioned closure-policy
+bytes, including scope, graph and completeness attestation, not a candidate hash.
+Their semantic interpretation MUST already be independently qualified; this section
+defines no policy parser or provisioning protocol. A hash cannot recover that policy.
+
+Root IDs are unique nonempty opaque byte strings, at most 64 bytes, independently
+bound to actual private root paths/handles and logical views. Views are 1=current
+filesystem, 2=committed tree, 3=index stage 0. Selector is empty for view 1; for
+view 2 it is U8(object_format)||B(commit_id), format 1=SHA-1 (20-byte ID),
+2=SHA-256 (32-byte ID); for view 3 it is the independently bound repository's
+view-1 root ID. Roots sort by raw root_id bytes, lexicographic unsigned comparison,
+shorter prefix first. Each root defines one namespace; no duplicate root/view
+aliases. Git views of one repository have distinct root IDs; physical view-1 roots
+MUST NOT overlap or alias. Multi-role files use one record with role 8, not duplicate paths.
+Roles are 1=source, 2=tool, 3=config, 4=generated, 5=Git-tree, 6=Git-index,
+7=explicit-Git-metadata, 8=multiple; exact role obligations are in held policy.
+Views 2/3 require roles 5/6 respectively; view 1 permits 1–4,7,8.
+
+Kinds are 1=regular-file, 2=directory, 3=exclusion. Every included regular file
+MUST carry file_payload, with executable exactly 0 or 1, actual logical byte size
+and a 32-byte digest. In view 1 executable is 1 iff any POSIX execute mode bit
+is set; unobservable mode semantics is Unknown(UnobservableInput).
+Every included directory, including each root, MUST carry
+its complete immediate membership, sorted by unsigned raw name bytes and unique.
+Members refer to exactly one child record at that parent path, with matching kind;
+there are no missing, extra or orphan records. Exclusions carry actual_kind 1 or 2
+and reason 1–3; no bytes/digest or arbitrary reason text. Excluded roots are forbidden.
+Git directories are explicit logical records; Git modes must be regular 100644 or
+100755 (executable 0/1), or tree 040000; other modes require refusal below.
+Directories use their policy-assigned role; membership covers children of all roles.
+
+Entries sort uniquely by `(role, root_id, raw_relative_path, kind)`, comparing role
+and kind numerically, byte strings lexicographically as above. Raw relative path is
+components joined by byte 2f, used only for ordering, never as an alternative wire
+encoding. A `(root_id,path)` has exactly one record regardless of role/kind; duplicate
+or conflicting paths reject Conflict. Zero components denotes the root directory
+only; no other empty path, empty component, slash byte, NUL byte, `.` or `..`
+component is allowed. Invalid path components/absolute paths reject UnsafeTraversal.
+Non-UTF8 components are preserved byte-for-byte; no normalization, replacement or casefolding.
+A host unable to expose exact names is Unknown(UnobservableInput). Case-insensitive
+or normalization-aliasing filesystems are unsupported: Unknown(UnobservableInput);
+known name/object aliases or competing spellings reject Conflict. No sorting by hash.
+
+**Filesystem identity and coherence.** Walk from independently held anchored roots
+with no-follow handles for every ancestor/child and verified containment in the
+pinned allowed local mount. Symlinks/magic links, escape, mount substitution/crossing,
+network mounts, special nodes and regular files with link count other than one
+reject UnsafeTraversal; never open special nodes for content. Track held opaque
+object identities independently of digest (including device, inode, mount and
+reuse-safe generation where available); repeated objects under different paths
+reject Conflict. Unavailable containment/object evidence is Unknown(UnobservableInput).
+Submodule gitlinks and LFS pointer-only coverage are Unknown(UnqualifiedCoverage):
+actual relevant checked-out content, separately nominated roots and complete pinned
+object/content closure are mandatory. If containment cannot be provided, refuse;
+never initialize submodules, smudge pointers or fetch. A known digest/object-ID
+collision rejects Conflict; digest equality MUST NOT override differing held bytes
+or opaque object identities. No cross-host snapshot identity is qualified here.
+
+Keep a private opaque snapshot handle binding descriptors, root/view selectors,
+complete membership, policy/closure, bytes, executable bits and all relevant metadata
+(including ownership/ACLs, link/device/mount IDs, size and modification/change data)
+and local/external generations. Metadata beyond executable/size is held separately,
+not silently omitted from snapshot identity; unknown relevant metadata semantics
+is Unknown(UnqualifiedCoverage). Same bytes on a replacement inode are not the same
+snapshot. A read-only descriptor and two equal scans cannot exclude in-place writes,
+alias writes or mutate-and-restore. Separately qualified kernel/FS snapshot or writer
+exclusion over the entire closure and membership is required; absent it return
+Unknown(UnstableSnapshot), even when every digest matches. No host independence or
+stable observation is established by this proposal or the synthetic vector.
+
+At revalidation compare held content, metadata, membership, objects, mounts, policy
+and generations without pathname substitution. An internally malformed or
+self-contradictory canonical record rejects Conflict; a well-formed observation
+whose included/missing/extra relevant entries, content, index, type, metadata or
+membership differ from the held baseline rejects IdentityMismatch. Known generation
+change rejects GenerationChanged and invalidates the handle (both mismatch and
+generation findings select IdentityMismatch by precedence).
+Unknown coherence invalidates it with Unknown(UnstableSnapshot). Hold through any
+future assessment/use; this section provides no atomic use/consume transaction.
+Matching digest is neither race-free observation nor provenance/authentication,
+reviewer authority, validation readiness, execution permission or replay protection.
+
+**Bounds and outcomes.** Inherit #155 unchanged: at most 4,096 entries including
+all directories/exclusions across all views/roots, 16 MiB per file, 128 MiB aggregate
+reads including rereads, decoded Git bytes and metadata/manifest buffers, 64 path
+components and 30 seconds elapsed. Root/graph/membership/buffer storage also counts
+toward the aggregate budget; no streaming or compression loophole. Use checked
+addition/multiplication before reads/allocation; overflow/excess rejects OverBudget.
+Policy MAY lower but MUST NOT enlarge caps; zero/unknown caps mean
+Unknown(UnqualifiedCoverage). Unavailable deadline enforcement is
+Unknown(UnobservableInput). A failed attempt emits no partial positive result.
+
+Public results are exactly #155's enum-only `ObservedUntrusted`,
+`Unknown(MissingNomination|UnqualifiedCoverage|UnreadableInput|UnobservableInput|UnstableSnapshot)`
+and `Reject(OverBudget|UnsafeTraversal|Conflict|IdentityMismatch|GenerationChanged|PrivacyViolation)`.
+Select (1) OverBudget; (2) UnsafeTraversal then PrivacyViolation; (3) Unknown reasons
+in displayed order; (4) Conflict, IdentityMismatch, GenerationChanged; (5)
+ObservedUntrusted. Within a stage use #155 coverage-table order, then canonical
+entry order; never enumeration order. Only established findings participate; do not
+probe unsafe inputs to discover later failures. No public hashes, source, real paths,
+prompts, argv, environment, credentials or private policy; retain bounded ephemeral
+private state only. This does not change #153 comparison/decoder precedence.
+
+**Synthetic reference vector (offline model only).** The following executable
+Python pseudocode defines every byte of one positive framing vector: independent
+fake policy `p`, nongit root `r`, root directory and nonexecutable file `a` containing
+`x`. Its fake external closure/host/metadata guarantees are assumed, never inferred
+from `p`. With these separate assumptions it models ObservedUntrusted only.
+
+```python
+from hashlib import sha256
+u8 = lambda n: n.to_bytes(1, 'big')
+u16 = lambda n: n.to_bytes(2, 'big')
+u32 = lambda n: n.to_bytes(4, 'big')
+u64 = lambda n: n.to_bytes(8, 'big')
+B = lambda x: u32(len(x)) + x
+L = lambda xs: u32(len(xs)) + b''.join(B(x) for x in xs)
+F = b'codex-smart/current-source-file/v1\0'
+D = b'codex-smart/current-source-manifest/v1\0'
+c = sha256(F + u64(1) + b'x').digest()
+root = B(b'r') + u8(1) + B(b'')
+entry = lambda p,k,v: u8(1) + B(b'r') + B(L(p)) + u8(k) + B(v)
+e0 = entry([], 2, L([B(b'a') + u8(1)]))
+e1 = entry([b'a'], 1, u8(0) + u64(1) + B(c))
+M = D + u16(1) + B(b'p') + L([root]) + L([e0,e1])
+assert len(M) == 178
+assert c.hex() == 'c2586d2caf753b40fd3dfeef9547a73545ecafdfd501c8d43021d412b1bf16a8'
+assert sha256(M).hexdigest() == '3a90e011e2e94c4a9a61f9ff7ec591860a1c54df0eca87c487b41f0f7016f31b'
+```
+
+| Single mutation of qualified fake baseline (other prerequisites held) | Expected enum |
+| --- | --- |
+| Remove independent nomination / semantic completeness evidence | Unknown(MissingNomination) / Unknown(UnqualifiedCoverage) |
+| Self-inconsistent member/record set, duplicate path/role or invalid encoding | Reject(Conflict) |
+| Remove/add a relevant entry or directory member against a prior held baseline | Reject(IdentityMismatch) |
+| Required file absent/unreadable; required Git object missing | Unknown(UnreadableInput); Unknown(UnobservableInput) |
+| Relevant ignored/generated input excluded or missing from policy closure | Unknown(UnqualifiedCoverage) |
+| Stale index claim vs held index bytes; changed staged blob or mode | Reject(IdentityMismatch) |
+| Malformed framing/Git/index, wrong version/enum/order, trailing bytes | Reject(Conflict) |
+| Index stages 1–3; sparse checkout | Reject(Conflict); Unknown(UnqualifiedCoverage) |
+| Case/path alias, known collision, duplicate root or object identity | Reject(Conflict) |
+| Slash/NUL/dot/dot-dot component, symlink/ancestor link, escape | Reject(UnsafeTraversal) |
+| File becomes directory vs held snapshot; executable/ACL/other bound metadata changes | Reject(IdentityMismatch) |
+| Hardlink count >1, FIFO/device/socket, crossed/substituted mount | Reject(UnsafeTraversal) |
+| Submodule gitlink only; LFS pointer without relevant content | Unknown(UnqualifiedCoverage) |
+| Changed file bytes; same bytes but replaced object | Reject(IdentityMismatch) |
+| Non-UTF8 name exposed exactly (reframe member/path consistently) | ObservedUntrusted |
+| Unsupported name/case semantics or mount/object observation API | Unknown(UnobservableInput) |
+| 4,097 entries, 16 MiB+1 file, 128 MiB+1 total, 65 components, >30s or overflow | Reject(OverBudget) |
+| Candidate write race without qualified isolation, even two equal scans | Unknown(UnstableSnapshot) |
+| Generation changes between capture/revalidation; TOCTOU after revalidation | Reject(GenerationChanged); Unknown(UnstableSnapshot) without atomic-use evidence |
+| Forbidden private access/output; overbudget plus missing nomination | Reject(PrivacyViolation); Reject(OverBudget) |
+
+These are proposed vectors, not implemented collector tests. This new manifest's
+limits/bytes are separate from #137 envelope v1's 16 KiB E / 64 KiB combined caps,
+S/K encoding and existing receipt digest. `BindingClaims.source` (E tag `14`) remains
+an untrusted 32-byte claim: no automatic manifest conversion is specified.
+`ParseOnly`, evidence binding and `compare_evidence` are unchanged; independent
+policy, host qualification and atomic-use evidence remain blockers, not promises.
+
 ### Reproducible byte-level offline vectors
 
 The fixture script below specifies complete positive bytes by construction,
