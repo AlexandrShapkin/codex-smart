@@ -97,7 +97,7 @@ auto-reviews, auto-merges or deploys.
   `python-unittest` (default) or `rust-cargo-test` (required for any
   `.rs` path). The Rust recipe uses only the system-installed
   `/usr/bin/cargo test --locked --offline --workspace`, with distro
-  `/usr/bin/rustc` and `/usr/bin/cc` available for compilation/linking,
+  `/usr/bin/rustc` and direct `/usr/bin/gcc` linker available for compilation/linking,
   and with `HOME` and
   `CARGO_HOME` isolated under `/tmp` and the entire source tree mounted
   read-only. It intentionally does **not** expose a user's rustup profile,
