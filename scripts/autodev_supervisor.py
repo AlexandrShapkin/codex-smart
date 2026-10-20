@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import signal
 import shutil
 import stat
 import subprocess
@@ -397,6 +398,33 @@ def pinned_executable(path, expected_sha):
     return path
 
 
+def bounded_codex(argv, *, cwd, env, seconds):
+    """Terminate the complete CLI process group on timeout/interruption."""
+    with open(os.devnull, "wb") as sink:
+        child = subprocess.Popen(
+            argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+            stdout=sink, stderr=sink, start_new_session=True,
+        )
+        try:
+            child.communicate(timeout=seconds)
+        except BaseException:
+            # Kill the entire private session, not just the launcher PID.
+            try:
+                os.killpg(child.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                child.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(child.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                child.wait(timeout=2)
+            raise
+        return child.returncode
+
+
 def run_task(repo, directory, task, codex, seconds, rustfmt=None, codex_sha=None):
     with tempfile.TemporaryDirectory(prefix="source-", dir=directory) as base:
         scratch = Path(base)
@@ -412,14 +440,12 @@ def run_task(repo, directory, task, codex, seconds, rustfmt=None, codex_sha=None
         env = {k: os.environ[k] for k in ("PATH", "HOME", "LANG", "CODEX_HOME")
                if k in os.environ}
         pinned_executable(codex, codex_sha)
-        with open(os.devnull, "wb") as sink:
-            outcome = subprocess.run(
-                [str(codex), "--ask-for-approval", "never", "exec",
-                 "--sandbox", "workspace-write", "--skip-git-repo-check", prompt],
-                cwd=scratch, env=env, stdin=subprocess.DEVNULL,
-                stdout=sink, stderr=sink, timeout=seconds, check=False,
-            )
-        if outcome.returncode:
+        code = bounded_codex(
+            [str(codex), "--ask-for-approval", "never", "exec",
+             "--sandbox", "workspace-write", "--skip-git-repo-check", prompt],
+            cwd=scratch, env=env, seconds=seconds,
+        )
+        if code:
             deny("Codex exited unsuccessfully")
         validate_sources(scratch, task["paths"], rustfmt=rustfmt)
         return apply_changes(repo, scratch, task["paths"], copied)
