@@ -209,7 +209,7 @@ class SupervisorTests(unittest.TestCase):
         expected = hashlib.sha256(self.bwrap.read_bytes()).hexdigest()
         original_is_file = Path.is_file
         def fake_is_file(path):
-            if str(path) == "/usr/bin/cargo":
+            if str(path) in ("/usr/bin/cargo", "/usr/bin/rustc", "/usr/bin/cc"):
                 return True
             return original_is_file(path)
         with mock.patch.object(Path, "is_file", fake_is_file), \
