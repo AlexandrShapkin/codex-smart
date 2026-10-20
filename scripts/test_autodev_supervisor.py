@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -193,6 +194,22 @@ class SupervisorTests(unittest.TestCase):
             autodev.execute(self.args("run", "--codex", str(self.codex)))
         with self.assertRaises(autodev.Refused):
             autodev.execute(self.args("run", "--codex", "/does/not/exist", "--apply"))
+        self.assertFalse((self.state / "state.json").exists())
+
+    def test_model_timeout_terminates_and_refuses_to_commit(self):
+        self.codex.write_text(
+            "#!/usr/bin/env python3\n"
+            "import time\n"
+            "time.sleep(60)\n"
+        )
+        self.codex.chmod(0o700)
+        with self.assertRaises(subprocess.TimeoutExpired):
+            autodev.bounded_codex(
+                [str(self.codex), "exec", "ignored"],
+                cwd=self.repo, env={"PATH": os.environ.get("PATH", "/usr/bin:/bin")},
+                seconds=0.2,
+            )
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
         self.assertFalse((self.state / "state.json").exists())
 
     def test_explicit_codex_pin_denies_mismatch_before_model_launch(self):
