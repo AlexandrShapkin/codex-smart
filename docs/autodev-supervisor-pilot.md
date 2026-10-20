@@ -43,6 +43,13 @@ python3 scripts/autodev_supervisor.py run --apply --manifest /private/queue.json
   --codex /absolute/verified/path/to/codex
 ~~~
 
+To run only one or two stages per invocation, pass `--max-stages 1`
+or `--max-stages 2`. If the process finishes its allotted stages cleanly,
+the private receipt stays at `ready` and another explicit `run --apply`
+continues from the verified SHA without repeating prior commits. The
+`--publish-draft` option refuses partial batches; a crashed or failed
+`started` attempt still requires manual reconciliation, never retry.
+
 Read progress or interruption status:
 
 ~~~sh
