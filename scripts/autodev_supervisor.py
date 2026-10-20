@@ -127,6 +127,10 @@ def checkout(repo, doc):
     for part in [repo, *repo.parents]:
         if part.is_symlink():
             deny("symlink in checkout ancestry")
+    # The source branch must be a separate Git worktree, never a renamed
+    # primary checkout that might hold unrelated operator state.
+    if not (repo / ".git").is_file() or (repo / ".git").is_symlink():
+        deny("dedicated linked git worktree required")
     top = git(repo, "rev-parse", "--show-toplevel").stdout.decode().strip()
     branch = git(repo, "symbolic-ref", "--short", "HEAD").stdout.decode().strip()
     head = git(repo, "rev-parse", "HEAD").stdout.decode().strip()
