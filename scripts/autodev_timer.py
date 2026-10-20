@@ -5,6 +5,7 @@ This module NEVER writes systemd units, enables a timer, or requests Codex
 credentials. Render is read-only. Run requires a 0600 local consent file.
 """
 import argparse
+import importlib.util
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
@@ -14,7 +15,12 @@ import re
 import stat
 import sys
 
-import autodev_supervisor as supervisor
+# -I excludes the script directory from sys.path; import the adjacent
+# repository-owned module by its exact file, not through user PYTHONPATH.
+SUPERVISOR_PATH = Path(__file__).resolve().with_name("autodev_supervisor.py")
+spec = importlib.util.spec_from_file_location("autodev_supervisor", SUPERVISOR_PATH)
+supervisor = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(supervisor)
 
 CONFIG_KEYS = {
     "schema", "manifest", "repo", "state_dir", "codex", "codex_sha256",
