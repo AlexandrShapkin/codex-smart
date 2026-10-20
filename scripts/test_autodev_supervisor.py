@@ -140,6 +140,9 @@ class SupervisorTests(unittest.TestCase):
         self.write_manifest(count=3, paths=[".github/unsafe.yml"])
         with self.assertRaises(autodev.Refused):
             autodev.manifest(self.manifest)
+        self.write_manifest(count=3, paths=["deploy/run.sh"])
+        with self.assertRaises(autodev.Refused):
+            autodev.manifest(self.manifest)
         self.write_manifest(count=3, paths=["../escape.py"])
         with self.assertRaises(autodev.Refused):
             autodev.manifest(self.manifest)
@@ -161,6 +164,52 @@ class SupervisorTests(unittest.TestCase):
         with self.assertRaises(autodev.Refused):
             autodev.execute(self.args("run", "--codex", "/does/not/exist", "--apply"))
         self.assertFalse((self.state / "state.json").exists())
+
+    def test_python_syntax_gate_denies_before_worktree_mutation(self):
+        self.codex.write_text(
+            "#!/usr/bin/env python3\n"
+            "from pathlib import Path\n"
+            "Path('small.py').write_text('def broken(:\\n')\n"
+        )
+        self.codex.chmod(0o700)
+        with self.assertRaises(autodev.Refused):
+            self.run_case()
+        self.assertEqual((self.repo / "small.py").read_text(), "answer = 42\n")
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
+        receipt = json.loads((self.state / "state.json").read_text())
+        self.assertEqual(receipt["phase"], "started")
+        self.assertEqual(receipt["index"], 0)
+
+    def test_unsafe_checkpoint_symlink_and_permissions_refuse(self):
+        receipt = self.state / "state.json"
+        outside = self.base / "outside"
+        outside.write_text('{"schema":1}')
+        receipt.symlink_to(outside)
+        with self.assertRaises(autodev.Refused):
+            autodev.load_state(self.state)
+        receipt.unlink()
+        receipt.write_text('{"schema":1}')
+        receipt.chmod(0o644)
+        with self.assertRaises(autodev.Refused):
+            autodev.load_state(self.state)
+
+    def test_rust_tasks_require_explicit_formatter(self):
+        (self.repo / "lib.rs").write_text("fn x() {}")
+        git(self.repo, "add", "lib.rs")
+        git(self.repo, "commit", "-qm", "add Rust fixture")
+        self.head = git(self.repo, "rev-parse", "HEAD")
+        self.write_manifest(paths=["lib.rs"])
+        self.codex.write_text(
+            "#!/usr/bin/env python3\n"
+            "from pathlib import Path\n"
+            "Path('lib.rs').write_text('fn x() { }\\n')\n"
+        )
+        self.codex.chmod(0o700)
+        with self.assertRaises(autodev.Refused):
+            self.run_case()
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
+        self.assertEqual(json.loads((self.state / "state.json").read_text())["phase"],
+                         "started")
 
     def test_manifest_swap_blocks_resuming_or_publishing(self):
         self.assertEqual(self.run_case(), 0)
