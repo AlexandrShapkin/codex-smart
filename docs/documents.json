@@ -738,6 +738,15 @@
       "stages": [
         "adaptive"
       ]
+    },
+    {
+      "path": ".github/DEVELOPMENT_INTERFACE.md",
+      "title": "Shared repository development interface",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
     }
   ]
 }

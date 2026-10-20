@@ -7,6 +7,7 @@ GitHub Issues own live state; local issue files preserve design references.
 
 | Document | Owner | Role | Stages |
 | --- | --- | --- | --- |
+| [Shared repository development interface](../.github/DEVELOPMENT_INTERFACE.md) | engineering | current | workflow |
 | [pull_request_template](../.github/pull_request_template.md) | engineering | current | workflow |
 | [Repository engineering contract](../AGENTS.md) | engineering | current | workflow |
 | [Changelog](../CHANGELOG.md) | engineering | current | baseline |
