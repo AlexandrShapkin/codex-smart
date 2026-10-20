@@ -359,7 +359,25 @@ def apply_changes(repo, scratch, paths, copied):
     return changed
 
 
-def run_task(repo, directory, task, codex, seconds, rustfmt=None):
+def pinned_executable(path, expected_sha):
+    if (not isinstance(expected_sha, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", expected_sha)
+            or not path.is_absolute() or path.is_symlink()
+            or not path.is_file() or not os.access(path, os.X_OK)):
+        deny("absolute executable and SHA256 pin required")
+    st = path.stat()
+    if not stat.S_ISREG(st.st_mode) or st.st_size > 100 * 1024 * 1024:
+        deny("unsafe Codex executable")
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        while chunk := source.read(1024 * 1024):
+            digest.update(chunk)
+    if digest.hexdigest() != expected_sha:
+        deny("Codex binary SHA256 changed")
+    return path
+
+
+def run_task(repo, directory, task, codex, seconds, rustfmt=None, codex_sha=None):
     with tempfile.TemporaryDirectory(prefix="source-", dir=directory) as base:
         scratch = Path(base)
         copied = source_copy(repo, scratch)
@@ -373,6 +391,7 @@ def run_task(repo, directory, task, codex, seconds, rustfmt=None):
         # Do not forward GitHub tokens or unrelated secrets to the model.
         env = {k: os.environ[k] for k in ("PATH", "HOME", "LANG", "CODEX_HOME")
                if k in os.environ}
+        pinned_executable(codex, codex_sha)
         with open(os.devnull, "wb") as sink:
             outcome = subprocess.run(
                 [str(codex), "--ask-for-approval", "never", "exec",
@@ -430,6 +449,7 @@ def execute(argv=None):
     parser.add_argument("--repo", required=True, type=Path)
     parser.add_argument("--state-dir", type=Path)
     parser.add_argument("--codex", type=Path)
+    parser.add_argument("--codex-sha256")
     parser.add_argument("--rustfmt", type=Path)
     parser.add_argument("--stage-seconds", type=int, default=900)
     parser.add_argument("--max-stages", type=int, default=5)
@@ -462,10 +482,7 @@ def execute(argv=None):
             deny("stage timeout outside approved range")
         if not 1 <= args.max_stages <= MAX_TASKS:
             deny("invalid invocation stage budget")
-        if args.codex is None or not args.codex.is_absolute() or args.codex.is_symlink() or not args.codex.is_file():
-            deny("absolute, installed Codex executable required")
-        if not os.access(args.codex, os.X_OK):
-            deny("Codex executable unavailable")
+        pinned_executable(args.codex, args.codex_sha256) if args.codex else deny("Codex executable required")
         head, branch = checkout(args.repo, doc)
         if state is None:
             if head != doc["expected_sha"]:
@@ -486,7 +503,7 @@ def execute(argv=None):
             state["phase"] = "started"
             save_state(args.state_dir, state)  # before ANY model invocation
             changed = run_task(args.repo, args.state_dir, task, args.codex, args.stage_seconds,
-                               rustfmt=args.rustfmt)
+                               rustfmt=args.rustfmt, codex_sha=args.codex_sha256)
             new_head = commit_stage(args.repo, task, changed)
             state["commits"].append({"task_id": task["id"], "sha": new_head})
             state["head"] = new_head
