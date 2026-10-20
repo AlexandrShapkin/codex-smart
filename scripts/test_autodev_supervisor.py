@@ -290,6 +290,13 @@ class SupervisorTests(unittest.TestCase):
         finally:
             os.close(fd)
 
+    def test_rejects_overlapping_codex_auth_profile(self):
+        candidate = self.state / "codex-profile"
+        candidate.mkdir(mode=0o700)
+        with self.assertRaises(autodev.Refused):
+            self.run_case(extra=["--codex-home", str(candidate)])
+        self.assertFalse((self.state / "state.json").exists())
+
     def test_secret_environment_not_forwarded(self):
         # The model subprocess is fake and dumps its inherited environment into
         # an explicitly allowlisted file, which the supervisor then commits.
@@ -299,18 +306,22 @@ class SupervisorTests(unittest.TestCase):
             "import os\n"
             "Path('small.py').write_text('# GH='"
             " + str('GH_TOKEN' in os.environ) + ' SSH='"
-            " + str('SSH_AUTH_SOCK' in os.environ) + '\\n')\n"
+            " + str('SSH_AUTH_SOCK' in os.environ) + ' CLEANHOME='"
+            " + str(Path(os.environ['HOME']) == Path.cwd()) + ' PROFILE='"
+            " + str('CODEX_HOME' in os.environ) + '\\n')\n"
         )
         self.codex.chmod(0o700)
         with mock.patch.dict(os.environ, {
             "GH_TOKEN": "private", "GITHUB_TOKEN": "private",
             "SSH_AUTH_SOCK": "/tmp/not-a-real-agent",
+            "HOME": "/home/operator-with-private-config",
+            "CODEX_HOME": "/home/operator-with-private-config/.codex",
         }):
             with self.assertRaises(autodev.Refused):
                 # second stage repeats the same output -> no-change fail closed
                 self.run_case()
         output = (self.repo / "small.py").read_text()
-        self.assertIn("GH=False SSH=False", output)
+        self.assertIn("GH=False SSH=False CLEANHOME=True PROFILE=False", output)
 
 
 if __name__ == "__main__":
