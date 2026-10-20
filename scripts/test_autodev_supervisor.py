@@ -32,7 +32,15 @@ class SupervisorTests(unittest.TestCase):
         git(self.source, "config", "user.name", "Sandbox")
         git(self.source, "config", "user.email", "sandbox@example.invalid")
         (self.source / "small.py").write_text("answer = 42\n")
-        git(self.source, "add", "small.py")
+        (self.source / "scripts").mkdir()
+        (self.source / "scripts" / "test_small.py").write_text(
+            "import unittest\n"
+            "from pathlib import Path\n"
+            "class SmallTests(unittest.TestCase):\n"
+            "    def test_source(self):\n"
+            "        self.assertTrue(Path('small.py').is_file())\n"
+        )
+        git(self.source, "add", "small.py", "scripts/test_small.py")
         git(self.source, "commit", "-qm", "initial")
         git(self.source, "remote", "add", "origin",
             "https://github.com/AlexandrShapkin/sandbox.git")
@@ -59,6 +67,22 @@ class SupervisorTests(unittest.TestCase):
             "  Path('private.txt').write_text('leak')\n"
         )
         self.codex.chmod(0o700)
+        self.bwrap = self.base / "fake-bwrap"
+        self.bwrap.write_text(
+            "#!/usr/bin/env python3\n"
+            "import sys\n"
+            "from pathlib import Path\n"
+            "args = sys.argv[1:]\n"
+            "if '--unshare-all' not in args or '--ro-bind' not in args:\n"
+            "    sys.exit(23)\n"
+            "try:\n"
+            "    source = Path(args[args.index('/workspace') - 1])\n"
+            "    text = (source / 'small.py').read_text()\n"
+            "except (ValueError, OSError):\n"
+            "    sys.exit(24)\n"
+            "sys.exit(17 if 'FAIL_PROJECT_VALIDATION' in text else 0)\n"
+        )
+        self.bwrap.chmod(0o700)
 
     def write_manifest(self, count=3, prompts=None, paths=None):
         prompts = prompts or [f"Add regression test stage {i}" for i in range(count)]
@@ -80,8 +104,11 @@ class SupervisorTests(unittest.TestCase):
 
     def run_case(self, **kwargs):
         sha = hashlib.sha256(self.codex.read_bytes()).hexdigest()
+        bwrap_sha = hashlib.sha256(self.bwrap.read_bytes()).hexdigest()
         return autodev.execute(self.args(
             "run", "--codex", str(self.codex), "--codex-sha256", sha,
+            "--test-bwrap", str(self.bwrap),
+            "--test-bwrap-sha256", bwrap_sha,
             "--apply", *kwargs.get("extra", [])
         ))
 
@@ -134,6 +161,34 @@ class SupervisorTests(unittest.TestCase):
         partial = json.loads((self.state / "state.json").read_text())
         self.assertEqual(partial["index"], 1)
         self.assertEqual(partial["phase"], "ready")
+
+    def test_project_validation_failure_never_commits_or_advances(self):
+        self.write_manifest(prompts=[
+            "FAIL_PROJECT_VALIDATION: reject stage zero",
+            "Add regression test stage 1", "Add regression test stage 2",
+        ])
+        with self.assertRaises(autodev.Refused):
+            self.run_case()
+        state = json.loads((self.state / "state.json").read_text())
+        self.assertEqual(state["phase"], "started")
+        self.assertEqual(state["index"], 0)
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
+        self.assertEqual((self.repo / "small.py").read_text(), "answer = 42\n")
+
+    def test_project_gate_requires_verified_bwrap_before_codex(self):
+        sha = hashlib.sha256(self.codex.read_bytes()).hexdigest()
+        with self.assertRaises(autodev.Refused):
+            autodev.execute(self.args(
+                "run", "--codex", str(self.codex), "--codex-sha256", sha,
+                "--test-bwrap", str(self.bwrap),
+                "--test-bwrap-sha256", "0" * 64, "--apply"
+            ))
+        self.assertFalse((self.state / "state.json").exists())
+
+    def test_project_gate_never_accepts_unbounded_timeout(self):
+        with self.assertRaises(autodev.Refused):
+            self.run_case(extra=["--test-seconds", "999"])
+        self.assertFalse((self.state / "state.json").exists())
 
     def test_started_attempt_never_retried_after_failure(self):
         self.write_manifest(prompts=[
