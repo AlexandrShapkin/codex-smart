@@ -34,6 +34,8 @@ class FakeAPI:
             next(x for x in self.labels if x["name"] == name).update(body)
             return body
         if endpoint.endswith("/labels") and method == "POST":
+            if any(x["name"].casefold() == body["name"].casefold() for x in self.labels):
+                raise AdminError("GitHub label already exists (case-insensitive)")
             self.labels.append(dict(body))
             return body
         if "milestones?state=all" in endpoint:
@@ -74,6 +76,47 @@ class GitHubAdminTests(unittest.TestCase):
         sync_labels(api, "codex-smart", True)
         self.assertEqual(len(api.labels), 2)
         self.assertEqual(api.labels[1]["name"], "legacy")
+
+    def test_case_only_difference_is_an_empty_dry_run(self):
+        for name in ["priority:P0", "Priority:P0", "PRIORITY:P0"]:
+            with self.subTest(name=name):
+                api = FakeAPI(labels=[{"name": name, "color": "b60205", "description": "Critical"}])
+                self.assertEqual(sync_labels(api, "relayforge", False)["actions"], [])
+                sync_labels(api, "relayforge", True)
+                self.assertTrue(all(call[0] == "GET" for call in api.calls))
+                self.assertEqual(api.labels[0]["name"], name)
+
+    def test_casefold_update_keeps_actual_name_and_converges(self):
+        api = FakeAPI(labels=[{"name": "Priority:P0", "color": "ffffff", "description": "Old"}])
+        plan = sync_labels(api, "relayforge", False)
+        self.assertEqual(plan["actions"], [{"action": "update", "label": {
+            "name": "Priority:P0", "color": "b60205", "description": "Critical"}}])
+        sync_labels(api, "relayforge", True)
+        writes = [call for call in api.calls if call[0] != "GET"]
+        self.assertEqual(len(writes), 1)
+        method, path, body = writes[0]
+        self.assertEqual(method, "PATCH")
+        self.assertTrue(path.endswith("/labels/Priority:P0"))
+        self.assertEqual(body["name"], "Priority:P0")
+        self.assertNotIn("new_name", body)
+        self.assertEqual(api.labels[0]["name"], "Priority:P0")
+        self.assertEqual(sync_labels(api, "relayforge", False)["actions"], [])
+        sync_labels(api, "relayforge", True)
+        self.assertEqual(writes, [call for call in api.calls if call[0] != "GET"])
+
+    def test_case_colliding_schema_is_rejected_without_writes(self):
+        schema = {**SCHEMA, "labels": [SCHEMA["labels"][0],
+                  {**SCHEMA["labels"][0], "name": "Priority:P0"}]}
+        api = FakeAPI(schema=schema)
+        with self.assertRaises(AdminError):
+            sync_labels(api, "relayforge", True)
+        self.assertTrue(all(call[0] == "GET" for call in api.calls))
+
+    def test_case_colliding_live_definitions_are_rejected(self):
+        api = FakeAPI(labels=[{"name": "priority:P0"}, {"name": "Priority:P0"}])
+        with self.assertRaises(AdminError):
+            sync_labels(api, "relayforge", True)
+        self.assertTrue(all(call[0] == "GET" for call in api.calls))
 
     def test_unknown_project_denied(self):
         with self.assertRaises(AdminError):

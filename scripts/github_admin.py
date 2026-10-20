@@ -94,13 +94,13 @@ def label_schema(api: GhAPI, project: str) -> list[dict]:
         if not isinstance(item, dict) or set(item) != {"name", "color", "description"}:
             raise AdminError("invalid label fields")
         name, color, description = item["name"], item["color"], item["description"]
-        if not isinstance(name, str) or not LABEL_NAME.fullmatch(name) or name in seen:
+        if not isinstance(name, str) or not LABEL_NAME.fullmatch(name) or name.casefold() in seen:
             raise AdminError("invalid or duplicate label name")
         if not isinstance(color, str) or not COLOR.fullmatch(color):
             raise AdminError("invalid label color")
         if not isinstance(description, str) or len(description) > 200 or "\n" in description:
             raise AdminError("invalid label description")
-        seen.add(name)
+        seen.add(name.casefold())
     return labels
 
 
@@ -111,13 +111,14 @@ def plan_labels(api: GhAPI, project: str) -> list[dict]:
     for label in current:
         if not isinstance(label, dict) or not isinstance(label.get("name"), str):
             raise AdminError("invalid live label")
-        if label["name"] in by_name:
+        if label["name"].casefold() in by_name:
             raise AdminError("duplicate live label")
-        by_name[label["name"]] = label
+        by_name[label["name"].casefold()] = label
     actions = []
     for item in desired:
-        old = by_name.get(item["name"])
-        new = {"name": item["name"], "color": item["color"].lower(),
+        old = by_name.get(item["name"].casefold())
+        new = {"name": old["name"] if old is not None else item["name"],
+               "color": item["color"].lower(),
                "description": item["description"]}
         if old is None:
             actions.append({"action": "create", "label": new})
