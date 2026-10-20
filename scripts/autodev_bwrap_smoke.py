@@ -61,7 +61,7 @@ def main():
             raise
         if (scratch / "scripts" / "forbidden").exists():
             raise RuntimeError("wrote through a supposedly read-only mount")
-    if not Path("/usr/bin/cargo").is_file() or not Path("/usr/bin/rustc").is_file():
+    if not all(Path(p).is_file() for p in ("/usr/bin/cargo", "/usr/bin/rustc", "/usr/bin/gcc")):
         raise RuntimeError("System Rust toolchain not installed")
     with tempfile.TemporaryDirectory(prefix="autodev-live-cargo-") as d:
         scratch = Path(d)
@@ -103,6 +103,7 @@ def main():
                 "--setenv", "CARGO_HOME", "/tmp/cargo",
                 "--setenv", "CARGO_TARGET_DIR", "/tmp/target",
                 "--setenv", "CARGO_NET_OFFLINE", "true",
+                "--setenv", "RUSTFLAGS", "-C linker=/usr/bin/gcc",
                 "--", "/usr/bin/cargo", "test", "--locked", "--offline",
                 "--workspace",
             ]
