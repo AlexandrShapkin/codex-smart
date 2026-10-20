@@ -237,6 +237,26 @@ def save_state(directory, state):
         os.close(fd)
 
 
+def preflight_scopes(repo, doc, rustfmt):
+    """Reject unusable task paths before committing a model attempt."""
+    tracked = {os.fsdecode(p) for p in
+               git(repo, "ls-files", "-z").stdout.split(b"\0") if p}
+    for task in doc["tasks"]:
+        for name in task["paths"]:
+            path = repo / name
+            if (name not in tracked or not path.is_file()
+                    or path.is_symlink() or path.stat().st_size > MAX_SOURCE_FILE):
+                deny("task path missing, unsafe or oversized")
+            if any(parent.is_symlink() for parent in path.parents if parent != repo):
+                deny("task path has symlink ancestor")
+            if name.endswith(".rs") and (
+                rustfmt is None or not rustfmt.is_absolute()
+                or rustfmt.is_symlink() or not rustfmt.is_file()
+                or not os.access(rustfmt, os.X_OK)
+            ):
+                deny("Rust task requires explicit --rustfmt before model launch")
+
+
 def source_copy(repo, temp):
     items = git(repo, "ls-files", "-z").stdout.split(b"\0")
     entries = [os.fsdecode(s) for s in items if s]
@@ -486,6 +506,7 @@ def execute(argv=None):
             deny("Codex executable required")
         pinned_executable(args.codex, args.codex_sha256)
         head, branch = checkout(args.repo, doc)
+        preflight_scopes(args.repo, doc, args.rustfmt)
         if state is None:
             if head != doc["expected_sha"]:
                 deny("initial SHA mismatch")
