@@ -427,7 +427,8 @@ def bounded_codex(argv, *, cwd, env, seconds):
         return child.returncode
 
 
-def run_task(repo, directory, task, codex, seconds, rustfmt=None, codex_sha=None):
+def run_task(repo, directory, task, codex, seconds, rustfmt=None, codex_sha=None,
+             codex_home=None):
     with tempfile.TemporaryDirectory(prefix="source-", dir=directory) as base:
         scratch = Path(base)
         copied = source_copy(repo, scratch)
@@ -439,8 +440,10 @@ def run_task(repo, directory, task, codex, seconds, rustfmt=None, codex_sha=None
             "edit small and testable. Task: " + task["prompt"]
         )
         # Do not forward GitHub tokens or unrelated secrets to the model.
-        env = {k: os.environ[k] for k in ("PATH", "HOME", "LANG", "CODEX_HOME")
-               if k in os.environ}
+        env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+               "HOME": str(scratch), "LANG": "C.UTF-8"}
+        if codex_home is not None:
+            env["CODEX_HOME"] = str(codex_home)
         pinned_executable(codex, codex_sha)
         code = bounded_codex(
             [str(codex), "--ask-for-approval", "never", "exec",
@@ -498,6 +501,7 @@ def execute(argv=None):
     parser.add_argument("--state-dir", type=Path)
     parser.add_argument("--codex", type=Path)
     parser.add_argument("--codex-sha256")
+    parser.add_argument("--codex-home", type=Path)
     parser.add_argument("--rustfmt", type=Path)
     parser.add_argument("--stage-seconds", type=int, default=900)
     parser.add_argument("--max-stages", type=int, default=5)
@@ -533,6 +537,13 @@ def execute(argv=None):
         if args.codex is None:
             deny("Codex executable required")
         pinned_executable(args.codex, args.codex_sha256)
+        if args.codex_home is not None:
+            safe_directory(args.codex_home, mode=0o700)
+            if (args.codex_home == args.repo
+                    or args.codex_home.is_relative_to(args.repo)
+                    or args.codex_home == args.state_dir
+                    or args.codex_home.is_relative_to(args.state_dir)):
+                deny("dedicated Codex profile cannot overlap source or receipts")
         head, branch = checkout(args.repo, doc)
         preflight_scopes(args.repo, doc, args.rustfmt)
         if state is None:
@@ -554,7 +565,8 @@ def execute(argv=None):
             state["phase"] = "started"
             save_state(args.state_dir, state)  # before ANY model invocation
             changed = run_task(args.repo, args.state_dir, task, args.codex, args.stage_seconds,
-                               rustfmt=args.rustfmt, codex_sha=args.codex_sha256)
+                               rustfmt=args.rustfmt, codex_sha=args.codex_sha256,
+                               codex_home=args.codex_home)
             new_head = commit_stage(args.repo, task, changed)
             state["commits"].append({"task_id": task["id"], "sha": new_head})
             state["head"] = new_head
