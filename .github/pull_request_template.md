@@ -1,32 +1,44 @@
-## Problem
+## Owning Issue / task
 
-## Scope
+<!-- Link the owning Issue and related cross-repository Issues; priority and area. -->
 
-## Approach
+## Base SHA / current full head SHA
 
-## Changes
+<!-- Exact 40-character base/head IDs; recheck GitHub after changes. -->
 
-## Validation
+## Problem, acceptance and scoped changes
 
-<!-- Commands/results and CI/Security evidence for the exact final SHA. -->
+<!-- State the measurable result, changed files and explicitly excluded work. -->
 
-## Safety / compatibility
+## Validation and negative cases
 
-## Issue / stage
+<!-- Local commands + actual results, not planned/assumed PASS. -->
 
-<!-- Link the owning issue; identify stage owner and release milestone separately. -->
+## GitHub exact-head CI / Security / platforms
 
-## Risks and known limits
+<!-- Links to actual runs at the current full head; Unknown is not PASS. -->
 
-## Follow-ups
+## Security, permissions and private data
+
+<!-- No secrets or unauthorized device/prod changes; disclose new capabilities. -->
+
+## Independent review, merge and rollback
+
+<!-- Technical review is distinct from GitHub approval and owner merge authority. -->
+
+## Remaining dependencies / follow-ups
+
+## Project-specific mandatory checks
+
+Codex Smart: `just status`, `just context`, `just docs-check`, full `just check`; cached `just security` where applicable. Preserve generated index ownership, exact-head CI and Security/review, independent technical ACCEPT, branch protection and the explicit #125 merge veto.
 
 ## Checklist
 
-- [ ] Scope matches owning issue/stage
-- [ ] Focused regression tests added/updated (or documentation-only scope explained)
-- [ ] `just check` passes
-- [ ] Security gate passes when applicable
-- [ ] Docs updated at canonical owner
-- [ ] Generated docs were not manually edited
-- [ ] No hidden install/network/config mutation introduced
-- [ ] Known limits are documented
+- [ ] Owning Issue and acceptance match the actual scope
+- [ ] Diff and all new files inspected; unrelated work preserved
+- [ ] Tests/negative cases done, or documentation-only exception explained
+- [ ] Current full SHA and exact-head CI/Security/platform evidence recorded
+- [ ] Existing stronger native gates preserved, not replaced by a smoke/no-op
+- [ ] Secrets, user data, release/install/device access boundaries preserved
+- [ ] Independent review and actual merge eligibility verified separately
+- [ ] Known limitations, rollback and unverified evidence are explicit
