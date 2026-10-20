@@ -110,7 +110,8 @@ def validate_contract(
     """
     if type(data) is not bytes or not 0 < len(data) <= MAX_BYTES:
         refuse("missing or oversized TOML")
-    if not isinstance(root, Path) or not root.is_absolute() or not root.is_dir():
+    if (not isinstance(root, Path) or not root.is_absolute() or
+            ".." in root.parts or not root.is_dir()):
         refuse("canonical absolute project root required")
     no_symlink_ancestry(root)
     if (type(expected_repository) is not str or not REPOSITORY.fullmatch(expected_repository)
