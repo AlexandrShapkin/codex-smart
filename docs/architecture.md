@@ -33,15 +33,16 @@ to explicitly requested Codex launches; see [ADR-0007](decisions/0007-owned-exec
 and [the command/transport matrix](tool-compatibility.md). No handshake or installer is
 part of normal startup. Hash verification narrows execution races without eliminating them.
 
-## Cross-repository Autonomous Development Contract v1 (proposal)
+## Cross-repository Autonomous Development Contract v1 (disabled metadata schema)
 
 The proposed `automation/project.toml` is an optional **data contract**, not
 a new orchestrator or an execution policy. This design is tracked in
 [Issue #165](https://github.com/AlexandrShapkin/codex-smart/issues/165).
 An initial disabled candidate exists in
 [RelayForge PR #72](https://github.com/AlexandrShapkin/relayforge/pull/72).
-No accepted Codex Smart parser, workflow adapter or autonomous integration is
-claimed. In particular, experimental PR #164's operator-owned JSON manifest,
+Draft [PR #167](https://github.com/AlexandrShapkin/codex-smart/pull/167)
+implements a **passive** stdlib TOML v1 parser and negative tests; it is not
+merged, is not an executable adapter, and grants no permission. In particular, experimental PR #164's operator-owned JSON manifest,
 offline test recipes and private checkpoint ledger remain independent and
 unchanged. The `run` command remains passthrough.
 
@@ -58,16 +59,77 @@ TOML fields in this proposal have these semantics:
 | `verification.profiles` | Named identifiers for project-owned **trusted adapter** verification, not shell scripts or free-form command strings. |
 | `verification.ci_workflows` | Required workflow path hints; cannot lower the currently enforced GitHub branch, check, reviewer or security gates. |
 | `verification.live_device_proof` | Additional environment evidence remains separately required where applicable. |
-| `execution.enabled`, `max_stage_seconds`, `max_changed_files`, `max_changed_lines` | Source-declared opt-in candidate and stage ceilings; runner limits and operator policy can only tighten them. |
+| `execution.enabled`, `max_stage_seconds`, `max_changed_files`, `max_changed_lines` | In v1 `enabled` MUST be `false`; stage ceilings are metadata bounded by independent operator policy. |
 | `execution.checkpoint_mode`, `auto_merge`, `auto_deploy` | Private external state and explicit lifecycle prohibitions. V1 requires `auto_merge = false` and `auto_deploy = false`. |
 | `change_policy.candidate_paths`, `blocked_unattended_paths` | Informational source areas and risk exclusions, not permission to write those paths. |
 
-The candidate RelayForge file starts with `execution.enabled = false`.
-Setting it to `true` in Git, a PR, or an Issue **never** grants execution
-authority: absent an independently authorized operator grant and a validated
-source snapshot, the executor must refuse. The exact accepted schema, optional
-extensions and any later activation mechanism require a separately reviewed
-implementation and compatibility negotiation.
+**Schema v1 is disabled-only:** `execution.enabled`, `auto_merge`, and
+`auto_deploy` MUST each be the TOML boolean `false`. Setting any to `true`
+causes immediate validation refusal, even with operator consent. Runtime
+activation, if developed, needs a different separately reviewed policy plane
+or version; tracked manifest content never grants authority.
+
+### Exact disabled-only v1 shape (parser baseline)
+
+Normative syntax for metadata consumers is aligned to Draft #167 at full
+head `12ebbc84547aae159f99cc33e4bef487e6e7f774`. The only required
+root-level keys are `schema_version`, `project_id`, `project_type`,
+`repository`, `context`, `verification`, `execution`, `change_policy`.
+All four child tables require **exactly** the keys shown in the table above;
+unknown, missing, duplicated or extension keys/tables, unsupported versions,
+invalid TOML/UTF-8 and manifests above 16,384 bytes are refused in v1. No
+extra platform keys or downgrade/forward compatibility are silently accepted.
+
+- `schema_version` is integer `1`, not boolean. `project_id` is 1–64
+  ASCII characters matching `[a-z][a-z0-9-]*` (final length and pattern
+  enforced in code); `repository` is a canonical `owner/name` string
+  matching the parser's bounded GitHub owner/repository grammar and the
+  caller-supplied identity. `project_type` is one of
+  `rust-workspace`, `python-stdlib`, `python-project`, `mixed`.
+- `context` requires `entrypoint`, `architecture`, `workflow`,
+  `current_plan`, `security` as **five distinct existing regular,
+  single-link file** pointers and literal `task_source = "github-issues"`.
+  Relative paths use slash-delimited ASCII `[A-Za-z0-9_.-]+` components
+  (max 200 characters), never absolute paths, `.`, `..`, `.git`,
+  empty segments, colons, backslashes or symlinked ancestors.
+- `verification.profiles` and `ci_workflows` are unique nonempty lists of
+  1–16 strings. Profile IDs must match lowercase ASCII
+  `[a-z][a-z0-9-]*`, be at most 64 characters and occur in an externally
+  supplied **trusted** registry. For `rust-workspace` at least one of
+  `rust-tests`/`rust-ci` is required; for Python types at least one
+  of `python-tests`/`python-unittest`; `mixed` requires both families.
+  This is a **shape floor**, not approval of any actual command or of a
+  sufficiently strong project-specific test suite. CI paths must point to
+  existing single-link regular `.github/workflows/*.yml` or `*.yaml`
+  files; `live_device_proof` is `separate` or `not-applicable`.
+- `execution.max_stage_seconds` is an integer 1–3600;
+  `max_changed_files` is integer 1–5, `max_changed_lines` is
+  integer 1–400. Booleans do not count as integers. `checkpoint_mode`
+  must be `external-private`; the three activation/merge/deploy booleans
+  must all be `false`.
+- `change_policy.candidate_paths` and `blocked_unattended_paths`
+  each require 1–16 unique relative path entries using the same path
+  grammar, with an optional single trailing `/` for directory notation.
+  Normalized aliases, overlapping prefixes between candidate and blocked
+  entries, and symlinked existing ancestors are refused. Entries are
+  informational and cannot confer write permissions.
+- The caller must provide an absolute root without lexical `..`, existing
+  directory and symlink-free ancestry; independent canonical repository and
+  project identities; identical 40-character lowercase hexadecimal
+  `accepted_main_sha`/`checkout_sha`; exact `checkout_clean = True`;
+  and a `frozenset` of trusted profile IDs. These are **supplied facts,
+  not attested facts**. Neither the parser nor its `lstat` checks verifies
+  Git origin, tracked files, immutable checkout or TOCTOU safety.
+
+Only explicit fixed-argv trusted adapters outside the repository contract
+may eventually translate profile IDs into OS commands, with project-specific
+mandatory tests, platform gates and externally observed exact-head CI/review
+evidence. RustCraft `just ci` and Windows/Linux checks, Assistant Hub's
+Python/public-tree/UI checks, and RelayForge's offline-vs-device distinction
+must remain stronger than any generic ID requirement. Unknown adapters,
+missing dependencies or proofs, and interruption/restart ambiguity are
+refusals. Draft #166 remains documentation-only; Draft #167 remains
+non-authorizing passive code. Neither can independently enable executions.
 
 ### Deterministic interpretation and authority
 
@@ -111,12 +173,14 @@ different evidence levels. Neither a commit nor green CI authorizes merge,
 release, live benchmarking, secret access or production deployment. Explicit
 owner vetoes, including the PR #125 merge prohibition, remain binding.
 
-Adoption sequence: (1) approve a small schema and offline validator;
-(2) add disabled metadata through independent PRs without rewriting existing
-`just` or CI behavior; (3) implement a pure Codex Smart adapter and
-negative-path Python/Rust tests; (4) verify four independent repositories
-without RDC or Assistant Hub; (5) only then create a generic template
-repository. This does not activate RustCraft stage DX2, merge experimental
+Adoption may be prepared **in parallel** on reviewable Draft branches:
+(1) review schema documentation and offline validator; (2) add disabled
+metadata through independent PRs on the four repositories without rewriting
+existing `just` or CI behavior; (3) independently review a trusted Git/source
+adapter and fixed-argv test-profile mappings; (4) verify cross-repository
+synthetic evidence without RDC or Assistant Hub; (5) only then consider a
+generic template. No cross-project manifest may be accepted as a runtime
+policy merely because its syntax passes. This does not activate RustCraft stage DX2, merge experimental
 PR #164, or create a parallel task queue.
 
 ## Linux target and libc ABI qualification
