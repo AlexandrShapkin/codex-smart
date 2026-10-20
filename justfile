@@ -69,5 +69,5 @@ security:
 verify: check security
 
 # Canonical nonmutating local CLI doctor; not a runtime readiness attestation.
-doctor:
-    cargo run --quiet --locked -p codex-smart-cli --bin codex-smart -- doctor
+doctor executable="" sha256="":
+    python3 -B scripts/prepared_doctor.py --executable {{quote(executable)}} --sha256 {{quote(sha256)}}
