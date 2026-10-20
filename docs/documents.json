@@ -251,7 +251,7 @@
       ]
     },
     {
-      "path": "docs/index.md",
+      "path": "docs/INDEX.md",
       "title": "Documentation index",
       "owner": "engineering",
       "role": "generated",
@@ -560,7 +560,7 @@
       ]
     },
     {
-      "path": "docs/workflow.md",
+      "path": "docs/PROJECT_WORKFLOW.md",
       "title": "Repository development workflow",
       "owner": "engineering",
       "role": "current",
@@ -751,15 +751,6 @@
     {
       "path": "AGENTS.local.md",
       "title": "AGENTS.local",
-      "owner": "engineering",
-      "role": "current",
-      "stages": [
-        "workflow"
-      ]
-    },
-    {
-      "path": "docs/INDEX.md",
-      "title": "INDEX",
       "owner": "engineering",
       "role": "current",
       "stages": [

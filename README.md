@@ -95,11 +95,11 @@ for protocol, actual post-spawn supervision and remaining containment limits.
 
 ## Development
 
-Start with `just context [STAGE]` and `just issues`; validate with `just check`. See the [development guide](docs/development.md) for prerequisites and [workflow](docs/workflow.md) for documentation ownership. Security checks use `just security-fetch` for the explicit public advisory refresh, then `just security`.
+Start with `just context [STAGE]` and `just issues`; validate with `just check`. See the [development guide](docs/development.md) for prerequisites and [workflow](docs/PROJECT_WORKFLOW.md) for documentation ownership. Security checks use `just security-fetch` for the explicit public advisory refresh, then `just security`.
 
 ## Documentation
 
-Start at the [documentation index](docs/index.md), then the [roadmap](ROADMAP.md), [workflow](docs/workflow.md) and [architecture](docs/architecture.md). Consult [routing](docs/routing.md), [configuration](docs/configuration.md) and [tooling](docs/tooling.md) as needed.
+Start at the [documentation index](docs/INDEX.md), then the [roadmap](ROADMAP.md), [workflow](docs/PROJECT_WORKFLOW.md) and [architecture](docs/architecture.md). Consult [routing](docs/routing.md), [configuration](docs/configuration.md) and [tooling](docs/tooling.md) as needed.
 
 ## Roadmap
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "note": "Canonical Template label taxonomy; initial scaffold, not a managed sync channel. Apply only through an authorized reviewed metadata migration.",
+  "note": "Canonical Template priority/type/area scaffold; project stages remain consumer-owned in docs/stages.json.",
   "priority_order": [
     "priority:P0",
     "priority:P1",
@@ -72,26 +72,6 @@
       "name": "type:security",
       "color": "B60205",
       "description": "Security-specific review or remediation"
-    },
-    {
-      "name": "stage:foundation",
-      "color": "C5DEF5",
-      "description": "Accepted administrative and technical foundation"
-    },
-    {
-      "name": "stage:distribution",
-      "color": "C5DEF5",
-      "description": "Publication boundaries and distribution readiness"
-    },
-    {
-      "name": "stage:release",
-      "color": "C5DEF5",
-      "description": "Independent release policy and qualification"
-    },
-    {
-      "name": "stage:rollout",
-      "color": "C5DEF5",
-      "description": "Individually reviewed consumer adoption"
     }
   ],
   "not_automated": [

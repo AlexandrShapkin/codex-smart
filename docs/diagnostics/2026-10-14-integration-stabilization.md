@@ -93,7 +93,7 @@ not permission to bypass GitHub integration/review. Main was not merged by this 
   heads and intentionally unknown deployment paths/digests. Historical pins remain
   distinct. Runtime/qualification/measurement JSON already owns those immutable
   contracts; no duplicate database or background service was introduced.
-- The authoritative [workflow](../workflow.md#operational-source-register-and-host-side-checkpoint)
+- The authoritative [workflow](../PROJECT_WORKFLOW.md#operational-source-register-and-host-side-checkpoint)
   owns host commands, missing-evidence recovery and operator approval. ADR-0008's
   current-context sentence now accurately describes pure policy vs CLI passthrough.
 

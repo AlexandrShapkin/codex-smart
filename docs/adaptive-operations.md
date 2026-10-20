@@ -4,7 +4,7 @@ This benchmark-only workflow composes the existing authenticated adaptive runner
 It does not enable production model routing or authorize a campaign. Source,
 qualification, frozen budgets and independently graded evidence remain separate
 gates. [Benchmarking](benchmarking.md) owns interpretation;
-[repository workflow](workflow.md) owns source snapshots.
+[repository workflow](PROJECT_WORKFLOW.md) owns source snapshots.
 
 ## Source and roles
 
