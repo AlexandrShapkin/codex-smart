@@ -177,8 +177,24 @@ def load_state(directory):
         state = json.loads(path.read_text())
     except (ValueError, UnicodeError):
         deny("corrupt state")
-    if not isinstance(state, dict) or state.get("schema") != 1:
+    if not isinstance(state, dict) or set(state) not in (
+        {"schema", "manifest_sha256", "phase", "head", "branch", "index", "commits"},
+        {"schema", "manifest_sha256", "phase", "head", "branch", "index", "commits", "draft_pr_created"},
+    ) or state.get("schema") != 1:
         deny("unknown receipt schema")
+    index = state.get("index")
+    commits = state.get("commits")
+    if (type(index) is not int or not 0 <= index <= MAX_TASKS
+            or not isinstance(commits, list) or len(commits) != index
+            or state.get("phase") not in {"ready", "started", "complete", "publishing", "published"}
+            or not isinstance(state.get("head"), str)
+            or not re.fullmatch(r"[0-9a-f]{40}", state["head"])):
+        deny("corrupt state receipt")
+    for entry in commits:
+        if (not isinstance(entry, dict) or set(entry) != {"task_id", "sha"}
+                or not isinstance(entry["sha"], str)
+                or not re.fullmatch(r"[0-9a-f]{40}", entry["sha"])):
+            deny("corrupt checkpoint")
     return state
 
 
@@ -210,6 +226,7 @@ def source_copy(repo, temp):
     if len(entries) > MAX_TRACKED:
         deny("source inventory exceeds budget")
     total = 0
+    copied = set()
     for raw in entries:
         if raw.startswith(".git") or raw.startswith(".codex"):
             continue
@@ -227,13 +244,31 @@ def source_copy(repo, temp):
         dest = temp / raw
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, dest)
+        copied.add(raw)
+    return copied
 
 
-def apply_changes(repo, scratch, paths):
+def apply_changes(repo, scratch, paths, copied):
+    # Reject ALL out-of-scope edits in the sandbox, not just changes that
+    # would otherwise be copied back to the operator's checkout.
+    for candidate in scratch.rglob("*"):
+        if candidate.is_symlink():
+            deny("symlink introduced in temporary source")
+        if not candidate.is_file():
+            continue
+        relative = candidate.relative_to(scratch).as_posix()
+        if relative not in copied:
+            deny("unexpected new sandbox file")
+        if relative not in paths and candidate.read_bytes() != (repo / relative).read_bytes():
+            deny("source outside task scope was edited")
     changed = []
     for name in paths:
         source, target = scratch / name, repo / name
         if not target.is_file() or target.is_symlink() or not source.is_file() or source.is_symlink():
+            deny("allowlisted source not regular")
+        if any(parent.is_symlink() for parent in source.parents if parent != scratch):
+            deny("symlink ancestry in candidate")
+        if name not in copied:
             deny("allowlisted source not regular")
         if source.stat().st_size > MAX_SOURCE_FILE:
             deny("candidate file too large")
@@ -265,7 +300,7 @@ def apply_changes(repo, scratch, paths):
 def run_task(repo, directory, task, codex, seconds):
     with tempfile.TemporaryDirectory(prefix="source-", dir=directory) as base:
         scratch = Path(base)
-        source_copy(repo, scratch)
+        copied = source_copy(repo, scratch)
         prompt = (
             "Codex Smart controlled source-only pilot. Work ONLY in: "
             + ", ".join(task["paths"])
@@ -285,7 +320,7 @@ def run_task(repo, directory, task, codex, seconds):
             )
         if outcome.returncode:
             deny("Codex exited unsuccessfully")
-        return apply_changes(repo, scratch, task["paths"])
+        return apply_changes(repo, scratch, task["paths"], copied)
 
 
 def commit_stage(repo, task, files):
