@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""Live bubblewrap smoke on disposable CI; no accounts or project secrets."""
+import hashlib
+import importlib.util
+from pathlib import Path
+import shutil
+import sys
+import tempfile
+
+HERE = Path(__file__).resolve().parent
+spec = importlib.util.spec_from_file_location("autodev_supervisor", HERE / "autodev_supervisor.py")
+autodev = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(autodev)
+
+
+def main():
+    bwrap = shutil.which("bwrap")
+    if not bwrap or Path(bwrap).resolve() != Path("/usr/bin/bwrap"):
+        raise RuntimeError("Expected distro-packaged /usr/bin/bwrap")
+    pinned = Path(bwrap)
+    digest = hashlib.sha256(pinned.read_bytes()).hexdigest()
+    with tempfile.TemporaryDirectory(prefix="autodev-live-bwrap-") as d:
+        scratch = Path(d)
+        (scratch / "scripts").mkdir()
+        (scratch / "scripts" / "test_isolation.py").write_text(
+            "import unittest\n"
+            "from pathlib import Path\n"
+            "class IsolationTests(unittest.TestCase):\n"
+            "    def test_source_readonly(self):\n"
+            "        self.assertTrue(Path('/workspace/scripts/test_isolation.py').is_file())\n"
+            "        with self.assertRaises(OSError):\n"
+            "            Path('/workspace/scripts/forbidden').write_text('mutation')\n"
+            "    def test_host_home_and_ssh_unavailable(self):\n"
+            "        self.assertFalse(Path('/home/runner').exists())\n"
+            "        self.assertFalse(Path('/root/.ssh').exists())\n"
+            "    def test_own_temp_is_writable(self):\n"
+            "        p = Path('/tmp/allowed')\n"
+            "        p.write_text('ok')\n"
+            "        self.assertEqual(p.read_text(), 'ok')\n",
+            encoding="utf-8",
+        )
+        autodev.project_test_gate(
+            scratch, pinned, digest, timeout=60, recipe="python-unittest",
+        )
+        if (scratch / "scripts" / "forbidden").exists():
+            raise RuntimeError("wrote through a supposedly read-only mount")
+    print("LIVE_BWRAP_SANDBOX_PASS")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (autodev.Refused, RuntimeError, OSError) as error:
+        print("LIVE_BWRAP_SANDBOX_FAIL:", type(error).__name__, file=sys.stderr)
+        sys.exit(2)
