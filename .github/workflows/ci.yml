@@ -9,6 +9,12 @@ jobs:
       RUSTUP_TOOLCHAIN: 1.98.0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Shared agent contract
+        run: python -B scripts/check_agent_contract.py --project codex-smart
+      - name: Agent contract regression tests
+        run: python -B -m unittest discover -s scripts -p 'test_agent_contract.py'
       - uses: ./.github/actions/setup-just
       - run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
       - run: just check
