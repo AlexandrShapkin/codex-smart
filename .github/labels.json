@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "note": "Reviewed desired label definitions; GitHub labels are changed only by explicit authenticated gh-admin --apply, never by CI or RelayForge.",
+  "note": "Declarative GitHub label taxonomy. Changes to actual GitHub labels require a separate authenticated, reviewed admin migration; this file is not executable.",
   "priority_order": [
     "priority:P0",
     "priority:P1",
@@ -83,9 +83,10 @@
     }
   ],
   "not_automated": [
+    "creation",
+    "renaming",
     "relabeling historical Issues",
-    "deletion/renaming of legacy Labels",
-    "creation of Milestones without explicit operator arguments",
-    "Projects changes"
+    "deletion",
+    "Project/milestone updates"
   ]
 }
