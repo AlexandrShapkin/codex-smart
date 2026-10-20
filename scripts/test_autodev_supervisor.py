@@ -251,8 +251,7 @@ class SupervisorTests(unittest.TestCase):
         with self.assertRaises(autodev.Refused):
             self.run_case()
         self.assertEqual(git(self.repo, "status", "--porcelain"), "")
-        self.assertEqual(json.loads((self.state / "state.json").read_text())["phase"],
-                         "started")
+        self.assertFalse((self.state / "state.json").exists())
 
     def test_manifest_swap_blocks_resuming_or_publishing(self):
         self.assertEqual(self.run_case(), 0)
