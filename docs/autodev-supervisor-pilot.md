@@ -66,7 +66,7 @@ auto-reviews, auto-merges or deploys.
 
 ## Execution contract
 
-- Three to five stages; each Codex call lasts at most 20 minutes.
+- Three to five stages; each Codex call lasts at most 20 minutes. Timeout or interruption terminates the private process group; the checkpoint remains ambiguous and cannot be retried automatically.
 - The operator supplies an independently trusted SHA256 for the exact installed Codex executable; the runner hashes it before every model stage. This narrows replacement risk but does not eliminate filesystem execution races.
 - Codex receives a temporary copy of bounded, regular, tracked source files
   WITHOUT .git or untracked content. It receives no GitHub/SSH token,
