@@ -125,8 +125,12 @@ class SupervisorTests(unittest.TestCase):
         ])
         # Scratch may contain private.txt produced by the fake agent, but
         # the real checkout must remain clean of such source mutations.
-        self.assertEqual(self.run_case(), 0)
+        with self.assertRaises(autodev.Refused):
+            self.run_case()
         self.assertFalse((self.repo / "private.txt").exists())
+        receipt = json.loads((self.state / "state.json").read_text())
+        self.assertEqual(receipt["phase"], "started")
+        self.assertEqual(receipt["index"], 0)
 
     def test_rejects_invalid_schema_and_hidden_file_scope(self):
         for count in [0, 1, 2, 6]:
