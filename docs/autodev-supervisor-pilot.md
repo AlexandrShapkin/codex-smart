@@ -41,7 +41,8 @@ reviewing the manifest, repository scope and local account permissions:
 python3 scripts/autodev_supervisor.py run --apply --manifest /private/queue.json \
   --repo /private/relayforge-worktree --state-dir /private/autodev-state \
   --codex /absolute/verified/path/to/codex \
-  --codex-sha256 ACTUAL_64_CHAR_HEX_SHA256
+  --codex-sha256 ACTUAL_64_CHAR_HEX_SHA256 \
+  --codex-home /private/independently-authorized-codex-profile
 ~~~
 
 To run only one or two stages per invocation, pass `--max-stages 1`
@@ -68,6 +69,13 @@ auto-reviews, auto-merges or deploys.
 
 - Three to five stages; each Codex call lasts at most 20 minutes. Timeout or interruption terminates the private process group; the checkpoint remains ambiguous and cannot be retried automatically.
 - The operator supplies an independently trusted SHA256 for the exact installed Codex executable; the runner hashes it before every model stage. This narrows replacement risk but does not eliminate filesystem execution races.
+- Codex executes with a temporary HOME rather than the operator's normal
+  home. To use an existing, separately authorized dedicated Codex profile,
+  supply `--codex-home /absolute/private/profile` pointing to a trusted 0700
+  directory outside the worktree and checkpoint state. No ambient CODEX_HOME
+  is inherited. This avoids unintentionally forwarding the operator's
+  GitHub/SSH configuration; it does NOT prove credential isolation from a
+  malicious local process or replace an OS sandbox/security review.
 - Codex receives a temporary copy of bounded, regular, tracked source files
   WITHOUT .git or untracked content. It receives no GitHub/SSH token,
   SSH_AUTH_SOCK or unrelated environment secrets from the supervisor.
