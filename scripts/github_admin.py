@@ -17,7 +17,7 @@ import sys
 
 OWNER = "AlexandrShapkin"
 PROJECTS = ("codex-smart", "relayforge", "assistant-hub", "rustcraft")
-LABEL_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9:._/-]{0,63}\Z")
+LABEL_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9:._-]{0,63}\Z")
 COLOR = re.compile(r"[0-9A-Fa-f]{6}\Z")
 MAX_BYTES = 65536
 
@@ -142,7 +142,7 @@ def sync_labels(api: GhAPI, project: str, apply: bool) -> dict:
         if remaining:
             raise AdminError("GitHub labels not yet converged")
     return {"repository": f"{OWNER}/{project}", "mode": "apply" if apply else "dry-run",
-            "actions": actions, "verified": apply and not actions or apply}
+            "actions": actions, "verified": bool(apply)}
 
 
 def milestone_fields(title=None, description=None, state=None, due_on=None):
