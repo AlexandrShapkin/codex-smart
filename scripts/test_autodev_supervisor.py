@@ -24,20 +24,20 @@ class SupervisorTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.base = Path(self.tmp.name)
-        self.repo = self.base / "isolated-worktree"
-        self.repo.mkdir()
-        git(self.repo, "init", "-q")
-        git(self.repo, "config", "user.name", "Sandbox")
-        git(self.repo, "config", "user.email", "sandbox@example.invalid")
-        (self.repo / "small.py").write_text("answer = 42\n")
-        (self.repo / "private.txt").write_text("untracked secret\n")
-        # Untracked source must not become available to the model.
-        (self.repo / "private.txt").unlink()
-        git(self.repo, "add", "small.py")
-        git(self.repo, "commit", "-qm", "initial")
-        git(self.repo, "switch", "-qc", "autodev/safe-pilot")
-        git(self.repo, "remote", "add", "origin",
+        self.source = self.base / "primary-checkout"
+        self.source.mkdir()
+        git(self.source, "init", "-q")
+        git(self.source, "config", "user.name", "Sandbox")
+        git(self.source, "config", "user.email", "sandbox@example.invalid")
+        (self.source / "small.py").write_text("answer = 42\n")
+        git(self.source, "add", "small.py")
+        git(self.source, "commit", "-qm", "initial")
+        git(self.source, "remote", "add", "origin",
             "https://github.com/AlexandrShapkin/sandbox.git")
+        self.repo = self.base / "isolated-worktree"
+        git(self.source, "worktree", "add", "-q", "-b",
+            "autodev/safe-pilot", str(self.repo), "HEAD")
+        self.assertTrue((self.repo / ".git").is_file())
         self.head = git(self.repo, "rev-parse", "HEAD")
         self.state = self.base / "private-state"
         self.state.mkdir(mode=0o700)
@@ -146,7 +146,7 @@ class SupervisorTests(unittest.TestCase):
 
     def test_rejects_untrusted_checkout_and_private_dir(self):
         self.write_manifest()
-        git(self.repo, "switch", "-qc", "main")
+        git(self.repo, "switch", "-qc", "unrelated")
         with self.assertRaises(autodev.Refused):
             self.run_case()
         git(self.repo, "switch", "-q", "autodev/safe-pilot")
