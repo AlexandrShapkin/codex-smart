@@ -62,7 +62,7 @@ def validate_path(raw):
     parts = PurePosixPath(raw).parts
     if any(x in (".", "..", ".git") or x.startswith(".") for x in parts):
         deny("hidden or escaping path denied")
-    if not raw.endswith((".rs", ".py", ".md", ".toml", ".sh", ".yml", ".yaml")):
+    if not raw.endswith((".rs", ".py", ".md", ".toml")):
         deny("only tracked source files may be edited")
     return raw
 
