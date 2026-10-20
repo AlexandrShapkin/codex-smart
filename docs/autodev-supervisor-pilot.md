@@ -67,8 +67,15 @@ auto-reviews, auto-merges or deploys.
 - Only explicitly allowlisted changed source files are copied back.
   The wrapper refuses symlinks, staged/untracked paths, binary changes,
   whitespace errors and more than 180 changed lines per task.
+- Every candidate receives a bounded pre-commit source check: Python uses
+  AST parsing without execution, TOML uses the standard parser, Markdown must
+  be nonempty; Rust uses an explicitly nominated executable via
+  `--rustfmt /absolute/verified/path/to/rustfmt` with `--check`, before
+  any candidate is copied back. Shell/YAML edits are refused until audited
+  validators exist. These are **syntax/format checks, not project tests**.
 - After each accepted stage, only a local commit is made on the dedicated
   branch. A private 0600 receipt is fsynced after every checkpoint.
+- Receipt reads use NOFOLLOW descriptor opening, ownership and exact 0600 checks. A symlink, corrupt or oversized ledger fails closed.
 - The receipt stores only task IDs, manifest SHA256, commit SHAs and coarse
   states. No prompts, raw model output, source or credentials are logged.
 - The supervisor writes a STARTED receipt before invoking Codex. A crash
