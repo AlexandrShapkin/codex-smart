@@ -23,7 +23,8 @@ Example manifest (replace the SHA with the actual full checkout SHA):
     {"id": "docs-test", "prompt": "Clarify the verified recovery test contract",
      "paths": ["docs/independent-local-recovery.md"]},
     {"id": "parser-test", "prompt": "Add one bounded recovery parser regression",
-     "paths": ["crates/relayforge-mcp/src/workstation_recovery.rs"]}
+     "paths": ["crates/relayforge-mcp/src/workstation_recovery.rs"],
+     "recipe": "rust-cargo-test"}
   ]
 }
 ~~~
@@ -92,6 +93,15 @@ auto-reviews, auto-merges or deploys.
   `--rustfmt /absolute/verified/path/to/rustfmt` with `--check`, before
   any candidate is copied back. Shell/YAML edits are refused until audited
   validators exist. These are **syntax/format checks, not project tests**.
+- Each task can select one of two **fixed, allowlisted** test recipes:
+  `python-unittest` (default) or `rust-cargo-test` (required for any
+  `.rs` path). The Rust recipe uses only the system-installed
+  `/usr/bin/cargo test --locked --offline --workspace`, with `HOME` and
+  `CARGO_HOME` isolated under `/tmp` and the entire source tree mounted
+  read-only. It intentionally does **not** expose a user's rustup profile,
+  crates.io login, registry cache, SSH agent or network. Therefore projects
+  with unvendored dependencies will fail closed; it does not yet replace
+  the normal CI Rust checks.
 - Before **every** local commit, the changed candidate snapshot must
   pass an isolated, fixed Python unittest discovery command:
   `/usr/bin/python3 -I -B -m unittest discover -s scripts -p 'test_*.py'`.
@@ -100,10 +110,10 @@ auto-reviews, auto-merges or deploys.
   are unshared, HOME is temporary, and the runner never inherits operator
   credentials. The bounded timeout is `--test-seconds` (15–240 seconds,
   default 120). A failing/timed-out test leaves the attempt ambiguous, with
-  **no commit**. Only this Python recipe is supported by the pilot so far;
-  Rust workspace tests, repo-specific recipes and authenticated CI
-  attestations are NOT yet implemented. This unit-test recipe can also
-  fail on repositories without `scripts/test_*.py`.
+  **no commit**. Only the fixed Python and offline Cargo recipes are supported; general
+  repo-specific recipes and authenticated CI attestations are NOT yet
+  implemented. Python tests can fail on repositories without
+  `scripts/test_*.py`, and offline Cargo requires self-contained dependencies.
 - CI tests use a **fake bubblewrap** to assert the gate contract; they do
   not prove bubblewrap works on the operator's Linux kernel or that the
   snapshot's untrusted tests cannot abuse a host kernel. A real isolated
@@ -149,9 +159,10 @@ commit, source edit, merge, deployment or unsafe operation.
 ## Deliberately incomplete
 
 This is a controlled local pilot, not an installed autonomous system.
-It performs one fixed offline Python unittest recipe in a required
-bubblewrap namespace, but does NOT implement Rust workspace tests, approved
-repository-specific test recipes, exact-SHA GitHub CI checks, live RelayForge
+It performs fixed offline Python unittest or offline Cargo recipes in a
+required bubblewrap namespace, but does NOT implement dependency-cache
+provisioning, approved repository-specific test recipes, exact-SHA GitHub
+CI checks, live RelayForge
 job-chain RPC calls, restart scheduling, production recovery, or automatic
 code review. A successful local commit
 is not evidence of correct implementation. Every PR requires normal
