@@ -1,5 +1,6 @@
 """No Codex account, GitHub token, network or service needed for pilot tests."""
 import importlib.util
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -77,9 +78,10 @@ class SupervisorTests(unittest.TestCase):
                 "--repo", str(self.repo), "--state-dir", str(self.state), *more]
 
     def run_case(self, **kwargs):
+        sha = hashlib.sha256(self.codex.read_bytes()).hexdigest()
         return autodev.execute(self.args(
-            "run", "--codex", str(self.codex), "--apply",
-            *kwargs.get("extra", [])
+            "run", "--codex", str(self.codex), "--codex-sha256", sha,
+            "--apply", *kwargs.get("extra", [])
         ))
 
     def test_plan_is_readonly_without_credential_or_state(self):
@@ -192,6 +194,19 @@ class SupervisorTests(unittest.TestCase):
         with self.assertRaises(autodev.Refused):
             autodev.execute(self.args("run", "--codex", "/does/not/exist", "--apply"))
         self.assertFalse((self.state / "state.json").exists())
+
+    def test_explicit_codex_pin_denies_mismatch_before_model_launch(self):
+        with self.assertRaises(autodev.Refused):
+            autodev.execute(self.args(
+                "run", "--codex", str(self.codex),
+                "--codex-sha256", "0" * 64, "--apply"
+            ))
+        self.assertFalse((self.state / "state.json").exists())
+        digest = hashlib.sha256(self.codex.read_bytes()).hexdigest()
+        self.assertIs(autodev.pinned_executable(self.codex, digest), self.codex)
+        self.codex.write_text(self.codex.read_text() + "\n# replaced executable\n")
+        with self.assertRaises(autodev.Refused):
+            autodev.pinned_executable(self.codex, digest)
 
     def test_python_syntax_gate_denies_before_worktree_mutation(self):
         self.codex.write_text(
