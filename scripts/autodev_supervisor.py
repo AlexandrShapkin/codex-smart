@@ -416,11 +416,13 @@ def bounded_codex(argv, *, cwd, env, seconds):
             try:
                 child.wait(timeout=2)
             except subprocess.TimeoutExpired:
-                try:
-                    os.killpg(child.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                child.wait(timeout=2)
+                pass
+            # A descendant may survive SIGTERM even after the main CLI exits.
+            try:
+                os.killpg(child.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            child.wait(timeout=2)
             raise
         return child.returncode
 
