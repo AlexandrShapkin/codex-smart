@@ -79,9 +79,42 @@ def main():
             '#[cfg(test)] mod tests { #[test] fn fixed() { assert_eq!(2 + 2, 4); } }\n',
             encoding="utf-8",
         )
-        autodev.project_test_gate(
-            scratch, pinned, digest, timeout=100, recipe="rust-cargo-test",
-        )
+        try:
+            autodev.project_test_gate(
+                scratch, pinned, digest, timeout=100, recipe="rust-cargo-test",
+            )
+        except autodev.Refused:
+            # Only a disposable, static fixture runs here; bounded details
+            # are safe to show in CI without exposing prompts or secrets.
+            sandbox = [
+                str(pinned), "--die-with-parent", "--unshare-all",
+                "--new-session", "--ro-bind", "/usr", "/usr",
+            ]
+            for system in ("/bin", "/lib", "/lib64"):
+                if Path(system).exists():
+                    if Path(system).is_symlink():
+                        sandbox += ["--symlink", __import__("os").readlink(system), system]
+                    else:
+                        sandbox += ["--ro-bind", system, system]
+            sandbox += [
+                "--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp",
+                "--ro-bind", str(scratch), "/workspace", "--chdir", "/workspace",
+                "--setenv", "HOME", "/tmp", "--setenv", "PATH", "/usr/bin:/bin",
+                "--setenv", "CARGO_HOME", "/tmp/cargo",
+                "--setenv", "CARGO_TARGET_DIR", "/tmp/target",
+                "--setenv", "CARGO_NET_OFFLINE", "true",
+                "--", "/usr/bin/cargo", "test", "--locked", "--offline",
+                "--workspace",
+            ]
+            result = subprocess.run(
+                sandbox, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                cwd=scratch, env={"PATH": "/usr/bin:/bin", "HOME": "/tmp"},
+                timeout=100, check=False,
+            )
+            print("LIVE_CARGO_DIAGNOSTIC", result.returncode,
+                  result.stderr.decode("utf-8", "replace")[:650].replace("\n", " "),
+                  file=sys.stderr)
+            raise
         if (scratch / "target").exists():
             raise RuntimeError("Cargo target escaped isolated /tmp")
     print("LIVE_CARGO_OFFLINE_SANDBOX_PASS")
