@@ -558,3 +558,47 @@ The initial bounded-context implementation is retained in its
 [normalization audit](diagnostics/2026-10-14-workflow-normalization.md) records the
 observed repository divergences and host limitations; it is historical evidence,
 not live deployment or issue state. Use `just context` for the current stage.
+
+## RDC-independent four-project development routing (Issue #171)
+
+Routine work targets GitHub first: source reads/edits, Issues, PRs, reviews,
+exact-head Actions and source-only integration. For GitHub label definitions
+and milestone metadata, use `scripts/github_admin.py` with an already
+authorized first-party `gh` login **outside RelayForge**. This repository
+does not install authentication, export tokens, or alter CI permissions.
+
+`scripts/development_router.py` is a **pure, non-authorizing selector** over
+capabilities observed from trusted *live* provider interfaces. It never runs
+tools, interprets Issues/TOML as capabilities or grants additional rights.
+Missing GitHub/RelayForge authorization is a blocked outcome, not a reason to
+retry through RDC. GUI/interactive tasks remain explicitly operator-controlled;
+RDC is never an automatic fallback and an exhausted quota prohibits attempts.
+The selected provider must independently enforce permissions at invocation.
+
+GitHub metadata operations are **dry-run by default**. Examples (the project
+value is a fixed allowlist, never a user-controlled repository URL):
+
+```sh
+python3 -B scripts/github_admin.py --project relayforge labels
+python3 -B scripts/github_admin.py --project relayforge labels --apply
+python3 -B scripts/github_admin.py --project rustcraft milestones-list
+python3 -B scripts/github_admin.py --project rustcraft milestones-create --title 'Explicit reviewed release' 
+```
+
+The final example only previews a proposal; a separately explicit `--apply`
+attempts the API write, then verifies actual server state. Milestone creation
+and edits require explicit target arguments, are never inferred from Issues,
+and never rewrite historical Issues. Label synchronization reads **accepted
+remote main** `.github/labels.json`, enforces schema/name/color limits,
+creates or updates the defined labels, re-reads live definitions and **never
+renames, deletes or mass-relabels**. A denied admin endpoint or absent
+authenticated `gh` is an external blocker, not permission to pass tokens
+through the RelayForge tunnel, CI or logs.
+
+RelayForge remains the only workstation bridge for its advertised read-only
+diagnostics, limited builds/jobs, file transfer and separate local opt-in
+mutations. Query current `capabilities` for each session; do not infer
+availability from this source document or use RDC when a capability is denied.
+Host update, recovery deployment, service changes and physical repair retain
+their existing operator permission requirements. Full native, platform and
+security CI plus independent review and precise merge authority remain mandatory.
