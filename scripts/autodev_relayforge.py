@@ -7,6 +7,8 @@ An imported JSON file is untrusted evidence, NOT authenticated device state.
 import argparse
 import hashlib
 import json
+import os
+import stat
 from pathlib import Path
 import re
 import sys
@@ -106,10 +108,23 @@ def main(argv=None):
     parser.add_argument("--expected-job-id", required=True)
     args = parser.parse_args(argv)
     path = args.bundle
-    if not path.is_file() or path.is_symlink():
-        reject("export unavailable or symlinked")
-    with path.open("rb") as stream:
-        raw = stream.read(MAX_BUNDLE_BYTES + 1)
+    if not path.is_absolute() or ".." in path.parts:
+        reject("absolute private export path required")
+    if any(part.is_symlink() for part in (path, *path.parents)):
+        reject("symlinked export path denied")
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except OSError:
+        reject("private chain export unavailable")
+    try:
+        st = os.fstat(fd)
+        if (not stat.S_ISREG(st.st_mode) or st.st_uid != os.geteuid()
+                or st.st_nlink != 1 or stat.S_IMODE(st.st_mode) != 0o600
+                or st.st_size > MAX_BUNDLE_BYTES):
+            reject("private export ownership or permissions denied")
+        raw = os.read(fd, MAX_BUNDLE_BYTES + 1)
+    finally:
+        os.close(fd)
     report = inspect_export(raw, args.expected_job_id)
     # Never print raw stage logs, script source or potentially sensitive output.
     print(json.dumps(report, sort_keys=True))
