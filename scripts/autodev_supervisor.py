@@ -482,7 +482,9 @@ def execute(argv=None):
             deny("stage timeout outside approved range")
         if not 1 <= args.max_stages <= MAX_TASKS:
             deny("invalid invocation stage budget")
-        pinned_executable(args.codex, args.codex_sha256) if args.codex else deny("Codex executable required")
+        if args.codex is None:
+            deny("Codex executable required")
+        pinned_executable(args.codex, args.codex_sha256)
         head, branch = checkout(args.repo, doc)
         if state is None:
             if head != doc["expected_sha"]:
