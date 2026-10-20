@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -39,9 +40,25 @@ def main():
             "        self.assertEqual(p.read_text(), 'ok')\n",
             encoding="utf-8",
         )
-        autodev.project_test_gate(
-            scratch, pinned, digest, timeout=60, recipe="python-unittest",
-        )
+        try:
+            autodev.project_test_gate(
+                scratch, pinned, digest, timeout=60, recipe="python-unittest",
+            )
+        except autodev.Refused:
+            # A fixed, credential-free probe distinguishes Ubuntu/AppArmor
+            # namespace denial from the supervisor's own mount recipe.
+            probe = subprocess.run(
+                [str(pinned), "--unshare-all", "--ro-bind", "/usr", "/usr",
+                 "--", "/usr/bin/true"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                timeout=8, check=False,
+                env={"PATH": "/usr/bin:/bin", "HOME": "/tmp"},
+            )
+            diagnostic = probe.stderr.decode("utf-8", "replace")[:220]
+            diagnostic = diagnostic.replace("\n", " ").replace("\r", " ")
+            print("BWRAP_PROBE_EXIT", probe.returncode, diagnostic,
+                  file=sys.stderr)
+            raise
         if (scratch / "scripts" / "forbidden").exists():
             raise RuntimeError("wrote through a supposedly read-only mount")
     print("LIVE_BWRAP_SANDBOX_PASS")
