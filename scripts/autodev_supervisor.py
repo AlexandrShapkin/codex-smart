@@ -110,6 +110,10 @@ def manifest(path):
     return doc, hashlib.sha256(raw).hexdigest()
 
 
+def overlaps(a, b):
+    return a == b or a.is_relative_to(b) or b.is_relative_to(a)
+
+
 def safe_directory(path, *, mode):
     if not path.is_absolute() or ".." in path.parts or path == Path("/"):
         deny("absolute private directory required")
@@ -516,8 +520,8 @@ def execute(argv=None):
         return 0
     if args.state_dir is None or not args.state_dir.is_absolute():
         deny("explicit private state directory required")
-    if args.state_dir == args.repo or args.state_dir.is_relative_to(args.repo):
-        deny("state must remain outside source worktree")
+    if overlaps(args.state_dir, args.repo):
+        deny("state must remain disjoint from source worktree")
     with private_lock(args.state_dir):
         state = load_state(args.state_dir)
         if args.action == "status":
@@ -539,10 +543,9 @@ def execute(argv=None):
         pinned_executable(args.codex, args.codex_sha256)
         if args.codex_home is not None:
             safe_directory(args.codex_home, mode=0o700)
-            if (args.codex_home == args.repo
-                    or args.codex_home.is_relative_to(args.repo)
-                    or args.codex_home == args.state_dir
-                    or args.codex_home.is_relative_to(args.state_dir)):
+            if overlaps(args.codex_home, args.repo) or overlaps(
+                args.codex_home, args.state_dir
+            ):
                 deny("dedicated Codex profile cannot overlap source or receipts")
         head, branch = checkout(args.repo, doc)
         preflight_scopes(args.repo, doc, args.rustfmt)
