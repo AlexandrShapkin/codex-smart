@@ -156,6 +156,62 @@ worker was queried. Until live read-only MCP authentication and source-SHA
 binding are implemented, this adapter MUST NOT be used to authorize a
 commit, source edit, merge, deployment or unsafe operation.
 
+## Fixed one-night systemd schedule (source-only, NOT activated)
+
+`scripts/autodev_timer.py` provides a one-night, one-stage-per-hour,
+**finite** user-systemd timer design. It is safer than an indefinitely
+recurring automation: it renders an exact set of 3–5 UTC `OnCalendar`
+entries derived from the manifest. Missed windows are not caught up
+(`Persistent=false`); finished runs are no-ops; stale, failed or ambiguous
+stages are never silently repeated. The service invokes the supervisor
+with `--max-stages 1` and no auto-publish. It never merges or deploys.
+
+The operator must create a private (0600) JSON configuration whose
+`schema: 1` fields are:
+
+~~~json
+{
+  "schema": 1,
+  "manifest": "/private/queue.json",
+  "repo": "/private/linked-autodev-worktree",
+  "state_dir": "/private/stage-state",
+  "codex": "/usr/bin/codex",
+  "codex_sha256": "REPLACE_WITH_64_HEX",
+  "test_bwrap": "/usr/bin/bwrap",
+  "test_bwrap_sha256": "REPLACE_WITH_64_HEX",
+  "codex_home": "/private/authorized-codex-profile",
+  "consent_file": "/private/allow-autodev",
+  "runner": "/absolute/trusted/codex-smart/scripts/autodev_timer.py",
+  "start_utc": "2026-10-21T00:15:00Z",
+  "interval_minutes": 60,
+  "stage_seconds": 900,
+  "test_seconds": 120
+}
+~~~
+
+`start_utc` is an **example**, not an installed schedule. Paths and
+executable hashes must be replaced and verified by the operator. The
+`repo`, state and Codex profile directories must remain disjoint.
+To preview exact unit contents without enabling anything:
+
+~~~sh
+python3 -I scripts/autodev_timer.py render --config /private/autodev-night.json
+~~~
+
+Render prints the service and timer definitions as JSON. Manually review
+them and place them into the appropriate user systemd unit files **only
+after separate local acceptance**. It never writes those files. To permit
+the finite run, the local operator must separately create a private 0600
+consent file with the precise contents
+`ALLOW_CODEX_SMART_AUTODEV\n`. The real `run` entrypoint refuses
+without it, outside the UTC schedule, or if a checkpoint is inconsistent.
+
+The timer intentionally does not auto-install, enable, run or publish.
+Live activation depends on a proved bubblewrap user-namespace environment,
+Codex access with separate authorization, a complete offline recipe and
+independent source review. Do not disable Ubuntu's AppArmor user-namespace
+policy to make a sandbox test green.
+
 ## Deliberately incomplete
 
 This is a controlled local pilot, not an installed autonomous system.
@@ -163,7 +219,7 @@ It performs fixed offline Python unittest or offline Cargo recipes in a
 required bubblewrap namespace, but does NOT implement dependency-cache
 provisioning, approved repository-specific test recipes, exact-SHA GitHub
 CI checks, live RelayForge
-job-chain RPC calls, restart scheduling, production recovery, or automatic
+job-chain RPC calls, automatic scheduler installation, production recovery, or automatic
 code review. A successful local commit
 is not evidence of correct implementation. Every PR requires normal
 independent CI and review. The stage timeout is a time budget, NOT a
