@@ -42,7 +42,8 @@ An initial disabled candidate exists in
 [RelayForge PR #72](https://github.com/AlexandrShapkin/relayforge/pull/72).
 Draft [PR #167](https://github.com/AlexandrShapkin/codex-smart/pull/167)
 implements a **passive** stdlib TOML v1 parser and negative tests; it is not
-merged, is not an executable adapter, and grants no permission. In particular, experimental PR #164's operator-owned JSON manifest,
+merged, is not an executable adapter, and grants no permission.
+In particular, experimental PR #164's operator-owned JSON manifest,
 offline test recipes and private checkpoint ledger remain independent and
 unchanged. The `run` command remains passthrough.
 
@@ -180,8 +181,8 @@ existing `just` or CI behavior; (3) independently review a trusted Git/source
 adapter and fixed-argv test-profile mappings; (4) verify cross-repository
 synthetic evidence without RDC or Assistant Hub; (5) only then consider a
 generic template. No cross-project manifest may be accepted as a runtime
-policy merely because its syntax passes. This does not activate RustCraft stage DX2, merge experimental
-PR #164, or create a parallel task queue.
+policy merely because its syntax passes. This does not activate RustCraft
+stage DX2, merge experimental PR #164, or create a parallel task queue.
 
 ## Linux target and libc ABI qualification
 
