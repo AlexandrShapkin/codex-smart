@@ -738,6 +738,15 @@
       "stages": [
         "adaptive"
       ]
+    },
+    {
+      "path": "docs/autodev-supervisor-pilot.md",
+      "title": "Bounded local autonomous development pilot",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "automation"
+      ]
     }
   ]
 }
