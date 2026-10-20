@@ -104,6 +104,34 @@ class SupervisorTests(unittest.TestCase):
         with self.assertRaises(autodev.Refused):
             self.run_case()
 
+    def test_resume_from_verified_checkpoint_without_duplicate_stage(self):
+        self.assertEqual(self.run_case(extra=["--max-stages", "1"]), 0)
+        first = json.loads((self.state / "state.json").read_text())
+        self.assertEqual(first["index"], 1)
+        self.assertEqual(first["phase"], "ready")
+        self.assertEqual(len(first["commits"]), 1)
+        first_sha = first["commits"][0]["sha"]
+        self.assertEqual(self.run_case(extra=["--max-stages", "2"]), 0)
+        last = json.loads((self.state / "state.json").read_text())
+        self.assertEqual(last["index"], 3)
+        self.assertEqual(last["phase"], "complete")
+        self.assertEqual(len(last["commits"]), 3)
+        self.assertEqual(last["commits"][0]["sha"], first_sha)
+        self.assertEqual(len(git(self.repo, "log", "--pretty=%s").splitlines()), 4)
+
+    def test_stage_budget_does_not_skip_or_publish_pending_tasks(self):
+        with self.assertRaises(autodev.Refused):
+            self.run_case(extra=["--max-stages", "0"])
+        self.assertFalse((self.state / "state.json").exists())
+        with self.assertRaises(autodev.Refused):
+            self.run_case(extra=["--max-stages", "6"])
+        self.assertFalse((self.state / "state.json").exists())
+        with self.assertRaises(autodev.Refused):
+            self.run_case(extra=["--max-stages", "1", "--publish-draft"])
+        partial = json.loads((self.state / "state.json").read_text())
+        self.assertEqual(partial["index"], 1)
+        self.assertEqual(partial["phase"], "ready")
+
     def test_started_attempt_never_retried_after_failure(self):
         self.write_manifest(prompts=[
             "Add regression test stage 0", "simulate-crash at stage one",
