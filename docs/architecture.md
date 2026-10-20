@@ -33,6 +33,92 @@ to explicitly requested Codex launches; see [ADR-0007](decisions/0007-owned-exec
 and [the command/transport matrix](tool-compatibility.md). No handshake or installer is
 part of normal startup. Hash verification narrows execution races without eliminating them.
 
+## Cross-repository Autonomous Development Contract v1 (proposal)
+
+The proposed `automation/project.toml` is an optional **data contract**, not
+a new orchestrator or an execution policy. This design is tracked in
+[Issue #165](https://github.com/AlexandrShapkin/codex-smart/issues/165).
+An initial disabled candidate exists in
+[RelayForge PR #72](https://github.com/AlexandrShapkin/relayforge/pull/72).
+No accepted Codex Smart parser, workflow adapter or autonomous integration is
+claimed. In particular, experimental PR #164's operator-owned JSON manifest,
+offline test recipes and private checkpoint ledger remain independent and
+unchanged. The `run` command remains passthrough.
+
+### Minimum manifest
+
+TOML fields in this proposal have these semantics:
+
+| Key | Meaning |
+| --- | --- |
+| `schema_version = 1` | Exact supported major contract version; unknown versions fail closed. |
+| `project_id`, `project_type`, `repository` | Stable identity, e.g. `rust-workspace` or `python-stdlib`, and canonical `owner/name`. Bind against independently verified origin and accepted-main SHA. |
+| `context.entrypoint`, `architecture`, `workflow`, `current_plan`, `security` | Bounded pointers to tracked regular files, not instructions to execute or read everything. |
+| `context.task_source = "github-issues"` | Issues contain live actionable tasks; registry/roadmap only define stage ordering and dependencies. |
+| `verification.profiles` | Named identifiers for project-owned **trusted adapter** verification, not shell scripts or free-form command strings. |
+| `verification.ci_workflows` | Required workflow path hints; cannot lower the currently enforced GitHub branch, check, reviewer or security gates. |
+| `verification.live_device_proof` | Additional environment evidence remains separately required where applicable. |
+| `execution.enabled`, `max_stage_seconds`, `max_changed_files`, `max_changed_lines` | Source-declared opt-in candidate and stage ceilings; runner limits and operator policy can only tighten them. |
+| `execution.checkpoint_mode`, `auto_merge`, `auto_deploy` | Private external state and explicit lifecycle prohibitions. V1 requires `auto_merge = false` and `auto_deploy = false`. |
+| `change_policy.candidate_paths`, `blocked_unattended_paths` | Informational source areas and risk exclusions, not permission to write those paths. |
+
+The candidate RelayForge file starts with `execution.enabled = false`.
+Setting it to `true` in Git, a PR, or an Issue **never** grants execution
+authority: absent an independently authorized operator grant and a validated
+source snapshot, the executor must refuse. The exact accepted schema, optional
+extensions and any later activation mechanism require a separately reviewed
+implementation and compatibility negotiation.
+
+### Deterministic interpretation and authority
+
+A future reader must use a known parser and strict schema, bound to an
+explicitly verified project identity, canonical root and full 40-character
+accepted GitHub commit SHA. It must reject unknown executable profile IDs,
+unexpected keys or versions, duplicated/ambiguous paths, path traversal,
+symlinks, dirty or mismatched checkouts, and unsupported platforms. An unknown
+value is not an implied default or permission. Git-controlled metadata is
+untrusted, including when offered through a pull request. A task's actionable
+scope is the intersection of separately authorized operator policy, an
+independently pinned accepted project contract, and the specific task's
+allowed files. Never grant rights from broader candidate paths in a repository.
+
+No arbitrary command text, `sh -c`, copied scripts, environment expansion,
+or repository-specified executable lookup may cross the runner boundary.
+Adapter implementations must map supported profile IDs to audited fixed OS
+argv, timeouts, sanitized environments and product-specific checks. Profile
+names in this proposal do not constitute an implemented or universal recipe.
+For RustCraft, `just check` is only a Cargo type check; full validation is
+`just ci` plus any separately required Windows, GPU or measurement proof.
+For RelayForge, GitHub CI cannot establish actual device recovery. For
+Assistant Hub, Python, public-tree and UI checks stay distinct. Codex Smart's
+own `just check`, cached `just security` and independent review gates remain
+required where applicable.
+
+The operator must supply a separate private allowed task manifest and
+permission scope. The worker creates or verifies an isolated worktree, pins
+Codex CLI and test executables, and uses the stricter of all time/file/line
+limits. A missing dependency, source cache, test recipe, safe sandbox,
+current Issue, matching SHA or trustworthy evidence causes a **refusal or
+unverified result**, never an automatic network fallback or policy downgrade.
+Resume requires a private, durable, restricted checkpoint matching the
+actual committed SHA; an ambiguous interruption is not silently replayed.
+
+### Evidence and rollout boundary
+
+An accepted local check, exact-head GitHub CI, independent technical/security
+review, merge eligibility, installed artifact and verified live system are
+different evidence levels. Neither a commit nor green CI authorizes merge,
+release, live benchmarking, secret access or production deployment. Explicit
+owner vetoes, including the PR #125 merge prohibition, remain binding.
+
+Adoption sequence: (1) approve a small schema and offline validator;
+(2) add disabled metadata through independent PRs without rewriting existing
+`just` or CI behavior; (3) implement a pure Codex Smart adapter and
+negative-path Python/Rust tests; (4) verify four independent repositories
+without RDC or Assistant Hub; (5) only then create a generic template
+repository. This does not activate RustCraft stage DX2, merge experimental
+PR #164, or create a parallel task queue.
+
 ## Linux target and libc ABI qualification
 
 This is the canonical qualification matrix for [Issue #116](https://github.com/AlexandrShapkin/codex-smart/issues/116).
