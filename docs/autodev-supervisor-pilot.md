@@ -42,7 +42,9 @@ python3 scripts/autodev_supervisor.py run --apply --manifest /private/queue.json
   --repo /private/relayforge-worktree --state-dir /private/autodev-state \
   --codex /absolute/verified/path/to/codex \
   --codex-sha256 ACTUAL_64_CHAR_HEX_SHA256 \
-  --codex-home /private/independently-authorized-codex-profile
+  --codex-home /private/independently-authorized-codex-profile \
+  --test-bwrap /absolute/verified/path/to/bwrap \
+  --test-bwrap-sha256 ACTUAL_64_CHAR_HEX_SHA256
 ~~~
 
 To run only one or two stages per invocation, pass `--max-stages 1`
@@ -90,6 +92,22 @@ auto-reviews, auto-merges or deploys.
   `--rustfmt /absolute/verified/path/to/rustfmt` with `--check`, before
   any candidate is copied back. Shell/YAML edits are refused until audited
   validators exist. These are **syntax/format checks, not project tests**.
+- Before **every** local commit, the changed candidate snapshot must
+  pass an isolated, fixed Python unittest discovery command:
+  `/usr/bin/python3 -I -B -m unittest discover -s scripts -p 'test_*.py'`.
+  An explicitly SHA256-pinned, locally installed `bubblewrap` executable
+  is required. The project source is mounted read-only, network namespaces
+  are unshared, HOME is temporary, and the runner never inherits operator
+  credentials. The bounded timeout is `--test-seconds` (15–240 seconds,
+  default 120). A failing/timed-out test leaves the attempt ambiguous, with
+  **no commit**. Only this Python recipe is supported by the pilot so far;
+  Rust workspace tests, repo-specific recipes and authenticated CI
+  attestations are NOT yet implemented. This unit-test recipe can also
+  fail on repositories without `scripts/test_*.py`.
+- CI tests use a **fake bubblewrap** to assert the gate contract; they do
+  not prove bubblewrap works on the operator's Linux kernel or that the
+  snapshot's untrusted tests cannot abuse a host kernel. A real isolated
+  deployment requires an independent containment test and review.
 - After each accepted stage, only a local commit is made on the dedicated
   branch. A private 0600 receipt is fsynced after every checkpoint.
 - Receipt reads use NOFOLLOW descriptor opening, ownership and exact 0600 checks. A symlink, corrupt or oversized ledger fails closed.
@@ -105,9 +123,11 @@ auto-reviews, auto-merges or deploys.
 ## Deliberately incomplete
 
 This is a controlled local pilot, not an installed autonomous system.
-It does NOT perform independent source validation recipes, exact-SHA
-GitHub CI checks, RelayForge job-chain adapter calls, restart scheduling,
-production recovery, or automatic code review. A successful local commit
+It performs one fixed offline Python unittest recipe in a required
+bubblewrap namespace, but does NOT implement Rust workspace tests, approved
+repository-specific test recipes, exact-SHA GitHub CI checks, live RelayForge
+job-chain RPC calls, restart scheduling, production recovery, or automatic
+code review. A successful local commit
 is not evidence of correct implementation. Every PR requires normal
 independent CI and review. The stage timeout is a time budget, NOT a
 monetary token/API limit.
