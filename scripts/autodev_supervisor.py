@@ -5,6 +5,7 @@ The operator owns the checkout, manifest and local Codex authorization. This
 does not install a daemon, timer, key or GitHub integration.
 """
 import argparse
+import ast
 import contextlib
 import fcntl
 import hashlib
@@ -17,6 +18,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import tomllib
 
 MAX_TASKS = 5
 MAX_FILES = 2
@@ -170,15 +172,26 @@ def private_lock(directory):
 
 def load_state(directory):
     path = directory / "state.json"
-    if not path.exists():
-        return None
-    if path.is_symlink() or path.stat().st_size > 8192:
-        deny("unsafe state receipt")
-    st = path.stat()
-    if st.st_uid != os.geteuid() or stat.S_IMODE(st.st_mode) != 0o600:
-        deny("unsafe state permissions")
     try:
-        state = json.loads(path.read_text())
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except FileNotFoundError:
+        return None
+    except OSError:
+        deny("unsafe state receipt")
+    try:
+        st = os.fstat(fd)
+        if (not stat.S_ISREG(st.st_mode) or st.st_nlink != 1
+                or st.st_size > 8192 or st.st_uid != os.geteuid()
+                or stat.S_IMODE(st.st_mode) != 0o600):
+            deny("unsafe state receipt")
+        with os.fdopen(fd, "rb", closefd=False) as handle:
+            raw = handle.read(8193)
+        if len(raw) > 8192:
+            deny("oversized state receipt")
+    finally:
+        os.close(fd)
+    try:
+        state = json.loads(raw)
     except (ValueError, UnicodeError):
         deny("corrupt state")
     if not isinstance(state, dict) or set(state) not in (
@@ -252,6 +265,51 @@ def source_copy(repo, temp):
     return copied
 
 
+def validate_sources(scratch, paths, rustfmt=None):
+    """Never execute model-authored Python or shell; parse source only.
+
+    Rust requires an explicit operator-provided formatting tool path. This
+    is a structural gate, NOT evidence that the code passes project tests.
+    """
+    for name in paths:
+        source = scratch / name
+        if not source.is_file() or source.is_symlink():
+            deny("validation source unavailable")
+        data = source.read_bytes()
+        try:
+            content = data.decode("utf-8")
+        except UnicodeDecodeError:
+            deny("non-UTF8 candidate")
+        if "\x00" in content:
+            deny("NUL in candidate")
+        if name.endswith(".py"):
+            try:
+                ast.parse(content, filename=name)
+            except (SyntaxError, ValueError):
+                deny("Python source syntax invalid")
+        elif name.endswith(".toml"):
+            try:
+                tomllib.loads(content)
+            except tomllib.TOMLDecodeError:
+                deny("TOML source syntax invalid")
+        elif name.endswith(".rs"):
+            if (rustfmt is None or not rustfmt.is_absolute()
+                    or rustfmt.is_symlink() or not rustfmt.is_file()
+                    or not os.access(rustfmt, os.X_OK)):
+                deny("Rust edits require explicit --rustfmt tool")
+            result = command([str(rustfmt), "--check", "--edition", "2024",
+                              "--config", "skip_children=true", name],
+                             cwd=scratch, timeout=25, check=False,
+                             env={"PATH": "/usr/bin:/bin", "HOME": str(scratch)})
+            if result.returncode:
+                deny("Rust source formatting invalid")
+        elif name.endswith(".md"):
+            if not content.strip():
+                deny("empty Markdown candidate")
+        else:
+            deny("no bounded syntax verification for source extension")
+
+
 def apply_changes(repo, scratch, paths, copied):
     # Reject ALL out-of-scope edits in the sandbox, not just changes that
     # would otherwise be copied back to the operator's checkout.
@@ -301,7 +359,7 @@ def apply_changes(repo, scratch, paths, copied):
     return changed
 
 
-def run_task(repo, directory, task, codex, seconds):
+def run_task(repo, directory, task, codex, seconds, rustfmt=None):
     with tempfile.TemporaryDirectory(prefix="source-", dir=directory) as base:
         scratch = Path(base)
         copied = source_copy(repo, scratch)
@@ -324,6 +382,7 @@ def run_task(repo, directory, task, codex, seconds):
             )
         if outcome.returncode:
             deny("Codex exited unsuccessfully")
+        validate_sources(scratch, task["paths"], rustfmt=rustfmt)
         return apply_changes(repo, scratch, task["paths"], copied)
 
 
@@ -371,6 +430,7 @@ def execute(argv=None):
     parser.add_argument("--repo", required=True, type=Path)
     parser.add_argument("--state-dir", type=Path)
     parser.add_argument("--codex", type=Path)
+    parser.add_argument("--rustfmt", type=Path)
     parser.add_argument("--stage-seconds", type=int, default=900)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--publish-draft", action="store_true")
@@ -418,14 +478,15 @@ def execute(argv=None):
             task = doc["tasks"][index]
             state["phase"] = "started"
             save_state(args.state_dir, state)  # before ANY model invocation
-            changed = run_task(args.repo, args.state_dir, task, args.codex, args.stage_seconds)
+            changed = run_task(args.repo, args.state_dir, task, args.codex, args.stage_seconds,
+                               rustfmt=args.rustfmt)
             new_head = commit_stage(args.repo, task, changed)
             state["commits"].append({"task_id": task["id"], "sha": new_head})
             state["head"] = new_head
             state["index"] = index + 1
             state["phase"] = "ready"
             save_state(args.state_dir, state)
-            print("Committed verified stage " + str(index + 1), flush=True)
+            print("Committed syntax-checked stage " + str(index + 1), flush=True)
         state["phase"] = "complete"
         save_state(args.state_dir, state)
         if args.publish_draft:
