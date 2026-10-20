@@ -83,14 +83,24 @@ class ChainEvidenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "chain.json"
             path.write_text(json.dumps(bundle()))
+            path.chmod(0o600)
             before = path.read_bytes()
             relayforge.main(["--bundle", str(path), "--expected-job-id", JOB])
             self.assertEqual(path.read_bytes(), before)
+
+    def test_rejects_readable_by_group_export(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "chain.json"
+            path.write_text(json.dumps(bundle()))
+            path.chmod(0o644)
+            with self.assertRaises(relayforge.InvalidChain):
+                relayforge.main(["--bundle", str(path), "--expected-job-id", JOB])
 
     def test_rejects_symlink_input(self):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "actual.json"
             path.write_text(json.dumps(bundle()))
+            path.chmod(0o600)
             alias = Path(d) / "chain.json"
             alias.symlink_to(path)
             with self.assertRaises(relayforge.InvalidChain):
