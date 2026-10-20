@@ -7,7 +7,9 @@ GitHub Issues own live state; local issue files preserve design references.
 
 | Document | Owner | Role | Stages |
 | --- | --- | --- | --- |
+| [DEVELOPMENT_INTERFACE](../.github/DEVELOPMENT_INTERFACE.md) | engineering | current | workflow |
 | [pull_request_template](../.github/pull_request_template.md) | engineering | current | workflow |
+| [AGENTS.local](../AGENTS.local.md) | engineering | current | workflow |
 | [Repository engineering contract](../AGENTS.md) | engineering | current | workflow |
 | [Changelog](../CHANGELOG.md) | engineering | current | baseline |
 | [Contributing](../CONTRIBUTING.md) | engineering | current | workflow |
@@ -15,6 +17,10 @@ GitHub Issues own live state; local issue files preserve design references.
 | [Roadmap](../ROADMAP.md) | engineering | generated | workflow |
 | [Security](../SECURITY.md) | security | current | hardening |
 | [Codex Smart — project brief and engineering backlog](../codex-smart-project-brief.md) | provenance | input | baseline |
+| [INDEX](../docs/INDEX.md) | engineering | current | workflow |
+| [PROJECT](../docs/PROJECT.md) | engineering | current | workflow |
+| [UPGRADING](../docs/UPGRADING.md) | engineering | current | workflow |
+| [WORKFLOW](../docs/WORKFLOW.md) | engineering | current | workflow |
 | [Adaptive split-host operator runbook](../docs/adaptive-operations.md) | benchmark | current | adaptive, benchmark |
 | [Architecture](../docs/architecture.md) | architecture | current | baseline, router, playbooks, adaptive, automation, distribution |
 | [Benchmark qualified-host and representative runner contract](../docs/benchmark-host.md) | benchmark | contract | benchmark |
