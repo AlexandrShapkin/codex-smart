@@ -432,6 +432,7 @@ def execute(argv=None):
     parser.add_argument("--codex", type=Path)
     parser.add_argument("--rustfmt", type=Path)
     parser.add_argument("--stage-seconds", type=int, default=900)
+    parser.add_argument("--max-stages", type=int, default=5)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--publish-draft", action="store_true")
     args = parser.parse_args(argv)
@@ -459,6 +460,8 @@ def execute(argv=None):
             return 0
         if not 30 <= args.stage_seconds <= 1200:
             deny("stage timeout outside approved range")
+        if not 1 <= args.max_stages <= MAX_TASKS:
+            deny("invalid invocation stage budget")
         if args.codex is None or not args.codex.is_absolute() or args.codex.is_symlink() or not args.codex.is_file():
             deny("absolute, installed Codex executable required")
         if not os.access(args.codex, os.X_OK):
@@ -474,7 +477,11 @@ def execute(argv=None):
             deny("manifest or branch changed")
         if state.get("phase") != "ready" or head != state.get("head"):
             deny("ambiguous attempt or checkout mismatch: manual review required")
-        for index in range(state["index"], len(doc["tasks"])):
+        remaining = len(doc["tasks"]) - state["index"]
+        if remaining <= 0:
+            deny("all stages already complete or receipt inconsistent")
+        last_stage = state["index"] + min(remaining, args.max_stages)
+        for index in range(state["index"], last_stage):
             task = doc["tasks"][index]
             state["phase"] = "started"
             save_state(args.state_dir, state)  # before ANY model invocation
@@ -487,10 +494,16 @@ def execute(argv=None):
             state["phase"] = "ready"
             save_state(args.state_dir, state)
             print("Committed syntax-checked stage " + str(index + 1), flush=True)
-        state["phase"] = "complete"
-        save_state(args.state_dir, state)
-        if args.publish_draft:
-            publish(args.repo, args.state_dir, state, doc)
+        if state["index"] == len(doc["tasks"]):
+            state["phase"] = "complete"
+            save_state(args.state_dir, state)
+            if args.publish_draft:
+                publish(args.repo, args.state_dir, state, doc)
+        else:
+            if args.publish_draft:
+                deny("cannot publish a partial stage batch")
+            print("Paused at verified checkpoint; a later explicit run may resume",
+                  flush=True)
         return 0
 
 
