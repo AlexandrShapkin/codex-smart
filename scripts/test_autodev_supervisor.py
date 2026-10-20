@@ -290,6 +290,19 @@ class SupervisorTests(unittest.TestCase):
         finally:
             os.close(fd)
 
+    def test_state_directory_must_not_be_checkout_ancestor(self):
+        # A 0700 parent can be a valid private directory, but never a
+        # supervisor state location when it also contains the worktree.
+        with self.assertRaises(autodev.Refused):
+            autodev.execute([
+                "run", "--apply", "--manifest", str(self.manifest),
+                "--repo", str(self.repo), "--state-dir", str(self.base),
+                "--codex", str(self.codex),
+                "--codex-sha256",
+                hashlib.sha256(self.codex.read_bytes()).hexdigest(),
+            ])
+        self.assertFalse((self.base / "state.json").exists())
+
     def test_rejects_overlapping_codex_auth_profile(self):
         candidate = self.state / "codex-profile"
         candidate.mkdir(mode=0o700)
