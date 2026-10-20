@@ -84,15 +84,16 @@ class SupervisorTests(unittest.TestCase):
         )
         self.bwrap.chmod(0o700)
 
-    def write_manifest(self, count=3, prompts=None, paths=None):
+    def write_manifest(self, count=3, prompts=None, paths=None, recipe=None):
         prompts = prompts or [f"Add regression test stage {i}" for i in range(count)]
         body = {
             "schema": 1,
             "repository": "AlexandrShapkin/sandbox",
             "expected_sha": self.head,
             "tasks": [
-                {"id": f"stage-{i}", "prompt": prompts[i],
-                 "paths": paths or ["small.py"]}
+                {**{"id": f"stage-{i}", "prompt": prompts[i],
+                    "paths": paths or ["small.py"]},
+                 **({"recipe": recipe} if recipe is not None else {})}
                 for i in range(count)
             ]
         }
@@ -189,6 +190,49 @@ class SupervisorTests(unittest.TestCase):
         with self.assertRaises(autodev.Refused):
             self.run_case(extra=["--test-seconds", "999"])
         self.assertFalse((self.state / "state.json").exists())
+
+    def test_rust_edit_manifest_requires_cargo_recipe(self):
+        self.write_manifest(paths=["lib.rs"])
+        with self.assertRaises(autodev.Refused):
+            autodev.manifest(self.manifest)
+        self.write_manifest(paths=["lib.rs"], recipe="rust-cargo-test")
+        data, _ = autodev.manifest(self.manifest)
+        self.assertEqual(data["tasks"][0]["recipe"], "rust-cargo-test")
+        self.write_manifest(paths=["lib.rs"], recipe="unrestricted-shell")
+        with self.assertRaises(autodev.Refused):
+            autodev.manifest(self.manifest)
+
+    def test_rust_cargo_gate_uses_fixed_offline_command(self):
+        (self.repo / "Cargo.toml").write_text(
+            '[package]\nname="sample"\nversion="0.1.0"\nedition="2021"\n'
+        )
+        expected = hashlib.sha256(self.bwrap.read_bytes()).hexdigest()
+        original_is_file = Path.is_file
+        def fake_is_file(path):
+            if str(path) == "/usr/bin/cargo":
+                return True
+            return original_is_file(path)
+        with mock.patch.object(Path, "is_file", fake_is_file), \
+             mock.patch.object(autodev, "bounded_codex", return_value=0) as bound:
+            autodev.project_test_gate(
+                self.repo, self.bwrap, expected, timeout=30,
+                recipe="rust-cargo-test",
+            )
+        invocation = bound.call_args.args[0]
+        self.assertIn("--unshare-all", invocation)
+        self.assertIn("--offline", invocation)
+        self.assertIn("--locked", invocation)
+        self.assertIn("--workspace", invocation)
+        self.assertIn("/usr/bin/cargo", invocation)
+        self.assertNotIn("sh", invocation)
+
+    def test_rejects_cargo_recipe_when_manifest_missing(self):
+        expected = hashlib.sha256(self.bwrap.read_bytes()).hexdigest()
+        with self.assertRaises(autodev.Refused):
+            autodev.project_test_gate(
+                self.repo, self.bwrap, expected, timeout=30,
+                recipe="rust-cargo-test",
+            )
 
     def test_started_attempt_never_retried_after_failure(self):
         self.write_manifest(prompts=[
@@ -313,7 +357,7 @@ class SupervisorTests(unittest.TestCase):
         git(self.repo, "add", "lib.rs")
         git(self.repo, "commit", "-qm", "add Rust fixture")
         self.head = git(self.repo, "rev-parse", "HEAD")
-        self.write_manifest(paths=["lib.rs"])
+        self.write_manifest(paths=["lib.rs"], recipe="rust-cargo-test")
         self.codex.write_text(
             "#!/usr/bin/env python3\n"
             "from pathlib import Path\n"
