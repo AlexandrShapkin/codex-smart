@@ -40,7 +40,8 @@ reviewing the manifest, repository scope and local account permissions:
 ~~~sh
 python3 scripts/autodev_supervisor.py run --apply --manifest /private/queue.json \
   --repo /private/relayforge-worktree --state-dir /private/autodev-state \
-  --codex /absolute/verified/path/to/codex
+  --codex /absolute/verified/path/to/codex \
+  --codex-sha256 ACTUAL_64_CHAR_HEX_SHA256
 ~~~
 
 To run only one or two stages per invocation, pass `--max-stages 1`
@@ -66,6 +67,7 @@ auto-reviews, auto-merges or deploys.
 ## Execution contract
 
 - Three to five stages; each Codex call lasts at most 20 minutes.
+- The operator supplies an independently trusted SHA256 for the exact installed Codex executable; the runner hashes it before every model stage. This narrows replacement risk but does not eliminate filesystem execution races.
 - Codex receives a temporary copy of bounded, regular, tracked source files
   WITHOUT .git or untracked content. It receives no GitHub/SSH token,
   SSH_AUTH_SOCK or unrelated environment secrets from the supervisor.
