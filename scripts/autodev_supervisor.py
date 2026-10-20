@@ -335,7 +335,9 @@ def validate_sources(scratch, paths, rustfmt=None):
             deny("no bounded syntax verification for source extension")
 
 
-def apply_changes(repo, scratch, paths, copied):
+def scoped_candidates(repo, scratch, paths, copied):
+    """Read-only safety check BEFORE running any project test code."""
+
     # Reject ALL out-of-scope edits in the sandbox, not just changes that
     # would otherwise be copied back to the operator's checkout.
     for candidate in scratch.rglob("*"):
@@ -362,10 +364,16 @@ def apply_changes(repo, scratch, paths, copied):
         before, after = target.read_bytes(), source.read_bytes()
         if after != before:
             after.decode("utf-8")
-            target.write_bytes(after)
             changed.append(name)
     if not changed:
         deny("task made no permitted change")
+    return changed
+
+
+def apply_changes(repo, scratch, paths, copied):
+    changed = scoped_candidates(repo, scratch, paths, copied)
+    for name in changed:
+        (repo / name).write_bytes((scratch / name).read_bytes())
     status = git(repo, "status", "--porcelain=v1", "-z", "--untracked-files=all").stdout
     rows = status.split(b"\0")
     if rows[-1] != b"":
@@ -431,8 +439,52 @@ def bounded_codex(argv, *, cwd, env, seconds):
         return child.returncode
 
 
+def project_test_gate(scratch, bwrap, expected_sha, *, timeout):
+    """Run ONE fixed project-test recipe inside a networkless OS sandbox.
+
+    Project test code is untrusted: never execute it directly on the host.
+    The validation copy is mounted read-only. No user HOME, secrets, network,
+    SSH, Git metadata, host services or mutable host worktree are mounted.
+    """
+    if not 15 <= timeout <= 240:
+        deny("validation timeout outside bounded range")
+    pinned_executable(bwrap, expected_sha)
+    if not (scratch / "scripts").is_dir():
+        deny("Python project test directory unavailable")
+    # Limit the filesystem view to the system Python runtime and this source
+    # snapshot. Do not accidentally ro-bind /, /home, /etc or /var.
+    args = [str(bwrap), "--die-with-parent", "--unshare-all", "--new-session",
+            "--ro-bind", "/usr", "/usr"]
+    for system in ("/bin", "/lib", "/lib64"):
+        if Path(system).exists():
+            if Path(system).is_symlink():
+                args += ["--symlink", os.readlink(system), system]
+            else:
+                args += ["--ro-bind", system, system]
+    args += ["--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp",
+             "--ro-bind", str(scratch), "/workspace",
+             "--chdir", "/workspace", "--setenv", "HOME", "/tmp",
+             "--setenv", "PYTHONDONTWRITEBYTECODE", "1",
+             "--setenv", "PATH", "/usr/bin:/bin",
+             "--", "/usr/bin/python3", "-I", "-B", "-m", "unittest",
+             "discover", "-s", "scripts", "-p", "test_*.py"]
+    try:
+        status = bounded_codex(
+            args, cwd=scratch,
+            env={"PATH": "/usr/bin:/bin", "HOME": "/tmp", "LANG": "C.UTF-8"},
+            seconds=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        deny("isolated project tests exceeded time budget")
+    if status != 0:
+        deny("isolated project tests did not pass")
+    # The OS sandbox normally keeps snapshot read-only. This repeat check
+    # below prevents a broken/mock sandbox from silently altering sources.
+
+
 def run_task(repo, directory, task, codex, seconds, rustfmt=None, codex_sha=None,
-             codex_home=None):
+             codex_home=None, test_bwrap=None, test_bwrap_sha=None,
+             test_seconds=120):
     with tempfile.TemporaryDirectory(prefix="source-", dir=directory) as base:
         scratch = Path(base)
         copied = source_copy(repo, scratch)
@@ -456,7 +508,11 @@ def run_task(repo, directory, task, codex, seconds, rustfmt=None, codex_sha=None
         )
         if code:
             deny("Codex exited unsuccessfully")
+        scoped_candidates(repo, scratch, task["paths"], copied)
         validate_sources(scratch, task["paths"], rustfmt=rustfmt)
+        project_test_gate(scratch, test_bwrap, test_bwrap_sha,
+                          timeout=test_seconds)
+        # Model code and all project checks finished before ANY worktree write.
         return apply_changes(repo, scratch, task["paths"], copied)
 
 
@@ -507,6 +563,9 @@ def execute(argv=None):
     parser.add_argument("--codex-sha256")
     parser.add_argument("--codex-home", type=Path)
     parser.add_argument("--rustfmt", type=Path)
+    parser.add_argument("--test-bwrap", type=Path)
+    parser.add_argument("--test-bwrap-sha256")
+    parser.add_argument("--test-seconds", type=int, default=120)
     parser.add_argument("--stage-seconds", type=int, default=900)
     parser.add_argument("--max-stages", type=int, default=5)
     parser.add_argument("--apply", action="store_true")
@@ -541,6 +600,11 @@ def execute(argv=None):
         if args.codex is None:
             deny("Codex executable required")
         pinned_executable(args.codex, args.codex_sha256)
+        if args.test_bwrap is None:
+            deny("offline project validation requires pinned bubblewrap")
+        pinned_executable(args.test_bwrap, args.test_bwrap_sha256)
+        if not 15 <= args.test_seconds <= 240:
+            deny("project test timeout outside approved range")
         if args.codex_home is not None:
             safe_directory(args.codex_home, mode=0o700)
             if overlaps(args.codex_home, args.repo) or overlaps(
@@ -569,7 +633,10 @@ def execute(argv=None):
             save_state(args.state_dir, state)  # before ANY model invocation
             changed = run_task(args.repo, args.state_dir, task, args.codex, args.stage_seconds,
                                rustfmt=args.rustfmt, codex_sha=args.codex_sha256,
-                               codex_home=args.codex_home)
+                               codex_home=args.codex_home,
+                               test_bwrap=args.test_bwrap,
+                               test_bwrap_sha=args.test_bwrap_sha256,
+                               test_seconds=args.test_seconds)
             new_head = commit_stage(args.repo, task, changed)
             state["commits"].append({"task_id": task["id"], "sha": new_head})
             state["head"] = new_head
