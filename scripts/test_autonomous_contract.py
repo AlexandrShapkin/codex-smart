@@ -153,6 +153,16 @@ class PassiveContractTests(unittest.TestCase):
         self.denied(self.replace('project_type = "rust-workspace"', 'project_type = "linux-host-admin"'))
         self.denied(self.replace('repository = "Owner/fixture"', 'repository = "Owner/../fixture"'))
 
+    def test_reject_root_lexical_parent_component(self):
+        # Path.is_absolute/is_dir accept this alias when the middle dir exists.
+        detour = self.root.parent / "detour"
+        detour.mkdir()
+        alias = detour / ".." / "worktree"
+        self.assertTrue(alias.is_absolute())
+        self.assertTrue(alias.is_dir())
+        self.assertIn("..", alias.parts)
+        self.denied(root=alias)
+
     def test_reject_root_symlink(self):
         link = Path(self.temp.name) / "shortcut"
         link.symlink_to(self.root, target_is_directory=True)
