@@ -120,6 +120,32 @@ auto-reviews, auto-merges or deploys.
 - Publishing is separately gated. An ambiguous push/PR operation leaves
   PUBLISHING, with NO automatic retry or duplicate PR.
 
+## RelayForge job.chain: read-only evidence adapter
+
+The separate `scripts/autodev_relayforge.py` adapter accepts a JSON export
+assembled by an authorized RelayForge client. It **never calls MCP**, opens
+network connections or modifies any service. Export schema 1 contains
+`status` (the JSON returned by `job.chain.status`) and ordered `outputs`
+(one JSON object from `job.chain.output` for each 1-based step), plus
+`schema: 1`. Use an operator-owned private 0600 export file and the exact
+returned job ID:
+
+~~~sh
+python3 scripts/autodev_relayforge.py \
+  --bundle /private/chain-export.json \
+  --expected-job-id relayforge-job-1792429049-07f0cb
+~~~
+
+The adapter checks the fixed chain ID, 2–6 completed stages, consistent
+step receipts, zero exit codes and bounded UTF-8 output, then prints only
+the stage count and a SHA256 fingerprint. It never prints stage stdout,
+stderr or scripts. **The file itself is not authenticated**; even a valid
+report means only that the exported JSON *claims* successful offline work,
+not that the current source checkout was tested or that a live RelayForge
+worker was queried. Until live read-only MCP authentication and source-SHA
+binding are implemented, this adapter MUST NOT be used to authorize a
+commit, source edit, merge, deployment or unsafe operation.
+
 ## Deliberately incomplete
 
 This is a controlled local pilot, not an installed autonomous system.
