@@ -91,9 +91,15 @@ def manifest(path):
         deny("exactly 3–5 small tasks required")
     names = set()
     for task in tasks:
-        if not isinstance(task, dict) or set(task) != {"id", "prompt", "paths"}:
+        if not isinstance(task, dict) or not (
+            {"id", "prompt", "paths"} <= set(task)
+            <= {"id", "prompt", "paths", "recipe"}
+        ):
             deny("invalid task fields")
         name, prompt, paths = task["id"], task["prompt"], task["paths"]
+        recipe = task.get("recipe", "python-unittest")
+        if recipe not in ("python-unittest", "rust-cargo-test"):
+            deny("unsupported fixed project-test recipe")
         if not isinstance(name, str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", name):
             deny("invalid task identity")
         if name in names:
@@ -107,6 +113,8 @@ def manifest(path):
             deny("duplicate path")
         for path in paths:
             validate_path(path)
+        if any(path.endswith(".rs") for path in paths) and recipe != "rust-cargo-test":
+            deny("Rust edits require Rust workspace test recipe")
     return doc, hashlib.sha256(raw).hexdigest()
 
 
@@ -439,7 +447,7 @@ def bounded_codex(argv, *, cwd, env, seconds):
         return child.returncode
 
 
-def project_test_gate(scratch, bwrap, expected_sha, *, timeout):
+def project_test_gate(scratch, bwrap, expected_sha, *, timeout, recipe="python-unittest"):
     """Run ONE fixed project-test recipe inside a networkless OS sandbox.
 
     Project test code is untrusted: never execute it directly on the host.
@@ -449,8 +457,25 @@ def project_test_gate(scratch, bwrap, expected_sha, *, timeout):
     if not 15 <= timeout <= 240:
         deny("validation timeout outside bounded range")
     pinned_executable(bwrap, expected_sha)
-    if not (scratch / "scripts").is_dir():
-        deny("Python project test directory unavailable")
+    if recipe == "python-unittest":
+        if not (scratch / "scripts").is_dir():
+            deny("Python project test directory unavailable")
+        inside_command = [
+            "/usr/bin/python3", "-I", "-B", "-m", "unittest",
+            "discover", "-s", "scripts", "-p", "test_*.py",
+        ]
+    elif recipe == "rust-cargo-test":
+        # Only system-installed Cargo and offline, self-contained/vendor-based
+        # workspaces are supported. No $HOME/rustup, user registries or tokens.
+        if not (scratch / "Cargo.toml").is_file():
+            deny("Rust workspace manifest unavailable")
+        if not Path("/usr/bin/cargo").is_file():
+            deny("system Cargo unavailable")
+        inside_command = [
+            "/usr/bin/cargo", "test", "--locked", "--offline", "--workspace",
+        ]
+    else:
+        deny("unrecognized validation recipe")
     # Limit the filesystem view to the system Python runtime and this source
     # snapshot. Do not accidentally ro-bind /, /home, /etc or /var.
     args = [str(bwrap), "--die-with-parent", "--unshare-all", "--new-session",
@@ -466,8 +491,10 @@ def project_test_gate(scratch, bwrap, expected_sha, *, timeout):
              "--chdir", "/workspace", "--setenv", "HOME", "/tmp",
              "--setenv", "PYTHONDONTWRITEBYTECODE", "1",
              "--setenv", "PATH", "/usr/bin:/bin",
-             "--", "/usr/bin/python3", "-I", "-B", "-m", "unittest",
-             "discover", "-s", "scripts", "-p", "test_*.py"]
+             "--setenv", "CARGO_HOME", "/tmp/cargo",
+             "--setenv", "CARGO_TARGET_DIR", "/tmp/target",
+             "--setenv", "CARGO_NET_OFFLINE", "true",
+             "--", *inside_command]
     try:
         status = bounded_codex(
             args, cwd=scratch,
@@ -511,7 +538,7 @@ def run_task(repo, directory, task, codex, seconds, rustfmt=None, codex_sha=None
         scoped_candidates(repo, scratch, task["paths"], copied)
         validate_sources(scratch, task["paths"], rustfmt=rustfmt)
         project_test_gate(scratch, test_bwrap, test_bwrap_sha,
-                          timeout=test_seconds)
+                          timeout=test_seconds, recipe=task.get("recipe", "python-unittest"))
         # Model code and all project checks finished before ANY worktree write.
         return apply_changes(repo, scratch, task["paths"], copied)
 
