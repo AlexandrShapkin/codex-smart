@@ -471,8 +471,8 @@ def project_test_gate(scratch, bwrap, expected_sha, *, timeout, recipe="python-u
             deny("Rust workspace manifest unavailable")
         if not Path("/usr/bin/cargo").is_file():
             deny("system Cargo unavailable")
-        if not Path("/usr/bin/rustc").is_file() or not Path("/usr/bin/cc").is_file():
-            deny("system Rust compiler or linker unavailable")
+        if not Path("/usr/bin/rustc").is_file() or not Path("/usr/bin/gcc").is_file():
+            deny("system Rust compiler or GCC linker unavailable")
         inside_command = [
             "/usr/bin/cargo", "test", "--locked", "--offline", "--workspace",
         ]
@@ -496,6 +496,7 @@ def project_test_gate(scratch, bwrap, expected_sha, *, timeout, recipe="python-u
              "--setenv", "CARGO_HOME", "/tmp/cargo",
              "--setenv", "CARGO_TARGET_DIR", "/tmp/target",
              "--setenv", "CARGO_NET_OFFLINE", "true",
+             "--setenv", "RUSTFLAGS", "-C linker=/usr/bin/gcc",
              "--", *inside_command]
     try:
         status = bounded_codex(
