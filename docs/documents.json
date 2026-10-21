@@ -251,7 +251,7 @@
       ]
     },
     {
-      "path": "docs/index.md",
+      "path": "docs/INDEX.md",
       "title": "Documentation index",
       "owner": "engineering",
       "role": "generated",
@@ -560,7 +560,7 @@
       ]
     },
     {
-      "path": "docs/workflow.md",
+      "path": "docs/PROJECT_WORKFLOW.md",
       "title": "Repository development workflow",
       "owner": "engineering",
       "role": "current",
@@ -737,6 +737,51 @@
       "role": "contract",
       "stages": [
         "adaptive"
+      ]
+    },
+    {
+      "path": ".github/DEVELOPMENT_INTERFACE.md",
+      "title": "DEVELOPMENT_INTERFACE",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "AGENTS.local.md",
+      "title": "AGENTS.local",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/PROJECT.md",
+      "title": "PROJECT",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/UPGRADING.md",
+      "title": "UPGRADING",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/WORKFLOW.md",
+      "title": "WORKFLOW",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
       ]
     }
   ]
