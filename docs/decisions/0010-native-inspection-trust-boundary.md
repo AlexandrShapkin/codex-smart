@@ -35,7 +35,7 @@ and [workflow intelligence](../workflow-intelligence.md).
 | `crates/codex-smart-cli/src/plan.rs:1–13,92–120` | Explicit plan-only preview uses Unknown native evidence and grants no execution rights; it does not acquire reviewed inspection receipts. |
 | `crates/codex-smart-cli/src/prepare.rs:1–13,40–112` | Explicit worker path/digest/protocol are caller CLI inputs to local preparation, not proof of an independently enrolled native-inspection trust root. |
 | `crates/codex-smart-cli/src/main.rs:144–184,185–208` | Ordinary `run` remains the separate Codex passthrough and `plan`/`prepare` are explicit branches; no native-inspection review ingress or authority projection is joined. |
-| [Pinned source snapshot workflow](../workflow.md#pinned-source-snapshots-on-thinkpad-and-srv0) | Snapshot verification depends on an external independently recorded source receipt digest, and cannot itself qualify reviewer authority, current runtime identity, or clock/replay protection. |
+| [Pinned source snapshot workflow](../PROJECT_WORKFLOW.md#pinned-source-snapshots-on-thinkpad-and-srv0) | Snapshot verification depends on an external independently recorded source receipt digest, and cannot itself qualify reviewer authority, current runtime identity, or clock/replay protection. |
 
 A targeted repository search for `native_inspection` and `IndependentlyReviewed` in
 `crates` finds the module export, evaluator and synthetic tests, without a product

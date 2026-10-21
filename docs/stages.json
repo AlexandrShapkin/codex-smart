@@ -45,7 +45,7 @@
       ],
       "contract": "docs/stages/workflow.md",
       "reads": [
-        "docs/workflow.md",
+        "docs/PROJECT_WORKFLOW.md",
         "docs/development.md",
         "docs/decisions/0006-bounded-context.md"
       ],

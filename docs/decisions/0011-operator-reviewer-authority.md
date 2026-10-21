@@ -18,7 +18,7 @@ The following are available design and code evidence, not approved provisioning 
 | Same module, `Assessment`, `summary`, `MAX_LIFETIME_SECONDS` | AcceptedInspection only; health Unknown, execution_authorized=false, lifetime at most 300 seconds. |
 | `crates/codex-smart-core/tests/native_inspection.rs` | Synthetic binding, canonical encoding, provenance and interval regression evidence; no authenticated host provisioning. Tests are inspected, not executed in this docs task. |
 | ADR-0010 | Proposed independent root/store, identity, clock and replay obligations; not delivered infrastructure. Its 16 KiB candidate and 64 KiB combined policy/envelope bounds are conceptual. |
-| `docs/workflow.md`, review and merge authorization | Separates review, machine checks and owner authorization. ChatGPT transcription through an owner account does not establish owner intent. Repository governance is not native inspection credential provisioning. |
+| `docs/PROJECT_WORKFLOW.md`, review and merge authorization | Separates review, machine checks and owner authorization. ChatGPT transcription through an owner account does not establish owner intent. Repository governance is not native inspection credential provisioning. |
 | `SECURITY.md`, Adaptive and production readiness contracts | Untrusted project/PATH, private-data restrictions, missing runtime joins and closed production admission. |
 
 **Operator != reviewer != authenticated channel != candidate.** The operator is the

@@ -203,7 +203,7 @@ compiled adapter hashes and campaign authorizations remain independent gates.
 
 ## Normalized workflow and verification
 
-The authoritative [workflow](../workflow.md) now defines verified-main task isolation,
+The authoritative [workflow](../PROJECT_WORKFLOW.md) now defines verified-main task isolation,
 offline gates, reviewed PR integration, complete-source receipts and non-destructive
 interruption recovery. Read-only diagnostics never refresh remote knowledge;
 worktree creation is the explicit network/mutation step. Source export writes only

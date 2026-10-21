@@ -9,6 +9,10 @@ jobs:
       RUSTUP_TOOLCHAIN: 1.98.0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify reviewed governance sources
+        run: python3 -B scripts/test_governance_sources.py
       - uses: ./.github/actions/setup-just
       - run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
       - run: just check
