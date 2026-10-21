@@ -95,6 +95,16 @@ for protocol, actual post-spawn supervision and remaining containment limits.
 
 ## Development
 
+`just doctor /absolute/trusted/codex-smart EXPECTED_SHA256` runs only an already
+prepared executable explicitly trusted by the operator, with its recorded digest.
+The Linux wrapper pins the verified executable inode through `/proc`; it does not
+search PATH, discover a build output, compile, install or download anything.
+No executable/digest, a missing binary or failed verification returns `UNAVAILABLE`.
+On other platforms invoke the trusted prepared CLI's `doctor` directly.
+Preparing a binary is a separate mutating development step, for example
+`cargo build --locked -p codex-smart-cli --bin codex-smart`; this can execute
+build scripts, fetch dependencies and write `target/`. It is never a doctor fallback.
+
 Start with `just context [STAGE]` and `just issues`; validate with `just check`. See the [development guide](docs/development.md) for prerequisites and [workflow](docs/PROJECT_WORKFLOW.md) for documentation ownership. Security checks use `just security-fetch` for the explicit public advisory refresh, then `just security`.
 
 ## Documentation
