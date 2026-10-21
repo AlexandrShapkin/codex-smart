@@ -8,7 +8,7 @@ repository = "AlexandrShapkin/codex-smart"
 [context]
 entrypoint = "AGENTS.md"
 architecture = "docs/architecture.md"
-workflow = "docs/workflow.md"
+workflow = "docs/PROJECT_WORKFLOW.md"
 current_plan = "ROADMAP.md"
 security = "SECURITY.md"
 task_source = "github-issues"

@@ -36,3 +36,18 @@ must be reconciled explicitly during independent review; do not merge either
 policy activation blindly. This branch starts from main, not an unreviewed stack.
 Author checks, exact-head native CI, independent acceptance and merge authority
 remain separate. No consumer is ACCEPTED by opening this Draft.
+
+## Bounded release matrix qualification
+
+| Product | Targets / format | Qualification |
+| --- | --- | --- |
+| CLI | Linux x86_64 working preview; additional targets require their own evidence | Existing `docs/releasing.md` and `docs/distribution.md` remain authoritative; no installer or portable package support is inferred from a Cargo build. |
+
+The first significant distributable release must select usable CLI packages from
+that qualified target set, with SHA-256, source/build provenance and narrative
+notes. Unqualified targets are omitted, never filled by placeholder artifacts.
+
+Contract v1 adoption remains inert. Its canonical schema and passive validator
+are Codex Smart #166/#167; independently pinned adapter mappings and Git evidence
+must be accepted before claiming authenticated readiness. GitHub Issues remain
+the live queue. No runtime or optional Hub integration is enabled.
