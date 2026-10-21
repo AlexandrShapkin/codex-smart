@@ -2,7 +2,7 @@
 
 This dated audit observes accepted GitHub main `5102c0ebefeb53c3dbd56021266b340524be7ad3`.
 It is a historical inventory, not a deployment instruction or performance result.
-The authoritative operational procedure is [workflow](../workflow.md).
+The authoritative operational procedure is [workflow](../PROJECT_WORKFLOW.md).
 All implementation was isolated on `chore/infrastructure-reconciliation`, initially
 at that main commit. No existing checkout, PR implementation, deployment, benchmark
 evidence, issue state, milestone, branch existence or protection setting was changed.

@@ -23,7 +23,7 @@ just docs-generate; just docs-check; just check. Isolated regression tests; dogf
 
 ## Context
 
-Read [docs/workflow.md](../../docs/workflow.md), [docs/development.md](../../docs/development.md), [docs/decisions/0006-bounded-context.md](../../docs/decisions/0006-bounded-context.md). Start with `just context workflow`; follow source entry points only as needed.
+Read [docs/PROJECT_WORKFLOW.md](../../docs/PROJECT_WORKFLOW.md), [docs/development.md](../../docs/development.md), [docs/decisions/0006-bounded-context.md](../../docs/decisions/0006-bounded-context.md). Start with `just context workflow`; follow source entry points only as needed.
 
 ## Follow-ups
 
