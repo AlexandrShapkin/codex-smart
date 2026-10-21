@@ -7,7 +7,9 @@ GitHub Issues own live state; local issue files preserve design references.
 
 | Document | Owner | Role | Stages |
 | --- | --- | --- | --- |
+| [DEVELOPMENT_INTERFACE](../.github/DEVELOPMENT_INTERFACE.md) | engineering | current | workflow |
 | [pull_request_template](../.github/pull_request_template.md) | engineering | current | workflow |
+| [AGENTS.local](../AGENTS.local.md) | engineering | current | workflow |
 | [Repository engineering contract](../AGENTS.md) | engineering | current | workflow |
 | [Changelog](../CHANGELOG.md) | engineering | current | baseline |
 | [Contributing](../CONTRIBUTING.md) | engineering | current | workflow |
@@ -15,6 +17,11 @@ GitHub Issues own live state; local issue files preserve design references.
 | [Roadmap](../ROADMAP.md) | engineering | generated | workflow |
 | [Security](../SECURITY.md) | security | current | hardening |
 | [Codex Smart — project brief and engineering backlog](../codex-smart-project-brief.md) | provenance | input | baseline |
+| [Documentation index](../docs/INDEX.md) | engineering | generated | workflow |
+| [PROJECT](../docs/PROJECT.md) | engineering | current | workflow |
+| [Repository development workflow](../docs/PROJECT_WORKFLOW.md) | engineering | current | workflow |
+| [UPGRADING](../docs/UPGRADING.md) | engineering | current | workflow |
+| [WORKFLOW](../docs/WORKFLOW.md) | engineering | current | workflow |
 | [Adaptive split-host operator runbook](../docs/adaptive-operations.md) | benchmark | current | adaptive, benchmark |
 | [Architecture](../docs/architecture.md) | architecture | current | baseline, router, playbooks, adaptive, automation, distribution |
 | [Benchmark qualified-host and representative runner contract](../docs/benchmark-host.md) | benchmark | contract | benchmark |
@@ -45,7 +52,6 @@ GitHub Issues own live state; local issue files preserve design references.
 | [Repository workflow normalization audit](../docs/diagnostics/2026-10-14-workflow-normalization.md) | engineering | historical | workflow |
 | [Distribution and release lifecycle target](../docs/distribution.md) | release | contract | playbooks, adaptive, automation, distribution, hardening, stable |
 | [Offline Doctor contract](../docs/doctor.md) | engineering | current | doctor |
-| [Documentation index](../docs/index.md) | engineering | generated | workflow |
 | [P0: Establish repository provenance and baseline](../docs/issues/01.md) | engineering | reference | baseline |
 | [P0: Bootstrap Rust workspace and CLI](../docs/issues/02.md) | engineering | reference | baseline |
 | [P0: Implement read-only capability preflight](../docs/issues/03.md) | engineering | reference | baseline |
@@ -85,4 +91,3 @@ GitHub Issues own live state; local issue files preserve design references.
 | [Tooling and capability trust](../docs/tooling.md) | engineering | current | tools, doctor |
 | [Versioning](../docs/versioning.md) | release | current | stable |
 | [Workflow intelligence target](../docs/workflow-intelligence.md) | architecture | contract | playbooks, adaptive, automation, distribution, hardening, stable |
-| [Repository development workflow](../docs/workflow.md) | engineering | current | workflow |

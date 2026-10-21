@@ -172,7 +172,7 @@ class Repository:
         for doc in sorted(self.docs["documents"], key=lambda d: d["path"]):
             relative = "../" + doc["path"]
             index.append(f"| [{doc['title']}]({relative}) | {doc['owner']} | {doc['role']} | {', '.join(doc['stages'])} |")
-        return {"ROADMAP.md": "\n".join(roadmap), "docs/index.md": "\n".join(index) + "\n"}
+        return {"ROADMAP.md": "\n".join(roadmap), "docs/INDEX.md": "\n".join(index) + "\n"}
 
     def check(self):
         self.validate()
@@ -250,7 +250,7 @@ def main():
             repo.validate()
             for name, content in repo.views().items():
                 repo.path(name).write_text(content, encoding="utf-8")
-            print("Generated ROADMAP.md and docs/index.md")
+            print("Generated ROADMAP.md and docs/INDEX.md")
     except (ValueError, KeyError, TypeError, OSError) as error:
         reason = str(error) if type(error) is ValueError else "Invalid registry/document input"
         code = "E_WORKFLOW" if args.action in actions else "E_DOCS"

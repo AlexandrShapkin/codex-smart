@@ -1,3 +1,10 @@
+# Native project procedures
+
+The canonical [Template interface](../.github/DEVELOPMENT_INTERFACE.md) owns the shared
+lifecycle. Retained local procedures and stronger product gates remain binding;
+historical generic workflow/standing-merge wording cannot weaken that interface
+or grant merge authority. Preserve bootstrap consent, vetoes and PR #125 ban.
+
 # Repository development workflow
 
 GitHub [AlexandrShapkin/codex-smart main](https://github.com/AlexandrShapkin/codex-smart/tree/main)
@@ -518,7 +525,7 @@ stage labels track mutable implementation ownership.
   entry points and recorded implementation progress. Each stage has a contract
   defining scope, non-goals, acceptance, validation, context and follow-ups.
 - `docs/documents.json` owns each Markdown document's maintainer, role and stages.
-  [The generated index](index.md) is the entry point. Current docs describe delivered
+  [The generated index](INDEX.md) is the entry point. Current docs describe delivered
   behavior; ADRs own durable decisions; dated diagnostics are historical evidence.
 - GitHub Issues own live actionable state, dependencies and acceptance discussion.
   `just issues` explicitly fetches bounded metadata through authenticated gh. Local
@@ -537,7 +544,7 @@ documents and 128 KiB per file. Document discovery is limited to root Markdown,
 `docs/` and `.github/`; runtime and generated build trees are excluded.
 
 `just docs-generate` is the separate explicit write: it rebuilds ROADMAP.md and
-docs/index.md deterministically from the registries, without timestamps or live issue
+docs/INDEX.md deterministically from the registries, without timestamps or live issue
 states. Update registries/contracts first; inspect both generated diffs. Add ownership
 for every new document. Never edit generated views directly.
 

@@ -1,0 +1,57 @@
+name: Task
+description: Bounded development task
+title: "[Task] "
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal and evidence
+      description: Current behavior, desired outcome and supporting evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope, non-goals and dependencies
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance and native verification
+      description: Commands, platforms, security checks and observable success.
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks, data impact and rollback
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Author/triager must assign exactly one matching priority:* label; dropdowns do not assign labels.
+      options:
+        - P2 planned
+        - P0 critical
+        - P1 blocking
+        - P3 later
+    validations:
+      required: true
+  - type: input
+    id: area
+    attributes:
+      label: Work kind and primary area
+      description: Required type:* and area:* labels; author/triager assigns actual labels.
+    validations:
+      required: true
+  - type: input
+    id: stage
+    attributes:
+      label: Stage and applicable Milestone
+      description: Use the documented roadmap stage; Milestone only for a confirmed deliverable, otherwise N/A with reason.
+  - type: textarea
+    id: debt
+    attributes:
+      label: Technical debt (if applicable)
+      description: Priority, owner, subsystem, impact and actionable completion criteria; otherwise none.
