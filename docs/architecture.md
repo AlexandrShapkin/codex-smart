@@ -35,14 +35,15 @@ part of normal startup. Hash verification narrows execution races without elimin
 
 ## Cross-repository Autonomous Development Contract v1 (disabled metadata schema)
 
-The proposed `automation/project.toml` is an optional **data contract**, not
+The `automation/project.toml` v1 is an optional **data contract**, not
 a new orchestrator or an execution policy. This design is tracked in
 [Issue #165](https://github.com/AlexandrShapkin/codex-smart/issues/165).
 An initial disabled candidate exists in
 [RelayForge PR #72](https://github.com/AlexandrShapkin/relayforge/pull/72).
 Draft [PR #167](https://github.com/AlexandrShapkin/codex-smart/pull/167)
-implements a **passive** stdlib TOML v1 parser and negative tests; it is not
-merged, is not an executable adapter, and grants no permission.
+implements the passive stdlib TOML parser, fixed project profile policy and
+explicit inert admission described below. It is not merged and grants no
+execution permission. These modules are not wired into CLI or a runner.
 In particular, experimental PR #164's operator-owned JSON manifest,
 offline test recipes and private checkpoint ledger remain independent and
 unchanged. The `run` command remains passthrough.
@@ -72,8 +73,10 @@ or version; tracked manifest content never grants authority.
 
 ### Exact disabled-only v1 shape (parser baseline)
 
-Normative syntax for metadata consumers is aligned to Draft #167 at full
-head `12ebbc84547aae159f99cc33e4bef487e6e7f774`. The only required
+Normative syntax is exactly `scripts/autonomous_contract.py` in Draft #167
+(the unchanged parser baseline is
+`12ebbc84547aae159f99cc33e4bef487e6e7f774`). The admission API does not add TOML
+fields, extensions or an activation switch. The only required
 root-level keys are `schema_version`, `project_id`, `project_type`,
 `repository`, `context`, `verification`, `execution`, `change_policy`.
 All four child tables require **exactly** the keys shown in the table above;
@@ -122,19 +125,82 @@ extra platform keys or downgrade/forward compatibility are silently accepted.
   not attested facts**. Neither the parser nor its `lstat` checks verifies
   Git origin, tracked files, immutable checkout or TOCTOU safety.
 
-Only explicit fixed-argv trusted adapters outside the repository contract
-may eventually translate profile IDs into OS commands, with project-specific
-mandatory tests, platform gates and externally observed exact-head CI/review
-evidence. RustCraft `just ci` and Windows/Linux checks, Assistant Hub's
-Python/public-tree/UI checks, and RelayForge's offline-vs-device distinction
-must remain stronger than any generic ID requirement. Unknown adapters,
-missing dependencies or proofs, and interruption/restart ambiguity are
-refusals. Draft #166 remains documentation-only; Draft #167 remains
-non-authorizing passive code. Neither can independently enable executions.
+### Implemented inert admission boundary
+
+Authenticated owner restrictions outrank independently pinned operator policy;
+that policy outranks the accepted-main project contract, which outranks untrusted
+task content. None can enable execution in the disabled-only v1 schema.
+The low-level parser remains pure: supplied SHA/clean facts are **not**
+authentication. The separate `scripts/autonomous_admission.py` API obtains
+actual observations before calling that parser. An independently trusted operator
+must pin the Python/module source and provide `OperatorPolicy` from outside the
+admitted repository: canonical absolute root and common Git directory, project,
+explicit approved main SHA, open Issue number, native executable paths/SHA-256
+and expected dependency-file hashes. Never construct these pins from TOML, a
+repository file, PATH discovery or Issue prose. Policy pins mean independently
+reviewed compatible bytes; admission does not discover or test tool versions.
+
+- Direct anonymous TLS GETs to fixed `api.github.com` authenticate canonical
+  numeric repository/owner IDs, `refs/heads/main` and an open GitHub Issue with
+  one P0–P3 priority. No credentials, environment proxy/CA overrides or redirects
+  are accepted. Malformed, oversized, duplicate-key, unavailable or stale evidence
+  refuses. Explicit main must equal the live SHA; an unmerged PR head is refused.
+- Native CI evidence is bound to fixed per-project workflow paths, authenticated
+  workflow IDs and same-repository exact-main **push** runs. The latest matching
+  run must succeed; its matching latest jobs must all succeed and include every
+  required native/security/platform job. Job-name-only or caller JSON evidence
+  cannot authorize admission. Both authority observations must agree. More than
+  100 runs/jobs, disabled workflows, absent push evidence and pagination ambiguity
+  deliberately refuse. Required workflow/job sets preserve Smart CI+Security,
+  RustCraft Linux+Windows, Hub Python3.11/12/13+UI and both RelayForge workflows.
+- Linux procfs and no-follow directory descriptors pin the exact ordinary root
+  and operator-specified common Git directory. Registered linked worktrees must
+  have the exact Git pointer, common-directory relationship and reverse pointer.
+  Bare/nested/redirected roots, unsafe ownership/permissions, metadata symlinks,
+  hardlinks, special files and unsupported configuration/object topology refuse.
+- Only an externally pinned, regular native ELF Git inode runs, through its held
+  descriptor, fixed read-only builtin arguments and an allowlisted environment.
+  Hooks, helpers, filters, transport, replacements, lazy fetch and inherited Git
+  or loader settings cannot supply commands. No normal `git status`, working-tree
+  diff/filter or `fsck` helper launch is used. Commit, recursive tree and blob
+  SHA-1 identities are recomputed before raw source SHA-256 comparison.
+- The complete index must equal the accepted tree, including modes and stages;
+  assume-unchanged, sparse/split state, symlinks/submodules, staged/unstaged edits,
+  untracked and ignored files refuse. Raw no-follow file reads compare bytes and
+  execute modes twice. Manifest reads are bound to the observed committed hash.
+  Empty ordinary directories do not represent tracked Git content.
+- Project policies in `scripts/autonomous_profiles.py` require the complete fixed
+  profile/workflow set. External binary pins cover required native tool roles;
+  external dependency pins cover Cargo manifests/locks/recipes or Hub's stdlib
+  project manifest. Missing, changed, repository-owned, symlinked or non-native
+  executables and mismatched dependency files refuse. Pins admit presence and
+  integrity, **not** successful local verification or future command authority.
+  Optional RustCraft nextest is not made a mandatory generic dependency.
+
+`scripts/autonomous_receipts.py` optionally records explicit admission checks in
+an existing external owner-private directory. A nonblocking lock serializes
+checks; bounded 0600 records use fsync and atomic no-clobber publication. Begin
+records survive interruption. Recovery preserves prior evidence and performs
+fresh identity/source/tool/CI admission; it never replays a command or resumes
+execution. Finished IDs are not reused. Failed native CI, dependency failures,
+unauthorized execution, stale authority and forbidden edits cause refusal.
+Synthetic failure/restart tests are admission-lifecycle proofs, not evidence
+that product commands were run by this module.
+
+Limits are fail-closed: 16KiB TOML/receipts, 128KiB per API response, 20,000
+filesystem/graph entries, 64MiB scan/graph bytes, 128MiB per pinned binary, bounded
+Git stdout and per-command deadlines, a cooperative 30-second source-observation
+budget and at most 256 receipt-directory entries. POSIX filesystem calls, DNS/TLS
+and OS scheduling are not hard real-time; byte/count/cooperative bounds do not
+constitute a sandbox. An operator-owned **quiescent** filesystem is mandatory:
+concurrent inode writers, dynamic loader/library trust and host compromise are
+outside this observation contract. Results are ephemeral observations, not reusable
+capabilities. Revalidate for every check/recovery; CI/review and owner authority
+remain separate. Unsupported hosts fail closed, with no Windows local fallback.
 
 ### Deterministic interpretation and authority
 
-A future reader must use a known parser and strict schema, bound to an
+A consumer must use a known parser and strict schema, bound to an
 explicitly verified project identity, canonical root and full 40-character
 accepted GitHub commit SHA. It must reject unknown executable profile IDs,
 unexpected keys or versions, duplicated/ambiguous paths, path traversal,
@@ -157,14 +223,12 @@ Assistant Hub, Python, public-tree and UI checks stay distinct. Codex Smart's
 own `just check`, cached `just security` and independent review gates remain
 required where applicable.
 
-The operator must supply a separate private allowed task manifest and
-permission scope. The worker creates or verifies an isolated worktree, pins
-Codex CLI and test executables, and uses the stricter of all time/file/line
-limits. A missing dependency, source cache, test recipe, safe sandbox,
-current Issue, matching SHA or trustworthy evidence causes a **refusal or
-unverified result**, never an automatic network fallback or policy downgrade.
-Resume requires a private, durable, restricted checkpoint matching the
-actual committed SHA; an ambiguous interruption is not silently replayed.
+Admission accepts no execution request, regardless of owner-supplied prose.
+The existing bounded time/file/line metadata stays disabled. A future execution
+facility would need separate reviewed authorization, executable/environment and
+sandbox admission; it is not part of this v1 acceptance and is not implied by
+profile argv templates or a successful receipt. No Codex CLI, test command, Hub
+integration, overnight supervisor or service is started here.
 
 ### Evidence and rollout boundary
 
@@ -174,13 +238,17 @@ different evidence levels. Neither a commit nor green CI authorizes merge,
 release, live benchmarking, secret access or production deployment. Explicit
 owner vetoes, including the PR #125 merge prohibition, remain binding.
 
-Adoption may be prepared **in parallel** on reviewable Draft branches:
+The existing reviewable adoption PRs are Smart #168, RustCraft #40, Hub #63
+and RelayForge #83; do not repeat their accepted migrations. Compatibility
+checks bind the current exact manifest bytes; authenticated admission still
+requires accepted main, never treating their proposed heads as accepted.
+The source-only sequence is:
 (1) review schema documentation and offline validator; (2) add disabled
 metadata through independent PRs on the four repositories without rewriting
 existing `just` or CI behavior; (3) independently review a trusted Git/source
-adapter and fixed-argv test-profile mappings; (4) verify cross-repository
-synthetic evidence without RDC or Assistant Hub; (5) only then consider a
-generic template. No cross-project manifest may be accepted as a runtime
+admission and fixed profile mappings; (4) verify cross-repository
+compatibility and isolated failure/recovery evidence without RDC or Hub runtime.
+No new generic template or orchestrator is introduced by this task. No cross-project manifest may be accepted as a runtime
 policy merely because its syntax passes. This does not activate RustCraft
 stage DX2, merge experimental PR #164, or create a parallel task queue.
 
