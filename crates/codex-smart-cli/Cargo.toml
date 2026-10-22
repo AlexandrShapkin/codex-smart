@@ -14,7 +14,7 @@ name = "codex-smart-preparation-worker"
 path = "src/preparation_worker.rs"
 [dependencies]
 codex-smart-core = { version = "=0.1.0", path = "../codex-smart-core" }
-serde_json = { version = "=1.0.151", default-features = false, features = ["std"] }
+serde_json = { version = "=1.0.154", default-features = false, features = ["std"] }
 [lints]
 workspace = true
 
