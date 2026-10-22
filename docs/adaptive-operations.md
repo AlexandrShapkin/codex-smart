@@ -6,6 +6,18 @@ qualification, frozen budgets and independently graded evidence remain separate
 gates. [Benchmarking](benchmarking.md) owns interpretation;
 [repository workflow](PROJECT_WORKFLOW.md) owns source snapshots.
 
+The benchmark-only `scripts/benchmark_runner.py` contains shared artifact guards,
+durable attempt-marker writes, identity comparisons, execution observations,
+grade/result binding, unknown-preserving aggregate arithmetic and one-shot pinned
+transport. The Adaptive campaign and orchestrator still own the exact schemas,
+measurement identity, controller decisions, retry rules, budgets, authorization,
+source-verifying bootstrap and normalized outputs. Host authentication remains in
+the trusted-handoff module; runtime qualification reuses split-host preflight.
+[#181](https://github.com/AlexandrShapkin/codex-smart/issues/181) prepares this boundary
+under #95. It implements no static campaign. A future static control requires its
+own reviewed identity, fixed policy, budget and qualification, plus separate
+execution authorization; static results must never be identified as Adaptive.
+
 ## Source and roles
 
 Implementations start from verified GitHub main in isolated worktrees. This slice

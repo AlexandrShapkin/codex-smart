@@ -12,12 +12,11 @@ import json
 import os
 from pathlib import Path
 import re
-import shlex
 import stat
-import subprocess
 import tempfile
 
 import benchmark_adaptive_campaign as live
+import benchmark_runner as runner
 import benchmark_adaptive_trusted_handoff as handoff
 import repository_workflow as repository
 
@@ -312,20 +311,9 @@ class Transport:
         body = encoded({"plan": plan, "action": action, **payload})
         if len(body) > MAX_WIRE_BYTES:
             raise OrchestrationRefusal("bounded transport input exceeded")
-        options = handoff.pinned_srv0_options()
-        command = shlex.join(["/usr/bin/python3", "-I", "-B", "-c", bootstrap])
-        try:
-            timeout = 20 * live.submission_grading.RUNTIME_MAX_SECONDS + 120 if action == "grade" else 120
-            result = subprocess.run([handoff.SSH, *options, "-T", handoff.TRUSTED_ALIAS, command],
-                                    input=body, capture_output=True, timeout=timeout, check=False)
-        except (OSError, subprocess.TimeoutExpired) as error:
-            raise OrchestrationRefusal("pinned transport interrupted/unavailable; inspect and resume") from error
-        if result.returncode:
-            raise OrchestrationRefusal("pinned host operation refused; no model replay")
-        reply = decode(result.stdout)
-        if not isinstance(reply, dict):
-            raise OrchestrationRefusal("malformed pinned host response")
-        return reply
+        timeout = 20 * live.submission_grading.RUNTIME_MAX_SECONDS + 120 if action == "grade" else 120
+        return runner.pinned_request(handoff, bootstrap, body, timeout, decode,
+                                     refusal=OrchestrationRefusal)
 
     def summary_digest(self, path):
         return handoff.pinned_srv0_summary_sha256(str(path))

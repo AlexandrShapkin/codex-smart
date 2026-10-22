@@ -353,6 +353,26 @@ class OrchestratorTests(unittest.TestCase):
             self.assertIn("verify_snapshot", args[-1])
             self.assertNotIn("shell", run.call_args.kwargs)
 
+    def test_shared_transport_failure_never_retries(self):
+        cases = ((OSError("fake"), "interrupted/unavailable"),
+                 (subprocess.TimeoutExpired("fake", 120), "interrupted/unavailable"),
+                 (SimpleNamespace(returncode=1, stdout=b""), "no model replay"),
+                 (SimpleNamespace(returncode=0, stdout=b"[]"), "malformed pinned host response"),
+                 (SimpleNamespace(returncode=0, stdout=b'{"a":1,"a":2}'), "duplicate JSON key"))
+        for reply, message in cases:
+            with self.subTest(message=message), \
+                    patch.object(operation.handoff, "pinned_srv0_options", return_value=[]), \
+                    patch.object(subprocess, "run") as run:
+                if isinstance(reply, Exception):
+                    run.side_effect = reply
+                else:
+                    run.return_value = reply
+                with self.assertRaisesRegex(ValueError, message):
+                    operation.Transport().request(self.plan, "preflight")
+                run.assert_called_once()
+                self.assertEqual(run.call_args.kwargs["timeout"], 120)
+        self.assertEqual(self.model_calls, 0)
+
     def test_transport_bootstrap_verifies_source_before_import(self):
         run = subprocess.run
 
