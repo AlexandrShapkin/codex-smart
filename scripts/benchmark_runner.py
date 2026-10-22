@@ -163,4 +163,3 @@ def pinned_request(handoff, bootstrap, body, timeout, decode, *, refusal):
     if not isinstance(reply, dict):
         raise refusal("malformed pinned host response")
     return reply
-
