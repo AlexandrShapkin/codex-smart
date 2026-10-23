@@ -7,14 +7,10 @@ retry. The absolute frozen ceiling is 20 jobs / 40 Codex exec processes.
 
 import argparse
 import datetime
-import hashlib
 import json
 import math
-import os
 from pathlib import Path
 import re
-import stat
-import statistics
 import tempfile
 import time
 
@@ -27,6 +23,7 @@ import benchmark_coverage as coverage
 import benchmark_host as host
 import benchmark_isolation as isolation
 import benchmark_representative as representative
+import benchmark_runner as runner
 import benchmark_split_host_campaign as split
 import benchmark_submission_grading as submission_grading
 
@@ -41,32 +38,19 @@ class AdaptiveCampaignRefusal(ValueError):
 
 
 def _sha256(path):
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    return runner.sha256(path)
+
+
+def _artifact_refusal(message):
+    return AdaptiveCampaignRefusal(message.replace("artifact", "adaptive artifact"))
 
 
 def _safe_path(path, *, directory=False):
-    try:
-        path = Path(path)
-    except (TypeError, ValueError):
-        raise AdaptiveCampaignRefusal("invalid adaptive artifact path") from None
-    if not path.is_absolute() or any(part.is_symlink() for part in (path, *path.parents)):
-        raise AdaptiveCampaignRefusal("symlink or relative adaptive artifact path")
-    if directory and not path.is_dir():
-        raise AdaptiveCampaignRefusal("missing adaptive artifact directory")
-    return path
+    return runner.safe_path(path, directory=directory, refusal=_artifact_refusal)
 
 
 def _regular_file(path):
-    path = _safe_path(path)
-    try:
-        info = path.lstat()
-    except FileNotFoundError:
-        return False
-    return stat.S_ISREG(info.st_mode) and info.st_nlink == 1
+    return runner.regular_file(path, refusal=_artifact_refusal)
 
 
 def jobs():
@@ -134,12 +118,9 @@ def agent_preflight(codex, code_mode_host, runtime_root, inventory_dir,
                     adapter, adapter_sha256):
     if not adaptive.profile_mapping_verified():
         raise AdaptiveCampaignRefusal("adaptive profile mapping evidence is not accepted")
-    try:
-        campaign, runtime = split.agent_preflight(
-            codex, code_mode_host, runtime_root, inventory_dir
-        )
-    except (OSError, ValueError) as error:
-        raise AdaptiveCampaignRefusal("split-host agent preflight refused") from error
+    campaign, runtime = runner.agent_preflight(
+        codex, code_mode_host, runtime_root, inventory_dir, refusal=AdaptiveCampaignRefusal
+    )
 
     adapter = Path(adapter)
     if (
@@ -185,13 +166,7 @@ def _write_json(path, value, *, exclusive=True):
         split._write_json_exclusive(path, value)
         path.chmod(0o600)
         if path.name == "started.json":
-            with path.open("rb") as stream:
-                os.fsync(stream.fileno())
-            descriptor = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
-            try:
-                os.fsync(descriptor)
-            finally:
-                os.close(descriptor)
+            runner.sync_ledger(path)
     else:
         if path.exists() and not _regular_file(path):
             raise AdaptiveCampaignRefusal("unsafe adaptive summary artifact")
@@ -256,13 +231,13 @@ def _load_started(attempt_dir, scenario_id, repetition, seed, ordinal):
         "adapter_state", "started_at",
     }
     if (type(started) is not dict or set(started) != required
-            or type(started["schema_version"]) is not int or started["schema_version"] != 1
-            or started["measurement_id"] != adaptive.load_contract()["measurement_id"]
-            or started["job_id"] != _job_id(scenario_id, repetition, seed)
-            or started["scenario_id"] != scenario_id
-            or type(started["repetition"]) is not int or started["repetition"] != repetition
-            or type(started["seed"]) is not int or started["seed"] != seed
-            or type(started["attempt"]) is not int or started["attempt"] != ordinal
+            or not runner.attempt_identity_matches(started, {
+                "schema_version": 1,
+                "measurement_id": adaptive.load_contract()["measurement_id"],
+                "job_id": _job_id(scenario_id, repetition, seed),
+                "scenario_id": scenario_id, "repetition": repetition,
+                "seed": seed, "attempt": ordinal,
+            })
             or started["adapter_state"] != "ready"
             or started["controller_attempts_started_before"] != ordinal - 1
             or started["controller_retries_used_before"] != ordinal - 1
@@ -349,29 +324,9 @@ def _execute_attempt(
         execution_started_at = datetime.datetime.now(
             datetime.timezone.utc
         ).isoformat()
-        try:
-            observation = execute_fn(
-                argv, workspace, prompt, timeout=campaign["timeout_seconds"]
-            )
-        except OSError:
-            observation = {
-                "stdout": "",
-                "stderr": "",
-                "exit_status": None,
-                "timeout": False,
-                "duration": 0.0,
-                "launch_failure": True,
-            }
-        parsed = b.parse_trace(observation["stdout"])
-        failure = split._agent_reason(observation, parsed)
-        envelope = None
-        export_error = None
-        if failure is None:
-            try:
-                envelope = split.export_submission(scenario, workspace)
-            except (OSError, ValueError) as error:
-                failure = "submission-export-refused"
-                export_error = type(error).__name__
+        observation, parsed, failure, envelope, export_error = runner.observe_attempt(
+            argv, workspace, prompt, campaign["timeout_seconds"], execute_fn, scenario
+        )
 
         _write_text_exclusive(attempt_dir / "trace.jsonl", observation["stdout"])
         _write_text_exclusive(attempt_dir / "stderr.txt", observation["stderr"])
@@ -527,13 +482,13 @@ def _load_attempt_result(attempt_dir, scenario_id, repetition, seed, ordinal, *,
     if (
         type(result) is not dict
         or set(result) != required
-        or type(result["schema_version"]) is not int or result["schema_version"] != 1
-        or result["measurement_id"] != adaptive.load_contract()["measurement_id"]
-        or result["job_id"] != _job_id(scenario_id, repetition, seed)
-        or result["scenario_id"] != scenario_id
-        or type(result["repetition"]) is not int or result["repetition"] != repetition
-        or type(result["seed"]) is not int or result["seed"] != seed
-        or type(result["attempt"]) is not int or result["attempt"] != ordinal
+        or not runner.attempt_identity_matches(result, {
+            "schema_version": 1,
+            "measurement_id": adaptive.load_contract()["measurement_id"],
+            "job_id": _job_id(scenario_id, repetition, seed),
+            "scenario_id": scenario_id, "repetition": repetition,
+            "seed": seed, "attempt": ordinal,
+        })
         or any(result[key] != started[key] for key in (
             "profile", "reasoning", "model_key", "model"
         ))
@@ -985,30 +940,11 @@ def _load_grade_round(path, attempt, expected_sha256=None):
 
 
 def _match_grade(grade, started, result):
-    if grade is None:
-        raise AdaptiveCampaignRefusal("missing adaptive grade")
-    if any(grade[key] != started[key] for key in (
-        "job_id", "scenario_id", "repetition", "seed", "attempt"
-    )):
-        raise AdaptiveCampaignRefusal("adaptive grade/started identity mismatch")
-    if result is None:
-        if (grade["failure_reason"] != "interrupted-no-result"
-                or grade["quality_pass"] or grade["agent_success"]
-                or any(grade[key] is not None for key in (
-                    "profile", "reasoning", "model_key", "model",
-                    "trace_sha256", "submission_sha256"
-                ))):
-            raise AdaptiveCampaignRefusal("adaptive interrupted grade mismatch")
-    elif (any(grade[key] != result[key] for key in (
-            "profile", "reasoning", "model_key", "model", "trace_sha256",
-            "submission_sha256"))
-            or grade["agent_success"] != (result["failure_reason"] is None)
-            or (result["failure_reason"] is not None and (
-                grade["failure_reason"] != result["failure_reason"]
-                or grade["quality_pass"]))
-            or (result["failure_reason"] is None and not grade["quality_pass"]
-                and grade["failure_reason"] != "quality-failure")):
-        raise AdaptiveCampaignRefusal("adaptive grade/agent evidence mismatch")
+    def refusal(message):
+        if message == "missing grade":
+            return AdaptiveCampaignRefusal("missing adaptive grade")
+        return AdaptiveCampaignRefusal("adaptive " + message)
+    return runner.match_grade(grade, started, result, refusal=refusal)
 
 
 def _event_from_initial(result, grade):
@@ -1154,16 +1090,11 @@ def run_retry(
 
 
 def _sum_observed_tokens(results, key):
-    values = [result["tokens"].get(key) if result is not None else None for result in results]
-    if not values or any(value is None for value in values):
-        return None
-    return sum(values)
+    return runner.sum_observed_tokens(results, key)
 
 
 def _median(values):
-    return statistics.median(values) if values and all(
-        value is not None for value in values
-    ) else None
+    return runner.median(values)
 
 
 def finalize(agent_artifacts, initial_grades, retry_grades, output_dir, *,

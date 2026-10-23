@@ -121,6 +121,80 @@ class AdaptiveCampaignTests(unittest.TestCase):
     def result(self, ordinal=1):
         return live._load_attempt_result(self.attempt_dir(ordinal), *JOB, ordinal)
 
+    def test_shared_boundary_durable_identity_and_tamper_refusal(self):
+        with ExitStack() as stack:
+            self.fakes(stack)
+            sync = stack.enter_context(patch.object(live.runner, "sync_ledger",
+                                                     wraps=live.runner.sync_ledger))
+            self.initial()
+            sync.assert_called_once_with(self.attempt_dir() / "started.json")
+        result = self.result()
+        started = live._load_started(self.attempt_dir(), *JOB, 1)
+        grade = self.grade_row(result)
+        live._match_grade(grade, started, result)
+        for key, value in (("seed", 15), ("attempt", 2), ("job_id", "static-control")):
+            with self.subTest(key=key), self.assertRaisesRegex(
+                    live.AdaptiveCampaignRefusal, "adaptive grade/started identity mismatch"):
+                live._match_grade(grade | {key: value}, started, result)
+        with self.assertRaisesRegex(live.AdaptiveCampaignRefusal, "adaptive grade/agent evidence mismatch"):
+            live._match_grade(grade | {"trace_sha256": "0" * 64}, started, result)
+        marker = self.attempt_dir() / "started.json"
+        for key, value in (("measurement_id", "static-control"), ("attempt", True),
+                           ("repetition", False), ("schema_version", True)):
+            with self.subTest(ledger_key=key):
+                marker.write_text(json.dumps(started | {key: value}))
+                with self.assertRaisesRegex(live.AdaptiveCampaignRefusal, "started ledger identity mismatch"):
+                    self.result()
+        marker.write_text(json.dumps(started))
+        result_path = self.attempt_dir() / "agent-result.json"
+        for key, value in (("measurement_id", "static-control"), ("attempt", True)):
+            with self.subTest(result_key=key):
+                result_path.write_text(json.dumps(result | {key: value}))
+                with self.assertRaisesRegex(live.AdaptiveCampaignRefusal, "adaptive attempt identity mismatch"):
+                    self.result()
+
+    def test_shared_boundary_ledger_sync_failure_blocks_execution(self):
+        with ExitStack() as stack:
+            self.fakes(stack)
+            stack.enter_context(patch.object(live.runner, "sync_ledger", side_effect=OSError("fake sync")))
+            execute = stack.enter_context(patch.object(live.b, "execute"))
+            with self.assertRaisesRegex(OSError, "fake sync"):
+                self.initial(execute=execute)
+            execute.assert_not_called()
+            live.run_initial("a", "b", "c", "d", "e", "f", "fake-run",
+                             authorized=True, resume=True, execute_fn=execute)
+            execute.assert_not_called()
+
+    def test_shared_boundary_launch_failure_and_interruption_not_replayed(self):
+        with ExitStack() as stack:
+            self.fakes(stack)
+            launch = stack.enter_context(patch.object(live.b, "execute", side_effect=OSError("fake")))
+            self.initial(execute=launch)
+            self.assertEqual(self.result()["failure_reason"], "launch-failure")
+            live.run_initial("a", "b", "c", "d", "e", "f", "fake-run",
+                             authorized=True, resume=True, execute_fn=launch)
+            self.assertEqual(launch.call_count, 1)
+        interrupted = self.grade_row(None)
+        started = live._load_started(self.attempt_dir(), *JOB, 1)
+        live._match_grade(interrupted, started, None)
+        with self.assertRaisesRegex(live.AdaptiveCampaignRefusal, "adaptive interrupted grade mismatch"):
+            live._match_grade(interrupted | {"quality_pass": True}, started, None)
+
+    def test_shared_boundary_path_errors_and_preflight_refusal_preserved(self):
+        for path, message in ((None, "invalid adaptive artifact path"),
+                              ("relative", "symlink or relative adaptive artifact path")):
+            with self.subTest(path=path), self.assertRaisesRegex(live.AdaptiveCampaignRefusal, message):
+                live._safe_path(path)
+        link = self.root / "link"
+        link.symlink_to(self.artifacts, target_is_directory=True)
+        with self.assertRaisesRegex(live.AdaptiveCampaignRefusal, "symlink or relative"):
+            live._regular_file(link / "started.json")
+        with patch.object(live.adaptive, "profile_mapping_verified", return_value=True), \
+                patch.object(live.split, "agent_preflight", side_effect=ValueError("fake drift")):
+            with self.assertRaisesRegex(live.AdaptiveCampaignRefusal, "split-host agent preflight refused"):
+                live.agent_preflight("/fake/codex", "/fake/host", "/fake/runtime",
+                                     "/fake/inventory", "/fake/adapter", "0" * 64)
+
     def test_plan_and_authorization_before_any_preflight(self):
         plan = live.plan()
         self.assertEqual((plan["jobs"], plan["maximum_codex_executions"]), (20, 40))
