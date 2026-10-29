@@ -292,7 +292,8 @@
       "issues": [
         47,
         48,
-        49
+        49,
+        163
       ],
       "contract": "docs/stages/automation.md",
       "reads": [

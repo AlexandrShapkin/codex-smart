@@ -67,7 +67,7 @@ Dependencies: playbooks.
 
 Milestone: 0.6 Reusable Automation; recorded progress: **planned**.
 Dependencies: adaptive.
-[Stage contract](docs/stages/automation.md); issues: [#47](https://github.com/AlexandrShapkin/codex-smart/issues/47), [#48](https://github.com/AlexandrShapkin/codex-smart/issues/48), [#49](https://github.com/AlexandrShapkin/codex-smart/issues/49).
+[Stage contract](docs/stages/automation.md); issues: [#47](https://github.com/AlexandrShapkin/codex-smart/issues/47), [#48](https://github.com/AlexandrShapkin/codex-smart/issues/48), [#49](https://github.com/AlexandrShapkin/codex-smart/issues/49), [#163](https://github.com/AlexandrShapkin/codex-smart/issues/163).
 
 ## distribution — Installer, updater and release lifecycle
 

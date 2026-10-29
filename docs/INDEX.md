@@ -24,6 +24,7 @@ GitHub Issues own live state; local issue files preserve design references.
 | [WORKFLOW](../docs/WORKFLOW.md) | engineering | current | workflow |
 | [Adaptive split-host operator runbook](../docs/adaptive-operations.md) | benchmark | current | adaptive, benchmark |
 | [Architecture](../docs/architecture.md) | architecture | current | baseline, router, playbooks, adaptive, automation, distribution |
+| [Bounded local autonomous development pilot](../docs/autodev-supervisor-pilot.md) | engineering | current | automation |
 | [Benchmark qualified-host and representative runner contract](../docs/benchmark-host.md) | benchmark | contract | benchmark |
 | [Development benchmark protocol](../docs/benchmarking.md) | benchmark | current | benchmark |
 | [Configuration](../docs/configuration.md) | engineering | current | baseline |
