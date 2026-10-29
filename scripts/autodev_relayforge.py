@@ -113,7 +113,7 @@ def main(argv=None):
     if any(part.is_symlink() for part in (path, *path.parents)):
         reject("symlinked export path denied")
     try:
-        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK)
     except OSError:
         reject("private chain export unavailable")
     try:

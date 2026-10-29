@@ -45,7 +45,7 @@ def private_bytes(path, *, limit=8192):
     if any(p.is_symlink() for p in (path, *path.parents)):
         supervisor.deny("private path symlink denied")
     try:
-        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK)
     except OSError:
         supervisor.deny("private file unavailable")
     try:

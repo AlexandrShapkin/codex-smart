@@ -436,6 +436,30 @@ class SupervisorTests(unittest.TestCase):
         output = (self.repo / "small.py").read_text()
         self.assertIn("GH=False SSH=False CLEANHOME=True PROFILE=False", output)
 
+    def test_fifo_receipts_are_refused_without_blocking(self):
+        fifo = self.state / "state.json"
+        os.mkfifo(fifo, 0o600)
+        script = (
+            "import importlib.util,sys; from pathlib import Path; "
+            "spec=importlib.util.spec_from_file_location('reader',sys.argv[1]); "
+            "reader=importlib.util.module_from_spec(spec); spec.loader.exec_module(reader); "
+        )
+        cases = [("autodev_supervisor.py", "reader.load_state(Path(sys.argv[2]))",
+                  self.state, b"unsafe state receipt"),
+                 ("autodev_timer.py", "reader.private_bytes(Path(sys.argv[2]))",
+                  fifo, b"private file ownership"),
+                 ("autodev_relayforge.py",
+                  "reader.main(['--bundle',sys.argv[2],'--expected-job-id','fifo-test'])",
+                  fifo, b"private export ownership")]
+        for filename, call, path, reason in cases:
+            with self.subTest(reader=filename):
+                result = subprocess.run(
+                    [sys.executable, "-I", "-c", script + call,
+                     str(MODULE.with_name(filename)), str(path)],
+                    stdin=subprocess.DEVNULL, capture_output=True, timeout=3)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(reason, result.stderr)
+
     def test_successful_launcher_cannot_leave_mutating_descendant(self):
         marker = self.base / "descendant-survived"
         self.codex.write_text(

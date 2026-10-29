@@ -193,7 +193,7 @@ def private_lock(directory):
 def load_state(directory):
     path = directory / "state.json"
     try:
-        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK)
     except FileNotFoundError:
         return None
     except OSError:
