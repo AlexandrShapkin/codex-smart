@@ -18,7 +18,9 @@ class WorkflowTests(unittest.TestCase):
         docs = json.loads((ROOT / "docs/documents.json").read_text())
         stages = json.loads((ROOT / "docs/stages.json").read_text())
         for name in ["Cargo.toml", "LICENSE", "NOTICE", "docs/documents.json", "docs/stages.json",
-                     "docs/issues/github-map.json", *[d["path"] for d in docs["documents"]]]:
+                     "docs/issues/github-map.json", ".github/labels.json",
+                     "GOVERNANCE-NOTICE.txt", ".engineering-kit/source.json",
+                     ".project-template/source.json", *[d["path"] for d in docs["documents"]]]:
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, path)
@@ -99,7 +101,7 @@ class WorkflowTests(unittest.TestCase):
     def test_broken_links_fragments_and_generated_drift(self):
         readme = self.root / "README.md"
         original = readme.read_text()
-        for target in ["docs/nonexistent.md", "docs/workflow.md#nonexistent-fragment"]:
+        for target in ["docs/nonexistent.md", "docs/PROJECT_WORKFLOW.md#nonexistent-fragment"]:
             readme.write_text(original + f"\n[broken]({target})\n")
             with self.assertRaises(ValueError):
                 Repository(self.root).check()

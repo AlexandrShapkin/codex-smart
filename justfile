@@ -63,3 +63,11 @@ security-fetch:
 security:
     python3 scripts/check_dependencies.py
     cargo deny --frozen check -D warnings
+
+# Shared cross-repository opt-in developer gate. Never replaces exact-head GitHub CI,
+# technical review or real device/installation proof. Requires offline advisory cache.
+verify: check security
+
+# Canonical nonmutating local CLI doctor; not a runtime readiness attestation.
+doctor executable="" sha256="":
+    python3 -B scripts/prepared_doctor.py --executable {{quote(executable)}} --sha256 {{quote(sha256)}}

@@ -1,0 +1,35 @@
+# Autonomous Development Contract v1 candidate: inert repository metadata only.
+# Owner policy and audited adapters outside Git are the only possible authority.
+schema_version = 1
+project_id = "codex-smart"
+project_type = "rust-workspace"
+repository = "AlexandrShapkin/codex-smart"
+
+[context]
+entrypoint = "AGENTS.md"
+architecture = "docs/architecture.md"
+workflow = "docs/PROJECT_WORKFLOW.md"
+current_plan = "ROADMAP.md"
+security = "SECURITY.md"
+task_source = "github-issues"
+
+[verification]
+# Identifiers only. Never execute manifest content or infer authorization.
+# Preserve exact-head CI plus Security, just check and applicable just security.
+profiles = ["rust-ci", "rust-tests", "rust-format", "rust-clippy", "docs-check", "security-check"]
+ci_workflows = [".github/workflows/ci.yml", ".github/workflows/security.yml"]
+live_device_proof = "separate"
+
+[execution]
+enabled = false
+max_stage_seconds = 1200
+max_changed_files = 2
+max_changed_lines = 180
+checkpoint_mode = "external-private"
+auto_merge = false
+auto_deploy = false
+
+[change_policy]
+# Informational and narrower than external operator policy, never grants writes.
+candidate_paths = ["crates/", "docs/", "scripts/", "AGENTS.md", "justfile"]
+blocked_unattended_paths = [".github/", "automation/", "benchmarks/"]

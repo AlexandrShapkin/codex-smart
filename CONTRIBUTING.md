@@ -2,7 +2,7 @@
 
 ## Workflow
 
-Start from a verified GitHub `main` commit in a new task branch/worktree using the authoritative [workflow](docs/workflow.md#start-a-codex-task). Preserve existing dirty or outdated checkouts. Inside the isolated task, run `just context [STAGE]` and `just issues`; read the owning contract and relevant ADRs before editing. Keep changes within one acceptance slice and preserve the thin launcher and safety contracts.
+Start from a verified GitHub `main` commit in a new task branch/worktree using the authoritative [workflow](docs/PROJECT_WORKFLOW.md#start-a-codex-task). Preserve existing dirty or outdated checkouts. Inside the isolated task, run `just context [STAGE]` and `just issues`; read the owning contract and relevant ADRs before editing. Keep changes within one acceptance slice and preserve the thin launcher and safety contracts.
 
 Use `feat/<scope>`, `fix/<scope>`, `docs/<scope>` or `chore/<scope>` branches and small Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`). Inspect all diffs, including new files. Use the scoped authority in the workflow below for pushes and merges; release/publication requires separate explicit authority. Never auto-merge.
 
@@ -30,11 +30,11 @@ Keep core logic pure where practical. Add focused regression tests for behavior 
 
 Run `just check` before a commit; CI runs the same gate. Run `just nextest` when available and `just security-fetch` then `just deny` when dependency/security validation applies. The advisory refresh is an explicit network action. See [development](docs/development.md) for prerequisites.
 
-Update documentation at its canonical owner in `docs/documents.json`; update stage contracts/registries when scope or recorded evidence changes. Run `just docs-generate` for generated views and `just docs-check` for ownership and links. Never hand-edit ROADMAP.md or docs/index.md. Update changelog/version at logical release boundaries, not for routine internal commits.
+Update documentation at its canonical owner in `docs/documents.json`; update stage contracts/registries when scope or recorded evidence changes. Run `just docs-generate` for generated views and `just docs-check` for ownership and links. Never hand-edit ROADMAP.md or docs/INDEX.md. Update changelog/version at logical release boundaries, not for routine internal commits.
 
 ## PRs and closeout
 
-Use the PR template to connect the problem, scope, approach and validation to the owning issue/stage. Report safety/compatibility effects, risks, known limits and follow-ups. Follow the normative [review and merge authorization gates](docs/workflow.md#review-and-merge-authorization) for independent technical/security acceptance, machine checks, live formal-review requirements and valid scoped authority, including Draft/Ready and independent exact-main postmerge evidence. Standing authority applies only after owner-authorized acceptance into main; bootstrap retains personal PR/full-head merge consent. Covered routine steps and head changes need no repeated personal owner approval, but every changed head needs new independent ACCEPT and checks. Exceptions, veto/revocation and the PR #125 merge ban remain binding. Zero required formal approvals waives no other gate.
+Use the PR template to connect the problem, scope, approach and validation to the owning issue/stage. Report safety/compatibility effects, risks, known limits and follow-ups. Follow the normative [review and merge authorization gates](docs/PROJECT_WORKFLOW.md#review-and-merge-authorization) for independent technical/security acceptance, machine checks, live formal-review requirements and valid scoped authority, including Draft/Ready and independent exact-main postmerge evidence. Standing authority applies only after owner-authorized acceptance into main; bootstrap retains personal PR/full-head merge consent. Covered routine steps and head changes need no repeated personal owner approval, but every changed head needs new independent ACCEPT and checks. Exceptions, veto/revocation and the PR #125 merge ban remain binding. Zero required formal approvals waives no other gate.
 
 Close an issue only when its acceptance is satisfied and linked PR/commit/check evidence is recorded. Partial delivery needs explicit residual acceptance and an owning follow-up; stage transfers replace ownership labels. After authorized merge, verify GitHub `main` again and start the next slice in a new worktree.
 

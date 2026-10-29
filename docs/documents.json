@@ -66,7 +66,7 @@
     },
     {
       "path": "codex-smart-project-brief.md",
-      "title": "Codex Smart — project brief and engineering backlog",
+      "title": "Codex Smart \u2014 project brief and engineering backlog",
       "owner": "provenance",
       "role": "input",
       "stages": [
@@ -180,7 +180,7 @@
     },
     {
       "path": "docs/diagnostics/2026-10-06-baseline.md",
-      "title": "Post-bootstrap correction gate — 2026-10-06",
+      "title": "Post-bootstrap correction gate \u2014 2026-10-06",
       "owner": "engineering",
       "role": "historical",
       "stages": [
@@ -189,7 +189,7 @@
     },
     {
       "path": "docs/diagnostics/2026-10-06-config.md",
-      "title": "Configuration and transaction slice — 2026-10-06",
+      "title": "Configuration and transaction slice \u2014 2026-10-06",
       "owner": "engineering",
       "role": "historical",
       "stages": [
@@ -216,7 +216,7 @@
     },
     {
       "path": "docs/diagnostics/2026-10-06-tools.md",
-      "title": "External executable pin validation — 2026-10-06",
+      "title": "External executable pin validation \u2014 2026-10-06",
       "owner": "engineering",
       "role": "historical",
       "stages": [
@@ -225,7 +225,7 @@
     },
     {
       "path": "docs/diagnostics/2026-10-06-workflow.md",
-      "title": "Bounded workflow validation — 2026-10-06",
+      "title": "Bounded workflow validation \u2014 2026-10-06",
       "owner": "engineering",
       "role": "historical",
       "stages": [
@@ -234,7 +234,7 @@
     },
     {
       "path": "docs/diagnostics/2026-10-06.md",
-      "title": "Initial engineering diagnostic — 2026-10-06",
+      "title": "Initial engineering diagnostic \u2014 2026-10-06",
       "owner": "engineering",
       "role": "historical",
       "stages": [
@@ -251,7 +251,7 @@
       ]
     },
     {
-      "path": "docs/index.md",
+      "path": "docs/INDEX.md",
       "title": "Documentation index",
       "owner": "engineering",
       "role": "generated",
@@ -560,7 +560,7 @@
       ]
     },
     {
-      "path": "docs/workflow.md",
+      "path": "docs/PROJECT_WORKFLOW.md",
       "title": "Repository development workflow",
       "owner": "engineering",
       "role": "current",
@@ -676,7 +676,7 @@
     },
     {
       "path": "docs/diagnostics/2026-10-14-adaptive-orchestrator-audit.md",
-      "title": "Adaptive orchestrator adversarial audit — 2026-10-14",
+      "title": "Adaptive orchestrator adversarial audit \u2014 2026-10-14",
       "owner": "benchmark",
       "role": "historical",
       "stages": [
@@ -695,7 +695,7 @@
     },
     {
       "path": "docs/diagnostics/2026-10-14-infrastructure-reconciliation.md",
-      "title": "Infrastructure and governance reconciliation — 2026-10-14",
+      "title": "Infrastructure and governance reconciliation \u2014 2026-10-14",
       "owner": "engineering",
       "role": "historical",
       "stages": [
@@ -704,7 +704,7 @@
     },
     {
       "path": "docs/diagnostics/2026-10-14-integration-stabilization.md",
-      "title": "Integration and infrastructure stabilization — 2026-10-14",
+      "title": "Integration and infrastructure stabilization \u2014 2026-10-14",
       "owner": "engineering",
       "role": "historical",
       "stages": [
@@ -737,6 +737,69 @@
       "role": "contract",
       "stages": [
         "adaptive"
+      ]
+    },
+    {
+      "path": ".github/DEVELOPMENT_INTERFACE.md",
+      "title": "DEVELOPMENT_INTERFACE",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "AGENTS.local.md",
+      "title": "AGENTS.local",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/PROJECT.md",
+      "title": "PROJECT",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/UPGRADING.md",
+      "title": "UPGRADING",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/WORKFLOW.md",
+      "title": "WORKFLOW",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/index.md",
+      "title": "Documentation index",
+      "owner": "engineering",
+      "role": "generated",
+      "stages": [
+        "workflow"
+      ]
+    },
+    {
+      "path": "docs/workflow.md",
+      "title": "Repository development workflow",
+      "owner": "engineering",
+      "role": "current",
+      "stages": [
+        "workflow"
       ]
     },
     {

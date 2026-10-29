@@ -1,6 +1,6 @@
 # Development
 
-Prerequisites: Rust 1.98 with rustfmt/clippy, Python 3.11+ and just 1.58.0. just is the stable command surface; run `just context` before a batch and `just check` after it. See [workflow](workflow.md) and the [index](index.md). The first slice used std only; config adds exactly pinned toml_edit/rustix and executable pins add sha2. The Linux process helper uses exactly pinned libc for child-only close-on-exec isolation; core and CLI still forbid unsafe code. Run `cargo fetch --locked` explicitly to prepare a clean developer cache.
+Prerequisites: Rust 1.98 with rustfmt/clippy, Python 3.11+ and just 1.58.0. just is the stable command surface; run `just context` before a batch and `just check` after it. See [workflow](PROJECT_WORKFLOW.md) and the [index](INDEX.md). The first slice used std only; config adds exactly pinned toml_edit/rustix and executable pins add sha2. The Linux process helper uses exactly pinned libc for child-only close-on-exec isolation; core and CLI still forbid unsafe code. Run `cargo fetch --locked` explicitly to prepare a clean developer cache.
 
 `just check` matches CI: offline docs-check, Python regressions, fmt, clippy with warnings denied, workspace tests and build using the lockfile. Optional installed nextest/llvm-cov add runner isolation and coverage. `just security-fetch` explicitly refreshes the public advisory database; `just security` checks reviewed direct dependency pins, registry checksums and cargo-deny advisories/licenses/bans/sources. CI uses the same security commands and installs pinned cargo-deny 0.20.2 on its runner. No additional tool was installed locally. `just coverage` refuses missing LLVM prerequisites without installing components.
 
@@ -17,7 +17,7 @@ public advisory-cache workaround and exact validation results.
 Requested command aliases: `just docs-sync` runs the existing deterministic docs-generate;
 `just deny` runs the existing security gate. `just status` explicitly reads local git
 state and cached divergence/worktrees through the existing workflow command surface;
-remote freshness stays unknown. Use the authoritative [workflow](workflow.md) for
+remote freshness stays unknown. Use the authoritative [workflow](PROJECT_WORKFLOW.md) for
 task isolation and pinned source snapshot commands. The offline check/context
 implementation from PR #19 is preserved.
 
