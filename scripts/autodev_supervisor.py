@@ -9,6 +9,7 @@ import ast
 import contextlib
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -20,6 +21,12 @@ import subprocess
 import sys
 import tempfile
 import tomllib
+import time
+
+_spec = importlib.util.spec_from_file_location(
+    "autodev_lifecycle", Path(__file__).resolve().with_name("autodev_lifecycle.py"))
+lifecycle = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(lifecycle)
 
 MAX_TASKS = 5
 MAX_FILES = 2
@@ -207,7 +214,14 @@ def load_state(directory):
         state = json.loads(raw)
     except (ValueError, UnicodeError):
         deny("corrupt state")
-    if not isinstance(state, dict) or set(state) not in (
+    if not isinstance(state, dict):
+        deny("unknown receipt schema")
+    if "lifecycle" in state:
+        try:
+            lifecycle.validate(state["lifecycle"])
+        except lifecycle.LifecycleRefused:
+            deny("corrupt lifecycle receipt")
+    if set(state) - {"lifecycle"} not in (
         {"schema", "manifest_sha256", "phase", "head", "branch", "index", "commits"},
         {"schema", "manifest_sha256", "phase", "head", "branch", "index", "commits", "draft_pr_created"},
     ) or state.get("schema") != 1:
@@ -348,16 +362,22 @@ def scoped_candidates(repo, scratch, paths, copied):
 
     # Reject ALL out-of-scope edits in the sandbox, not just changes that
     # would otherwise be copied back to the operator's checkout.
+    seen = set()
     for candidate in scratch.rglob("*"):
         if candidate.is_symlink():
             deny("symlink introduced in temporary source")
-        if not candidate.is_file():
+        if candidate.is_dir():
             continue
+        if not candidate.is_file():
+            deny("nonregular file introduced in temporary source")
         relative = candidate.relative_to(scratch).as_posix()
+        seen.add(relative)
         if relative not in copied:
             deny("unexpected new sandbox file")
         if relative not in paths and candidate.read_bytes() != (repo / relative).read_bytes():
             deny("source outside task scope was edited")
+    if seen != copied:
+        deny("source deleted from validation snapshot")
     changed = []
     for name in paths:
         source, target = scratch / name, repo / name
@@ -418,15 +438,28 @@ def pinned_executable(path, expected_sha):
     return path
 
 
-def bounded_codex(argv, *, cwd, env, seconds):
-    """Terminate the complete CLI process group on timeout/interruption."""
+def bounded_codex(argv, *, cwd, env, seconds, cancelled=None):
+    """Retire the private process group on success, timeout or interruption."""
+    if cancelled is not None:
+        cancelled()
     with open(os.devnull, "wb") as sink:
         child = subprocess.Popen(
             argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
             stdout=sink, stderr=sink, start_new_session=True,
         )
         try:
-            child.communicate(timeout=seconds)
+            deadline = time.monotonic() + seconds
+            while True:
+                if cancelled is not None:
+                    cancelled()
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise subprocess.TimeoutExpired(argv, seconds)
+                try:
+                    child.communicate(timeout=min(remaining, 0.2))
+                    break
+                except subprocess.TimeoutExpired:
+                    continue
         except BaseException:
             # Kill the entire private session, not just the launcher PID.
             try:
@@ -444,10 +477,16 @@ def bounded_codex(argv, *, cwd, env, seconds):
                 pass
             child.wait(timeout=2)
             raise
+        # A successful launcher can leave descendants mutating the snapshot.
+        try:
+            os.killpg(child.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
         return child.returncode
 
 
-def project_test_gate(scratch, bwrap, expected_sha, *, timeout, recipe="python-unittest"):
+def project_test_gate(scratch, bwrap, expected_sha, *, timeout, recipe="python-unittest",
+                      cancelled=None):
     """Run ONE fixed project-test recipe inside a networkless OS sandbox.
 
     Project test code is untrusted: never execute it directly on the host.
@@ -502,7 +541,7 @@ def project_test_gate(scratch, bwrap, expected_sha, *, timeout, recipe="python-u
         status = bounded_codex(
             args, cwd=scratch,
             env={"PATH": "/usr/bin:/bin", "HOME": "/tmp", "LANG": "C.UTF-8"},
-            seconds=timeout,
+            seconds=timeout, cancelled=cancelled,
         )
     except subprocess.TimeoutExpired:
         deny("isolated project tests exceeded time budget")
@@ -514,7 +553,7 @@ def project_test_gate(scratch, bwrap, expected_sha, *, timeout, recipe="python-u
 
 def run_task(repo, directory, task, codex, seconds, rustfmt=None, codex_sha=None,
              codex_home=None, test_bwrap=None, test_bwrap_sha=None,
-             test_seconds=120):
+             test_seconds=120, cancelled=None):
     with tempfile.TemporaryDirectory(prefix="source-", dir=directory) as base:
         scratch = Path(base)
         copied = source_copy(repo, scratch)
@@ -534,14 +573,17 @@ def run_task(repo, directory, task, codex, seconds, rustfmt=None, codex_sha=None
         code = bounded_codex(
             [str(codex), "--ask-for-approval", "never", "exec",
              "--sandbox", "workspace-write", "--skip-git-repo-check", prompt],
-            cwd=scratch, env=env, seconds=seconds,
+            cwd=scratch, env=env, seconds=seconds, cancelled=cancelled,
         )
         if code:
             deny("Codex exited unsuccessfully")
         scoped_candidates(repo, scratch, task["paths"], copied)
         validate_sources(scratch, task["paths"], rustfmt=rustfmt)
         project_test_gate(scratch, test_bwrap, test_bwrap_sha,
-                          timeout=test_seconds, recipe=task.get("recipe", "python-unittest"))
+                          timeout=test_seconds, recipe=task.get("recipe", "python-unittest"),
+                          cancelled=cancelled)
+        if cancelled is not None:
+            cancelled()
         # Model code and all project checks finished before ANY worktree write.
         return apply_changes(repo, scratch, task["paths"], copied)
 
@@ -558,15 +600,21 @@ def commit_stage(repo, task, files):
     return git(repo, "rev-parse", "HEAD").stdout.decode().strip()
 
 
-def publish(repo, directory, state, doc):
+def publish(repo, directory, state, doc, *, cancelled=None):
     if state["phase"] != "complete":
         deny("cannot publish incomplete or ambiguous run")
     head, branch = checkout(repo, doc)
     if head != state["head"] or state["index"] != len(doc["tasks"]):
         deny("head mismatch or unfinished tasks")
+    if cancelled is not None:
+        cancelled()
     state["phase"] = "publishing"
     save_state(directory, state)  # no retry after ambiguous remote side effect
+    if cancelled is not None:
+        cancelled()
     git(repo, "push", "--set-upstream", "origin", branch)
+    if cancelled is not None:
+        cancelled()
     result = command(
         ["gh", "pr", "create", "--draft", "--base", "main", "--head", branch,
          "--title", "test: bounded autonomous development pilot",
@@ -583,9 +631,90 @@ def publish(repo, directory, state, doc):
     print("Draft PR created" if state["draft_pr_created"] else "Publish result unverified")
 
 
-def execute(argv=None):
+def cancellation(directory, digest, *, request=False):
+    """Cancellation can interrupt a lock-owning worker without taking its lock."""
+    safe_directory(directory, mode=0o700)
+    path = directory / "cancel"
+    if request:
+        try:
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        except FileExistsError:
+            cancellation(directory, digest)
+        else:
+            try:
+                os.write(fd, digest.encode("ascii"))
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+            parent = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(parent)
+            finally:
+                os.close(parent)
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except FileNotFoundError:
+        return
+    try:
+        st = os.fstat(fd)
+        if (not stat.S_ISREG(st.st_mode) or st.st_uid != os.geteuid() or st.st_nlink != 1
+                or stat.S_IMODE(st.st_mode) != 0o600 or os.read(fd, 65) != digest.encode("ascii")):
+            deny("unsafe or foreign cancellation marker")
+    finally:
+        os.close(fd)
+    deny("run cancelled; a new run requires a new private state directory")
+
+
+def execution_preflight(args):
+    if not 30 <= args.stage_seconds <= 1200:
+        deny("stage timeout outside approved range")
+    if not 1 <= args.max_stages <= MAX_TASKS:
+        deny("invalid invocation stage budget")
+    if args.codex is None:
+        deny("Codex executable required")
+    pinned_executable(args.codex, args.codex_sha256)
+    if args.test_bwrap is None:
+        deny("offline project validation requires pinned bubblewrap")
+    pinned_executable(args.test_bwrap, args.test_bwrap_sha256)
+    if not 15 <= args.test_seconds <= 240:
+        deny("project test timeout outside approved range")
+    if args.codex_home is not None:
+        safe_directory(args.codex_home, mode=0o700)
+        if overlaps(args.codex_home, args.repo) or overlaps(
+            args.codex_home, args.state_dir
+        ):
+            deny("dedicated Codex profile cannot overlap source or receipts")
+
+
+def revise_findings(args, doc, state, expected, findings, host, cancelled):
+    execution_preflight(args)
+    head, branch = checkout(args.repo, doc)
+    if head != expected or branch != state["branch"]:
+        deny("revision checkout mismatch")
+    paths = {f["path"] for f in findings}
+    tasks = [t for t in doc["tasks"] if paths <= set(t["paths"])]
+    if not tasks:
+        deny("findings exceed one original bounded task")
+    prompt = "Address independent review findings: " + " ".join(f["instruction"] for f in findings)
+    if len(prompt) > 1200:
+        deny("finding instructions exceed task budget")
+    task = dict(tasks[0], prompt=prompt)
+    changed = run_task(args.repo, args.state_dir, task, args.codex, args.stage_seconds,
+                       rustfmt=args.rustfmt, codex_sha=args.codex_sha256,
+                       codex_home=args.codex_home, test_bwrap=args.test_bwrap,
+                       test_bwrap_sha=args.test_bwrap_sha256, test_seconds=args.test_seconds,
+                       cancelled=cancelled)
+    cancelled()
+    head = commit_stage(args.repo, task, changed)
+    cancelled()
+    host.publish_revision(head)  # uncertain push stays revising; never replay
+    return head
+
+
+def execute(argv=None, *, host=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("plan", "status", "run", "publish"))
+    parser.add_argument("action", choices=("plan", "status", "run", "publish", "cancel",
+                                                  "review", "retry", "reconcile", "integrate", "verify"))
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--repo", required=True, type=Path)
     parser.add_argument("--state-dir", type=Path)
@@ -611,36 +740,60 @@ def execute(argv=None):
         deny("explicit private state directory required")
     if overlaps(args.state_dir, args.repo):
         deny("state must remain disjoint from source worktree")
+    if args.action == "cancel":
+        if not args.apply:
+            deny("cancellation requires explicit --apply")
+        try:
+            cancellation(args.state_dir, digest, request=True)
+        except Refused as error:
+            if str(error).startswith("run cancelled;"):
+                print("Cancellation recorded")
+                return 0
+            raise
+    cancelled = lambda: cancellation(args.state_dir, digest)
     with private_lock(args.state_dir):
         state = load_state(args.state_dir)
         if args.action == "status":
-            print(json.dumps(state or {"phase": "not-started"}, sort_keys=True))
+            report = dict(state or {"phase": "not-started"})
+            try:
+                cancelled()
+            except Refused as error:
+                if not str(error).startswith("run cancelled;"):
+                    raise
+                report["cancellation_requested"] = True
+            print(json.dumps(report, sort_keys=True))
             return 0
         if not args.apply:
             deny("execution requires explicit --apply")
+        if args.action not in {"reconcile", "verify"}:
+            cancelled()
+        if args.action in {"review", "retry", "reconcile", "integrate", "verify"}:
+            if host is None:
+                deny("independently authorized lifecycle host unavailable; no runtime adapter enrolled")
+            if state is None or state.get("manifest_sha256") != digest:
+                deny("no matching published run")
+            if host.repository != doc["repository"]:
+                deny("lifecycle host repository mismatch")
+            controller = lifecycle.Lifecycle(
+                state, lambda value: save_state(args.state_dir, value), host,
+                revise=lambda head, findings: revise_findings(
+                    args, doc, state, head, findings, host, cancelled),
+                cancelled=cancelled)
+            if "lifecycle" not in state:
+                controller.attach()
+            if args.action == "review":
+                controller.review({p for t in doc["tasks"] for p in t["paths"]})
+            elif args.action == "retry":
+                controller.retry()
+            else:
+                getattr(controller, args.action)()
+            return 0
         if args.action == "publish":
             if state is None or state.get("manifest_sha256") != digest:
                 deny("no matching completed manifest")
-            publish(args.repo, args.state_dir, state, doc)
+            publish(args.repo, args.state_dir, state, doc, cancelled=cancelled)
             return 0
-        if not 30 <= args.stage_seconds <= 1200:
-            deny("stage timeout outside approved range")
-        if not 1 <= args.max_stages <= MAX_TASKS:
-            deny("invalid invocation stage budget")
-        if args.codex is None:
-            deny("Codex executable required")
-        pinned_executable(args.codex, args.codex_sha256)
-        if args.test_bwrap is None:
-            deny("offline project validation requires pinned bubblewrap")
-        pinned_executable(args.test_bwrap, args.test_bwrap_sha256)
-        if not 15 <= args.test_seconds <= 240:
-            deny("project test timeout outside approved range")
-        if args.codex_home is not None:
-            safe_directory(args.codex_home, mode=0o700)
-            if overlaps(args.codex_home, args.repo) or overlaps(
-                args.codex_home, args.state_dir
-            ):
-                deny("dedicated Codex profile cannot overlap source or receipts")
+        execution_preflight(args)
         head, branch = checkout(args.repo, doc)
         preflight_scopes(args.repo, doc, args.rustfmt)
         if state is None:
@@ -659,6 +812,7 @@ def execute(argv=None):
         last_stage = state["index"] + min(remaining, args.max_stages)
         for index in range(state["index"], last_stage):
             task = doc["tasks"][index]
+            cancelled()
             state["phase"] = "started"
             save_state(args.state_dir, state)  # before ANY model invocation
             changed = run_task(args.repo, args.state_dir, task, args.codex, args.stage_seconds,
@@ -666,7 +820,8 @@ def execute(argv=None):
                                codex_home=args.codex_home,
                                test_bwrap=args.test_bwrap,
                                test_bwrap_sha=args.test_bwrap_sha256,
-                               test_seconds=args.test_seconds)
+                               test_seconds=args.test_seconds, cancelled=cancelled)
+            cancelled()
             new_head = commit_stage(args.repo, task, changed)
             state["commits"].append({"task_id": task["id"], "sha": new_head})
             state["head"] = new_head
@@ -678,7 +833,7 @@ def execute(argv=None):
             state["phase"] = "complete"
             save_state(args.state_dir, state)
             if args.publish_draft:
-                publish(args.repo, args.state_dir, state, doc)
+                publish(args.repo, args.state_dir, state, doc, cancelled=cancelled)
         else:
             if args.publish_draft:
                 deny("cannot publish a partial stage batch")
@@ -690,7 +845,7 @@ def execute(argv=None):
 def main():
     try:
         sys.exit(execute())
-    except (Refused, OSError, subprocess.TimeoutExpired, UnicodeError) as e:
+    except (Refused, lifecycle.LifecycleRefused, OSError, subprocess.TimeoutExpired, UnicodeError) as e:
         print(ERROR + ": " + (str(e) if isinstance(e, Refused) else type(e).__name__),
               file=sys.stderr)
         sys.exit(2)

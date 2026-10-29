@@ -238,3 +238,87 @@ Run isolated fake-Codex tests without any account/network:
 ~~~sh
 python3 -B -m unittest scripts/test_autodev_supervisor.py
 ~~~
+
+## Issue #163 lifecycle continuation (source only)
+
+Scope: reuse the existing runner, private atomic ledger, single-writer lock,
+manifest scopes, syntax checks and sandbox validation for independent review,
+actionable-finding revisions, cancellation, reconciliation and gated integration.
+Non-goals: activation of PR #164, merging PR #125, runtime authority enrollment,
+RelayForge/RDC execution, installations, services, credential changes or deployment.
+Dependencies are a separately authorized host, authenticated reviewer identity,
+current owner authority and complete live GitHub protection/check observations.
+Risks include lost acknowledgements, stale review/CI and concurrent base movement.
+
+The bounded plan is to add durable lifecycle transitions, exercise representative
+success and fault paths with isolated hosts, run native mandatory gates and obtain
+independent exact-head acceptance. A fake lifecycle proof establishes source
+behavior only; it establishes neither installation nor live operating readiness.
+
+`autodev_lifecycle.py` is the deterministic lifecycle component used by the existing
+supervisor. `execute(..., host=...)` accepts an independently provisioned host from
+its caller. There is deliberately no repository-selected executable, configuration
+plugin, self-authored review receipt or implicit GitHub credential adapter. CLI
+`review`, `retry`, `reconcile`, `integrate` and `verify` refuse when this host is
+absent. The operator/reviewer provisioning limitations in
+[ADR 0011](decisions/0011-operator-reviewer-authority.md) remain binding. A caller
+implementing this host is part of the trusted supervisor, not an untrusted source
+candidate. Its assertions require independent qualification before live use.
+
+The host must provide authenticated fresh PR identity; independent reviewer
+identity and full-head/base acceptance; complete required checks (including
+synthetic integration checks), check app identity, formal reviews, unresolved
+threads and actual protection; and current scoped owner authority, veto and
+revocation observations. Unknown facts refuse. Merge must enforce expected head
+and base at the mutation boundary or refuse; a preflight read alone is insufficient.
+Post-merge observation must verify ancestry/content and CI/Security for the actual
+merge SHA. The host must not interpret a candidate hash, GitHub account attribution
+or a boolean supplied by repository content as authenticated authority. This PR
+does not provision such a production host, so live integration remains unavailable.
+
+The lifecycle is:
+
+1. Attach only to an observed Draft PR matching the completed run's head/branch.
+   An interrupted `publishing` attempt may be reconciled by observing this exact
+   Draft PR; publication is never repeated automatically.
+2. Obtain authenticated review by a reviewer distinct from the implementer, bound
+   to the full head and base. ACCEPT requires zero unresolved findings. CHANGES
+   requires bounded actionable findings, unique IDs and original manifest paths.
+3. Permit at most two finding-driven revisions. Each must fit one original task's
+   scope and prompt budget. The existing pinned Codex, bounded process group,
+   syntax/patch checks and mandatory offline sandbox tests run before commit.
+   Persist `revising` and consume the attempt before any side effect. An ambiguous
+   revision remains stopped for operator reconciliation; never replay it.
+4. Require new independent acceptance and checks after a revision. Base movement
+   also invalidates acceptance. Failed, missing, wrong-app or stale head/base
+   check evidence blocks integration, as do unknown protection or review blockers.
+5. Persist `merge-pending` before the host can activate/merge an eligible PR.
+   PR #125 and PR #164 in codex-smart are specifically denied regardless of
+   generic authority. Lost acknowledgements are resolved by observation only;
+   an open/unknown result is never retried automatically.
+6. Record `merged` only from a verified observed merge SHA. Remain there until
+   post-merge ancestry/content and exact-merge-SHA CI/Security are verified.
+
+Cancellation uses the same manifest and private state directory:
+
+~~~sh
+python3 scripts/autodev_supervisor.py cancel --apply --manifest /private/queue.json \
+  --repo /private/worktree --state-dir /private/autodev-state
+~~~
+
+The durable 0600 marker binds the manifest digest and does not wait for the worker
+lock. Workers check it while waiting for Codex and sandbox tests and before source
+application/commit. Cancellation terminates the active process group. A marker
+prevents future execution in that state directory; status reports the request.
+It cannot undo an already completed commit, publication or merge. Observation-only
+reconciliation and post-merge verification remain available after a cancellation
+request so an in-flight irreversible operation can be accounted for. Retain the
+old ledger and source for review; use a new private state directory for a new run.
+
+Offline proof: `python3 -B -m unittest discover -s scripts -p 'test_autodev*.py'`
+includes review findings → sandbox-validated revision → fresh independent ACCEPT →
+exact-head/base CI gates → authorized simulated merge → post-merge verification.
+Negative cases cover authority revocation/Unknown, protected PRs, failed/stale CI,
+self-review, unauthenticated review, base movement, exhausted retries, cancellation,
+corrupt state and lost revision/merge acknowledgements. These tests use no real
+Codex account, GitHub writes, RelayForge, RDC or production infrastructure.

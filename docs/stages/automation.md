@@ -61,3 +61,8 @@ Reconcile each issue against concrete implementation and independent evidence. R
 ## Follow-ups
 
 Next dependent stage begins after explicit acceptance. Unresolved quality, security, compatibility or measurement gaps stay visible and fail closed.
+
+Issue #163 / Draft PR #164 adds a source-only bounded supervisor experiment and
+offline lifecycle proof. See the [pilot contract](../autodev-supervisor-pilot.md).
+Runtime enrollment, activation and live integration remain unavailable; automation
+stage acceptance is not established by the offline proof.

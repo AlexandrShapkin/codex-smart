@@ -785,24 +785,6 @@
       ]
     },
     {
-      "path": "docs/index.md",
-      "title": "Documentation index",
-      "owner": "engineering",
-      "role": "generated",
-      "stages": [
-        "workflow"
-      ]
-    },
-    {
-      "path": "docs/workflow.md",
-      "title": "Repository development workflow",
-      "owner": "engineering",
-      "role": "current",
-      "stages": [
-        "workflow"
-      ]
-    },
-    {
       "path": "docs/autodev-supervisor-pilot.md",
       "title": "Bounded local autonomous development pilot",
       "owner": "engineering",

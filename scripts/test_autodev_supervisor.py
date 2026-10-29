@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -434,6 +435,128 @@ class SupervisorTests(unittest.TestCase):
                 self.run_case()
         output = (self.repo / "small.py").read_text()
         self.assertIn("GH=False SSH=False CLEANHOME=True PROFILE=False", output)
+
+    def test_successful_launcher_cannot_leave_mutating_descendant(self):
+        marker = self.base / "descendant-survived"
+        self.codex.write_text(
+            "#!/usr/bin/env python3\nimport subprocess, sys\n"
+            "subprocess.Popen([sys.executable, '-c', "
+            + repr("import time; from pathlib import Path; time.sleep(0.4); Path("
+                   + repr(str(marker)) + ").write_text('survived')") + "])\n")
+        self.assertEqual(autodev.bounded_codex([str(self.codex)], cwd=self.repo,
+                                              env={"PATH": "/usr/bin:/bin"}, seconds=30), 0)
+        time.sleep(0.6)
+        self.assertFalse(marker.exists())
+
+    def test_candidate_cannot_delete_project_tests_before_validation(self):
+        with self.codex.open("a") as file:
+            file.write("Path('scripts/test_small.py').unlink()\n")
+        with mock.patch.object(autodev, "project_test_gate") as gate:
+            with self.assertRaisesRegex(autodev.Refused, "source deleted"):
+                self.run_case()
+            gate.assert_not_called()
+        self.assertEqual(git(self.repo, "rev-parse", "HEAD"), self.head)
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
+
+    def test_broken_sandbox_cannot_delete_tests_after_validation(self):
+        def delete_tests(scratch, *args, **kwargs):
+            (scratch / "scripts/test_small.py").unlink()
+        with mock.patch.object(autodev, "project_test_gate", side_effect=delete_tests):
+            with self.assertRaisesRegex(autodev.Refused, "source deleted"):
+                self.run_case()
+        self.assertEqual(git(self.repo, "rev-parse", "HEAD"), self.head)
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
+
+    def test_cancellation_does_not_wait_for_worker_lock_and_is_durable(self):
+        with autodev.private_lock(self.state):
+            self.assertEqual(autodev.execute(self.args("cancel", "--apply")), 0)
+        self.assertEqual((self.state / "cancel").stat().st_mode & 0o777, 0o600)
+        with self.assertRaisesRegex(autodev.Refused, "cancelled"):
+            self.run_case()
+        self.assertFalse((self.state / "state.json").exists())
+        self.assertEqual(git(self.repo, "rev-parse", "HEAD"), self.head)
+
+    def test_cancellation_interrupts_active_process(self):
+        self.codex.write_text("#!/usr/bin/env python3\nimport time\ntime.sleep(60)\n")
+        checks = []
+        def cancelled():
+            checks.append(True)
+            if len(checks) == 2:
+                raise autodev.Refused("run cancelled")
+        with self.assertRaisesRegex(autodev.Refused, "cancelled"):
+            autodev.bounded_codex([str(self.codex)], cwd=self.repo,
+                                  env={"PATH": "/usr/bin:/bin"}, seconds=30,
+                                  cancelled=cancelled)
+        self.assertEqual(len(checks), 2)
+
+    def test_cancellation_after_push_prevents_pr_creation(self):
+        self.run_case()
+        state = autodev.load_state(self.state)
+        doc, digest = autodev.manifest(self.manifest)
+        original = autodev.git
+        def git_cancel_after_push(repo, *args):
+            if args[0] == "push":
+                autodev.execute(self.args("cancel", "--apply"))
+                return mock.Mock(stdout=b"")
+            return original(repo, *args)
+        with mock.patch.object(autodev, "git", side_effect=git_cancel_after_push), \
+             mock.patch.object(autodev, "command", wraps=autodev.command) as commands:
+            with self.assertRaisesRegex(autodev.Refused, "cancelled"):
+                autodev.publish(self.repo, self.state, state, doc,
+                                cancelled=lambda: autodev.cancellation(self.state, digest))
+        self.assertFalse(any(call.args[0][0] == "gh" for call in commands.call_args_list))
+        self.assertEqual(autodev.load_state(self.state)["phase"], "publishing")
+
+    def test_already_cancelled_process_is_never_spawned(self):
+        def cancelled():
+            raise autodev.Refused("cancelled")
+        with mock.patch.object(autodev.subprocess, "Popen") as spawn:
+            with self.assertRaisesRegex(autodev.Refused, "cancelled"):
+                autodev.bounded_codex([str(self.codex)], cwd=self.repo, env={},
+                                      seconds=30, cancelled=cancelled)
+            spawn.assert_not_called()
+
+    def test_foreign_or_symlink_cancellation_marker_is_refused(self):
+        marker = self.state / "cancel"
+        marker.symlink_to(self.manifest)
+        with self.assertRaises(OSError):
+            autodev.execute(self.args("cancel", "--apply"))
+        marker.unlink()
+        marker.write_text("foreign-manifest")
+        marker.chmod(0o600)
+        with self.assertRaisesRegex(autodev.Refused, "foreign"):
+            self.run_case()
+
+    def test_lifecycle_cli_without_enrolled_host_never_calls_remote(self):
+        for action in ("review", "retry", "reconcile", "integrate", "verify"):
+            with self.subTest(action=action), mock.patch.object(autodev, "command") as remote:
+                with self.assertRaisesRegex(autodev.Refused, "host unavailable"):
+                    autodev.execute(self.args(action, "--apply"))
+                remote.assert_not_called()
+
+    def test_actionable_revision_reuses_scope_sandbox_and_commit_gates(self):
+        from test_autodev_lifecycle import FakeHost, FINDING
+        self.run_case()
+        state = autodev.load_state(self.state)
+        state.update(phase="published", draft_pr_created=True)
+        autodev.save_state(self.state, state)
+        host = FakeHost()
+        host.repository = "AlexandrShapkin/sandbox"
+        host.facts.update(repository=host.repository, branch=state["branch"], head=state["head"])
+        host.result.update(head=state["head"], verdict="CHANGES", findings=[FINDING])
+        host.publish_revision = lambda head: host.facts.update(head=head)
+        autodev.execute(self.args("review", "--apply"), host=host)
+        sha = hashlib.sha256(self.codex.read_bytes()).hexdigest()
+        bwrap_sha = hashlib.sha256(self.bwrap.read_bytes()).hexdigest()
+        autodev.execute(self.args("retry", "--apply", "--codex", str(self.codex),
+                                 "--codex-sha256", sha, "--test-bwrap", str(self.bwrap),
+                                 "--test-bwrap-sha256", bwrap_sha), host=host)
+        revised = autodev.load_state(self.state)
+        self.assertNotEqual(state["head"], revised["head"])
+        self.assertEqual(revised["lifecycle"]["attempts"], 1)
+        self.assertEqual(revised["lifecycle"]["phase"], "awaiting-review")
+        self.assertIsNone(revised["lifecycle"]["review"])
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
 
 
 if __name__ == "__main__":
