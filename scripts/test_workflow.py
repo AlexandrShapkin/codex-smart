@@ -58,6 +58,15 @@ class WorkflowTests(unittest.TestCase):
             self.assertLessEqual(len(first.encode()), CONTEXT_BYTES)
         self.assertEqual(before, self.snapshot())
 
+    def test_discontinued_status_suppresses_development_commitments(self):
+        repo = Repository(self.root)
+        self.assertIn("Discontinued", repo.views()["ROADMAP.md"])
+        self.assertNotIn("Active stage:", repo.views()["ROADMAP.md"])
+        self.assertIn("discontinued", repo.context())
+        self.edit("docs/stages.json", lambda d: d.update(project_status="unknown"))
+        with self.assertRaisesRegex(ValueError, "Unsupported registry"):
+            Repository(self.root).validate()
+
     def test_unknown_stage_and_command_fields_rejected(self):
         with self.assertRaisesRegex(ValueError, "Unknown stage"):
             Repository(self.root).context("bad; touch injected")

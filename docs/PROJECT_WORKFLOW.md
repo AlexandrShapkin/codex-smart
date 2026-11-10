@@ -1,7 +1,11 @@
+> **Discontinued — owner decision, 2026-11-10.** Product development is terminated. No unfinished feature will be merged or migrated into another repository.
+> Existing source, research and acceptance evidence are retained for reference.
+> Historical platform roadmaps and development commitments below are superseded;
+> they do not authorize renewed development. No OpenClaw integration is implemented.
+
 # Native project procedures
 
-The canonical [Template interface](../.github/DEVELOPMENT_INTERFACE.md) owns the shared
-lifecycle. Retained local procedures and stronger product gates remain binding;
+The [local workflow](../.github/DEVELOPMENT_INTERFACE.md) describes development. Retained local procedures and stronger product gates remain binding;
 historical generic workflow/standing-merge wording cannot weaken that interface
 or grant merge authority. Preserve bootstrap consent, vetoes and PR #125 ban.
 

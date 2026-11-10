@@ -361,7 +361,6 @@
       "sources": [
         "docs/stages.json",
         "docs/documents.json",
-        ".github/workflows/release.yml",
         "crates/codex-smart-core/src/process.rs",
         "crates/codex-smart-core/src/migration.rs"
       ],
@@ -395,5 +394,6 @@
       ],
       "evidence": []
     }
-  ]
+  ],
+  "project_status": "discontinued"
 }

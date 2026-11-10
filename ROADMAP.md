@@ -6,7 +6,7 @@ Version: 0.1.0 unreleased; see [versioning](docs/versioning.md).
 Recorded progress describes implementation evidence, not live issue closure or milestone completion.
 GitHub Issues own actionable state; use `just issues`. No legacy archive or benchmark quality is assumed.
 
-Active stage: **adaptive**. Start with `just context`.
+**Discontinued:** no active development or release commitments. The stages below preserve historical evidence.
 
 ## baseline — Recover trustworthy repository baseline
 
