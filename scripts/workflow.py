@@ -41,7 +41,8 @@ class Repository:
         return json.loads(self.read(name))
 
     def validate(self):
-        if (set(self.stages) != {"schema", "active", "stages"}
+        if (set(self.stages) not in ({"schema", "active", "stages"}, {"schema", "active", "stages", "project_status"})
+                or self.stages.get("project_status", "active") not in ("active", "discontinued")
                 or self.stages["schema"] != 1
                 or set(self.docs) != {"schema", "documents"} or self.docs["schema"] != 1):
             raise ValueError("Unsupported registry schema")
@@ -155,7 +156,7 @@ class Repository:
                    "", f"Version: {version} unreleased; see [versioning](docs/versioning.md).",
                    "Recorded progress describes implementation evidence, not live issue closure or milestone completion.",
                    "GitHub Issues own actionable state; use `just issues`. No legacy archive or benchmark quality is assumed.",
-                   "", f"Active stage: **{self.stages['active']}**. Start with `just context`.", ""]
+                   "", ("**Discontinued:** no active development or release commitments. The stages below preserve historical evidence." if self.stages.get("project_status") == "discontinued" else f"Active stage: **{self.stages['active']}**. Start with `just context`."), ""]
         for stage in self.stages["stages"]:
             roadmap += [f"## {stage['id']} — {stage['title']}", "",
                         f"Milestone: {stage['milestone']}; recorded progress: **{stage['progress']}**.",
@@ -186,7 +187,7 @@ class Repository:
         stage = next((s for s in self.stages["stages"] if s["id"] == stage_id), None)
         if stage is None:
             raise ValueError("Unknown stage; consult ROADMAP.md")
-        lines = [f"Stage: {stage['id']} — {stage['title']}",
+        lines = [("Project discontinued; stage evidence is historical." if self.stages.get("project_status") == "discontinued" else "Project active."), f"Stage: {stage['id']} — {stage['title']}",
                  f"Recorded progress: {stage['progress']} (live state: just issues)",
                  "Dependencies: " + (", ".join(stage["depends_on"]) or "none"),
                  "Issues: " + ", ".join(self.issue_map[str(n)]["url"] for n in stage["issues"]),

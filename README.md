@@ -1,3 +1,8 @@
+> **Discontinued — owner decision, 2026-11-10.** Product development is terminated. No unfinished feature will be merged or migrated into another repository.
+> Existing source, research and acceptance evidence are retained for reference.
+> Historical platform roadmaps and development commitments below are superseded;
+> they do not authorize renewed development. No OpenClaw integration is implemented.
+
 # codex-smart
 
 [![CI](https://github.com/AlexandrShapkin/codex-smart/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AlexandrShapkin/codex-smart/actions/workflows/ci.yml)

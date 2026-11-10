@@ -1,8 +1,11 @@
+> **Discontinued — owner decision, 2026-11-10.** Product development is terminated. No unfinished feature will be merged or migrated into another repository.
+> Existing source, research and acceptance evidence are retained for reference.
+> Historical platform roadmaps and development commitments below are superseded;
+> they do not authorize renewed development. No OpenClaw integration is implemented.
+
 # Project-local rules
 
-Follow root AGENTS.md; load canonical interface sections only when task-triggered, while preserving all binding requirements. These retained native
-rules may strengthen it; shared lifecycle policy belongs to Project Template.
-This migration grants no merge, deployment or runtime authority.
+Follow root AGENTS.md. This repository owns its native procedures and security boundaries.
 
 # Repository engineering contract
 
